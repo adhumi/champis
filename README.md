@@ -10,7 +10,7 @@ Prérequis : Python 3.12+, [uv](https://docs.astral.sh/uv/), ~5 Go de disque pou
 
 ```bash
 uv sync --group dev
-uv run pytest                      # 53 tests, dont une chaîne complète sur un département synthétique
+uv run pytest                      # 67 tests, dont une chaîne complète sur un département synthétique
 uv run champis-pipeline all --dept 25
 ```
 
@@ -20,14 +20,21 @@ uv run champis-pipeline all --dept 25
 2. **grid** — rasters alignés 25 m Lambert-93 dans `data/grid/25/` : `host.tif` (essence dominante), `cover.tif`, `ph.tif`, `alt.tif`, `slope.tif`, `aspect.tif`.
 3. **terrain** — `data/T/<espèce>/25-<hash>.tif`, un par espèce (7 au départ). Quelques secondes par espèce.
 4. **tiles** — `data/tiles/T-<espèce>-<hash>-p1.0.0.pmtiles`, niveaux 6–15. Quelques minutes par espèce pour un département (z15 ≈ 7 000 tuiles).
+5. **weather-grid** — `data/weather_grid.json` : les cellules météo 5 km où T > 0, avec leurs classes d'altitude ; c'est l'entrée de l'API.
 
 Puis `uv run champis-pipeline summary --dept 25` donne la surface par classe (excellent → très faible) par espèce : premier regard sur la crédibilité avant toute carte.
 
 Pour regarder le résultat : `python3 -m http.server 8000` à la racine du dépôt, ouvrir <http://localhost:8000/web/> et y glisser les PMTiles (voir `web/README.md`). Sans serveur, [pmtiles.io](https://pmtiles.io) les affiche en gris brut : 0 = noir = T 0, 254 = blanc = T 1.
 
+## Phase 2 — l'API météo
+
+```bash
+uv run uvicorn champis_api.app:app --reload     # /species, /weather, /weather/bbox — voir api/README.md
+```
+
 ## Ce qui n'est pas encore là
 
-- L'API (FastAPI) : `api/champis_api/scoring.py` contient déjà M et Φ, testés ; le service HTTP et le client Open-Meteo viennent en phase 2.
+- Le déploiement Railway (service, volume pour le cache, tâche nocturne) et `/departements`, `/tiles`, `/observations`.
 - Le contrôle GBIF et le recalibrage pH (`pipeline/check/`).
 
 ## Licences des données

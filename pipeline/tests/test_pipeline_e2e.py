@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from pathlib import Path
 
@@ -9,7 +10,7 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import rasterio
-from champis_pipeline import config, rasterize, terrain, tiles
+from champis_pipeline import config, rasterize, terrain, tiles, weather_grid
 from champis_pipeline.config import CRS_CALC, Grid
 from champis_pipeline.scoring import NODATA_U8, decode_u8
 from champis_pipeline.species import host_index
@@ -33,6 +34,8 @@ def sandbox(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(terrain, "T_DIR", tmp_path / "t")
     monkeypatch.setattr(tiles, "T_DIR", tmp_path / "t")
     monkeypatch.setattr(tiles, "TILES_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(weather_grid, "T_DIR", tmp_path / "t")
+    monkeypatch.setattr(weather_grid, "dept_dirs", rasterize.dept_dirs)
 
     # Doubs approximatif en Lambert-93 : x ≈ 930 000, y ≈ 6 680 000
     x0, y0 = 930_000.0, 6_680_000.0
@@ -173,3 +176,24 @@ def test_tile_position_and_value(sandbox):
         (lon2,), (lat2,) = rio_transform(CRS_CALC, "EPSG:4326", [x - 20_000], [y])
         t2 = mercantile.tile(lon2, lat2, 15)
         assert reader.get(15, t2.x, t2.y) is None
+
+
+def test_weather_grid(sandbox):
+    shp, grid = sandbox["shp"], sandbox["grid"]
+    rasterize.host_cover(DEPT, shp, grid)
+    rasterize.ph(DEPT, sandbox["ph"], grid)
+    rasterize.dem_products(DEPT, [sandbox["dem"]], grid)
+    terrain.compute(DEPT, "boletus_edulis")
+
+    out = weather_grid.build([DEPT], ["boletus_edulis"], out=sandbox["tmp"] / "weather_grid.json")
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["version"] == 1
+    cells = data["cells"]
+    # carré de 10 km non aligné sur les 5 km → entre 4 et 9 cellules, toutes dans le Doubs
+    assert 4 <= len(cells) <= 9
+    for c in cells:
+        assert 46.5 < c["lat"] < 47.8 and 5.5 < c["lon"] < 7.2
+        assert c["alt_classes"] and all(a % 300 == 150 for a in c["alt_classes"])
+        assert 600 <= c["elevation_m"] <= 1200
+    # MNT 600 → 1 200 m : les classes 750, 1050 (et 450/1350 aux bords) doivent apparaître
+    assert {750, 1050} <= {a for c in cells for a in c["alt_classes"]}
