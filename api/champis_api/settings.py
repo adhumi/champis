@@ -29,3 +29,5 @@ class Settings:
     # Servir la carte web statique (web/, shared/, species/) sous /web, /shared, /species
     serve_web: bool = os.environ.get("CHAMPIS_SERVE_WEB", "1") == "1"
     repo_root: Path = ROOT
+    # Clé API Open-Meteo (plan payant) : hôtes customer-*, quota dédié. Vide = gratuit.
+    open_meteo_api_key: str = os.environ.get("CHAMPIS_OPEN_METEO_API_KEY", "")

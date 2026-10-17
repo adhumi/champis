@@ -52,8 +52,11 @@ def create_app(settings: Settings | None = None, state: State | None = None) -> 
         cache = WeatherCache(settings.cache_db)
         async with httpx.AsyncClient(headers={"User-Agent": "champis-api"}) as http:
             grid = WeatherGrid.load(settings.weather_grid)
-            app.state.champis = State(grid=grid, client=OpenMeteoClient(http, cache), cache=cache)
-            warmer = OpenMeteoClient(http, cache, min_interval_s=WARM_INTERVAL_S)
+            key = settings.open_meteo_api_key
+            app.state.champis = State(
+                grid=grid, client=OpenMeteoClient(http, cache, api_key=key), cache=cache
+            )
+            warmer = OpenMeteoClient(http, cache, min_interval_s=WARM_INTERVAL_S, api_key=key)
             task = asyncio.create_task(
                 warm_scheduler(grid, warmer, settings.warm_hours, settings.warm_on_start)
             )

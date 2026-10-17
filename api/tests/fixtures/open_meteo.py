@@ -113,7 +113,9 @@ def transport(sc: Scenario, today: date) -> httpx.MockTransport:
         q = parse_qs(urlparse(str(request.url)).query)
         n = len(q["latitude"][0].split(","))
         host = request.url.host
-        if host.startswith("api."):
+        if host.startswith("customer-") and q.get("apikey", [""])[0] != "test-key":
+            return httpx.Response(401, json={"reason": "apikey manquante ou invalide"})
+        if host in ("api.open-meteo.com", "customer-api.open-meteo.com"):
             kind = "forecast"
             body = _forecast_body(sc, today, int(q["past_days"][0]), int(q["forecast_days"][0]))
         else:

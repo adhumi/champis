@@ -20,7 +20,7 @@ Un seul service, `Dockerfile` et `railway.toml` à la racine du dépôt (spec �
 1. Versionner la grille météo : `uv run champis-pipeline weather-grid --depts 25` puis `git add data/weather_grid.json` (seule exception à `data/` ignoré ; quelques dizaines de ko).
 2. Railway → New Project → Deploy from GitHub repo `adhumi/champis`, branche `main`. Le build utilise le `Dockerfile`.
 3. Ajouter un **volume** monté sur `/data` (le cache SQLite `weather_cache.db` y vit ; sans volume, chaque déploiement repart à froid).
-4. Variables déjà fixées dans l'image : `CHAMPIS_WEATHER_GRID`, `CHAMPIS_CACHE_DB=/data/weather_cache.db`, `CHAMPIS_WARM_HOURS=3,15` (pré-chauffe intégrée à 3 h et 15 h Paris, pas de second service). Optionnel : `CHAMPIS_WARM_ON_START=1` pour chauffer au premier déploiement (puis à retirer : chaque redéploiement relancerait un passage complet), `CHAMPIS_CORS_ORIGINS` pour restreindre.
+4. Variables déjà fixées dans l'image : `CHAMPIS_WEATHER_GRID`, `CHAMPIS_CACHE_DB=/data/weather_cache.db`, `CHAMPIS_WARM_HOURS=3,15` (pré-chauffe intégrée à 3 h et 15 h Paris, pas de second service). **À ajouter : `CHAMPIS_OPEN_METEO_API_KEY`** (plan payant Open-Meteo, en variable secrète Railway : l'IP de sortie Railway est partagée et bridée sur l'API gratuite). Optionnel : `CHAMPIS_WARM_ON_START=1` pour chauffer au premier déploiement (puis à retirer : chaque redéploiement relancerait un passage complet), `CHAMPIS_CORS_ORIGINS` pour restreindre.
 5. Health check : `/health`. La carte est servie par le même service sur `/web/` (l'URL de l'API y est pré-remplie avec l'origine de la page).
 
 Les PMTiles ne sont pas encore servis par le service (`/tiles` et le bucket viennent plus tard) : sur la carte déployée, on les glisse depuis son disque comme en local.
@@ -29,6 +29,7 @@ Les PMTiles ne sont pas encore servis par le service (`/tiles` et le bucket vien
 | --- | --- | --- |
 | `CHAMPIS_WEATHER_GRID` | `data/weather_grid.json` | Cellules météo (pipeline, étape `weather-grid`) |
 | `CHAMPIS_CACHE_DB` | `data/weather_cache.db` | Cache SQLite des réponses Open-Meteo |
+| `CHAMPIS_OPEN_METEO_API_KEY` | *(vide)* | Clé du plan payant Open-Meteo : bascule sur `customer-api` / `customer-archive-api` avec quota dédié ; vide = API gratuite |
 | `CHAMPIS_CORS_ORIGINS` | `*` | Origines autorisées, séparées par des virgules |
 | `CHAMPIS_WARM_HOURS` | *(vide)* | Heures Paris de la pré-chauffe intégrée, ex. `3,15` ; vide = cron externe (`champis-api warm`) |
 | `CHAMPIS_WARM_ON_START` | `0` | `1` : pré-chauffe au démarrage |
