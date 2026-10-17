@@ -175,7 +175,7 @@ async def test_cache_hits_within_bucket(grid, scenario):
         "forecast",
     ]  # 2 points, 1 appel chacun
     await client.fetch_cells(cells)
-    assert len(scenario.calls) == 3  # rien de nouveau dans le même seau de 6 h
+    assert len(scenario.calls) == 3  # rien de nouveau dans le même seau de 12 h
 
 
 @pytest.mark.asyncio
@@ -183,7 +183,7 @@ async def test_outage_serves_stale(grid, scenario):
     cache = WeatherCache()
     fresh = (await make_client(scenario, cache).fetch_cells([_cell(grid)]))[CELL]
     scenario.fail = {"forecast", "archive", "climatology"}
-    later = make_client(scenario, cache, now=NOW + timedelta(hours=7))  # seau suivant
+    later = make_client(scenario, cache, now=NOW + timedelta(hours=13))  # seau suivant
     stale = (await later.fetch_cells([_cell(grid)]))[CELL]
     assert stale.stale is True
     assert stale.forecast == fresh.forecast
@@ -280,3 +280,28 @@ async def test_missing_in_both_sources_is_an_error(grid, scenario):
         src["rain"][i] = None
     with pytest.raises(SeriesGapError, match="`rain_sum` manquant sur 2026-09-17"):
         build_series(raw)
+
+
+# ------------------------------------------------------------------ pré-chauffe
+
+
+@pytest.mark.asyncio
+async def test_warm_fills_cache_then_costs_nothing(grid, scenario):
+    from champis_api.warm import warm
+
+    client = make_client(scenario)
+    report = await warm(grid, client)
+    assert report.ok and report.cells == 2 and report.stale == 0
+    calls_after_warm = len(scenario.calls)
+    await client.fetch_cells(list(grid.cells.values()))
+    assert len(scenario.calls) == calls_after_warm  # tout vient du cache
+
+
+@pytest.mark.asyncio
+async def test_warm_reports_unavailable(grid, scenario):
+    from champis_api.warm import warm
+
+    scenario.fail = {"climatology"}
+    report = await warm(grid, make_client(scenario))
+    assert not report.ok
+    assert set(report.unavailable) == set(grid.cells)

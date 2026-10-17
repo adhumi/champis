@@ -7,6 +7,12 @@ uv run champis-pipeline weather-grid --depts 25        # produit data/weather_gr
 uv run uvicorn champis_api.app:app --reload            # http://127.0.0.1:8000/docs
 ```
 
+**Pré-chauffe** (pas de temps réel : décision du 17 oct. 2026) — `uv run champis-api warm` parcourt toute la grille à une requête toutes les 2 s et remplit le cache ; sort en code 1 si des cellules restent indisponibles. À lancer par cron une fois par seau de 12 h, par exemple :
+
+```
+0 3,15 * * *  cd /chemin/champis && uv run champis-api warm >> data/warm.log 2>&1
+```
+
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `CHAMPIS_WEATHER_GRID` | `data/weather_grid.json` | Cellules météo (pipeline, étape `weather-grid`) |
@@ -28,7 +34,7 @@ Le client choisit la classe d'altitude de son pixel ; le score affiché est `T �
 
 | Jeu | API | Fenêtre | Cache |
 | --- | --- | --- | --- |
-| `forecast` | prévision, `past_days=60&forecast_days=8` | J−60 → J+7 : températures, `rain_sum`, neige, ET0, humidité du sol 0–9 cm (moyenne journalière pondérée 1/2/6 des couches horaires 0–1, 1–3, 3–9 cm). Le modèle ne remonte pas plus loin | 6 h |
+| `forecast` | prévision, `past_days=60&forecast_days=8` | J−60 → J+7 : températures, `rain_sum`, neige, ET0, humidité du sol 0–9 cm (moyenne journalière pondérée 1/2/6 des couches horaires 0–1, 1–3, 3–9 cm). Le modèle ne remonte pas plus loin | 12 h |
 | `archive` | archive ERA5-Land, journalier | J−200 → J−1, toutes les variables dont `soil_moisture_0_to_7cm_mean` | 1 jour |
 | `soil_clim` | archive ERA5-Land, journalier | 10 ans de `soil_moisture_0_to_7cm_mean` → 11 quantiles par mois | permanent |
 
@@ -40,4 +46,4 @@ L'humidité du jour est exprimée en percentile de la climatologie du mois (inte
 
 ## Tests
 
-`uv run pytest api/tests` — sans réseau : `tests/fixtures/open_meteo.py` fabrique des réponses Open-Meteo dans la forme exacte de l'API à partir d'un `Scenario` (pluie, neige, gel, panne…). Scénarios couverts : grosse pluie puis beau temps, petite pluie récente après grosse pluie ancienne, épisode neigeux, gel en altitude seulement, panne (cache périmé puis 503), cache par seau de 6 h, trou de série.
+`uv run pytest api/tests` — sans réseau : `tests/fixtures/open_meteo.py` fabrique des réponses Open-Meteo dans la forme exacte de l'API à partir d'un `Scenario` (pluie, neige, gel, panne…). Scénarios couverts : grosse pluie puis beau temps, petite pluie récente après grosse pluie ancienne, épisode neigeux, gel en altitude seulement, panne (cache périmé puis 503), cache par seau de 12 h, trou de série, pré-chauffe.

@@ -5,7 +5,7 @@ Trois jeux de données par cellule, chacun normalisé puis mis en cache (`cache.
 - `forecast` : API prévision, `past_days=60&forecast_days=8` (J inclus → J+7), séries journalières +
   humidité du sol (moyenne journalière pondérée des couches horaires 0–1, 1–3 et 3–9 cm, poids
   1/2/6 : c'est la couche 0–9 cm, l'équivalent prévision du 0–7 cm ERA5-Land). Le modèle de
-  prévision ne remonte que ~60 jours : au-delà, l'API renvoie `null`. Seau de 6 h.
+  prévision ne remonte que ~60 jours : au-delà, l'API renvoie `null`. Seau de 12 h.
 - `archive` : API archive (ERA5-Land), **toutes les variables journalières** de J−200 à J−1, dont
   `soil_moisture_0_to_7cm_mean`. Comble les `null` de la prévision (mémoire estivale, bout de
   fenêtre pluie des girolles) ; décision du 17 oct. 2026. Un seau par jour.
@@ -98,10 +98,12 @@ class OpenMeteoClient:
         http: httpx.AsyncClient,
         cache: WeatherCache,
         now: Callable[[], datetime] | None = None,
+        min_interval_s: float = MIN_REQUEST_INTERVAL_S,
     ):
         self.http = http
         self.cache = cache
         self.now = now or (lambda: datetime.now().astimezone())
+        self.min_interval_s = min_interval_s
         self._lock = asyncio.Lock()
         self._last_request = 0.0
 
@@ -215,7 +217,7 @@ class OpenMeteoClient:
             }
             url, norm = ARCHIVE_URL, _normalize_soil_climatology
         async with self._lock:  # une requête à la fois, espacées : pas de rafale
-            wait = self._last_request + MIN_REQUEST_INTERVAL_S - time.monotonic()
+            wait = self._last_request + self.min_interval_s - time.monotonic()
             if wait > 0:
                 await asyncio.sleep(wait)
             self._last_request = time.monotonic()

@@ -13,6 +13,7 @@ dependencies = [
 
 [project.scripts]
 champis-vectors = "champis_api.vectors:main"
+champis-api = "champis_api.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.5,<0.12"]

@@ -1,4 +1,4 @@
-"""Cache SQLite des réponses brutes Open-Meteo (6 h par cellule) et de la climatologie du sol.
+"""Cache SQLite des réponses brutes Open-Meteo (12 h par cellule) et de la climatologie du sol.
 
 Clé : (cellule, type, seau). Le scoring se recalcule toujours depuis le cache ; on ne rappelle
 Open-Meteo que si le seau courant manque. Si Open-Meteo est injoignable, `latest` sert la
@@ -13,11 +13,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-BUCKET_HOURS = 6
+BUCKET_HOURS = 12  # deux rafraîchissements par jour (décision du 17 oct. 2026)
 
 
 def bucket_now(now: datetime) -> str:
-    """Seau de 6 h en UTC : `2026-10-17T12`."""
+    """Seau de 12 h en UTC : `2026-10-17T00` ou `2026-10-17T12`."""
     h = (now.hour // BUCKET_HOURS) * BUCKET_HOURS
     return now.astimezone(UTC).strftime("%Y-%m-%d") + f"T{h:02d}"
 
