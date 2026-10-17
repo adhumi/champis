@@ -324,6 +324,17 @@ async def test_api_key_switches_to_customer_hosts(grid, scenario):
         await bad.fetch_cells([_cell(grid)])
 
 
+def test_error_messages_hide_the_api_key():
+    import httpx
+    from champis_api.weather_client import _redact
+
+    req = httpx.Request(
+        "GET", "https://customer-api.open-meteo.com/v1/forecast?lat=1&apikey=SECRET&x=1"
+    )
+    e = httpx.HTTPStatusError("403", request=req, response=httpx.Response(403, request=req))
+    assert "SECRET" not in _redact(e) and "apikey=***" in _redact(e)
+
+
 # ------------------------------------------------------------------ déploiement : web statique, planificateur
 
 

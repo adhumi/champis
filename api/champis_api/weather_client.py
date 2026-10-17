@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -164,7 +165,7 @@ class OpenMeteoClient:
                 except (httpx.HTTPError, ValueError) as e:
                     ra = _retry_after(e)
                     retry_after = max(retry_after or 0, ra) if ra is not None else retry_after
-                    log.warning("Open-Meteo %s injoignable (%s) : cache périmé", kind, e)
+                    log.warning("Open-Meteo %s injoignable (%s) : cache périmé", kind, _redact(e))
                     for c in batch:
                         last = self.cache.latest(c.id, kind)
                         if last is None:
@@ -295,6 +296,11 @@ def _normalize_soil_climatology(body: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"climatologie du sol trop courte pour le mois {m}")
         months[str(m)] = [float(q) for q in np.quantile(vals, QUANTILES)]
     return {"months": months}
+
+
+def _redact(e: Exception) -> str:
+    """Message d'erreur sans la clé API (httpx met l'URL complète dans le message)."""
+    return re.sub(r"apikey=[^&'\s]+", "apikey=***", str(e))
 
 
 def _retry_after(e: Exception) -> int | None:
