@@ -312,6 +312,8 @@ async def test_warm_reports_unavailable(grid, scenario):
 
 @pytest.mark.asyncio
 async def test_static_web_is_served(api):
+    r = await api.get("/", follow_redirects=False)
+    assert r.status_code == 307 and r.headers["location"] == "/web/"
     r = await api.get("/web/")
     assert r.status_code == 200 and "<title>Champis" in r.text
     assert (await api.get("/shared/palette.json")).json()["version"] == 1

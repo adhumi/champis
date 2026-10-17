@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .cache import WeatherCache
@@ -76,6 +77,11 @@ def create_app(settings: Settings | None = None, state: State | None = None) -> 
         return {"status": "ok", "cells": len(app.state.champis.grid)}
 
     if settings.serve_web:
+
+        @app.get("/", include_in_schema=False)
+        async def root() -> RedirectResponse:
+            return RedirectResponse("/web/")
+
         # La page lit ../shared/palette.json et ../species/<id>.json : mêmes chemins qu'en local.
         for name in ("web", "shared", "species"):
             app.mount(f"/{name}", StaticFiles(directory=settings.repo_root / name, html=True))
