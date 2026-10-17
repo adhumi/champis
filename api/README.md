@@ -28,13 +28,15 @@ Le client choisit la classe d'altitude de son pixel ; le score affiché est `T �
 
 | Jeu | API | Fenêtre | Cache |
 | --- | --- | --- | --- |
-| `forecast` | prévision, `past_days=92&forecast_days=8` | J−92 → J+7 : températures, `rain_sum`, neige, ET0, humidité du sol 0–9 cm (moyenne journalière pondérée 1/2/6 des couches 0–1, 1–3, 3–9 cm). **Le modèle ne remonte que ~60 j : avant, l'API renvoie `null`** | 6 h |
-| `archive` | archive ERA5-Land | J−200 → J−1, toutes les variables (humidité 0–7 cm horaire moyennée par jour) | 1 jour |
-| `soil_clim` | archive ERA5-Land | 10 ans d'humidité 0–7 cm horaire → 11 quantiles par mois | permanent |
+| `forecast` | prévision, `past_days=60&forecast_days=8` | J−60 → J+7 : températures, `rain_sum`, neige, ET0, humidité du sol 0–9 cm (moyenne journalière pondérée 1/2/6 des couches horaires 0–1, 1–3, 3–9 cm). Le modèle ne remonte pas plus loin | 6 h |
+| `archive` | archive ERA5-Land, journalier | J−200 → J−1, toutes les variables dont `soil_moisture_0_to_7cm_mean` | 1 jour |
+| `soil_clim` | archive ERA5-Land, journalier | 10 ans de `soil_moisture_0_to_7cm_mean` → 11 quantiles par mois | permanent |
 
 **Fusion** (`weather_service.build_series`, décision du 17 oct. 2026) : par variable et par jour, la prévision si elle a la valeur, sinon l'archive. De J−60 à J+7 tout vient donc du modèle de prévision (pas de discontinuité au jour J) ; avant J−60 — mémoire estivale, bout de fenêtre pluie des girolles — c'est ERA5-Land. Une valeur absente des deux → 502 qui nomme la variable et les dates.
 
-L'humidité du jour est exprimée en percentile de la climatologie du mois (interpolation linéaire entre quantiles). Appels groupés jusqu'à 100 points (10 pour la climatologie). Open-Meteo injoignable → dernière réponse connue avec `"stale": true` ; aucune réponse connue → 503. Valeur absente des deux sources → 502, jamais une approximation silencieuse.
+L'humidité du jour est exprimée en percentile de la climatologie du mois (interpolation linéaire entre quantiles).
+
+**Quotas.** Open-Meteo pondère chaque requête par le nombre de points et la longueur de la période (gratuit ≈ 600 appels pondérés/min, 5 000/h, 10 000/j) : une requête horaire sur 10 ans valait des milliers d'appels, d'où le 429 du premier test réel. Désormais : rien d'horaire hors prévision, lots de 100 / 50 / 10 points, 250 ms minimum entre deux requêtes, `/weather/bbox` plafonné à 40 cellules (422 « zoomez » au-delà ; les cellules en cache ne coûtent rien). Open-Meteo injoignable ou 429 → dernière réponse connue avec `"stale": true` ; aucune réponse connue → 503 (avec `Retry-After` sur un 429). Valeur absente des deux sources → 502, jamais une approximation silencieuse.
 
 ## Tests
 

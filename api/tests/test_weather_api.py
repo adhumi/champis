@@ -195,6 +195,27 @@ async def test_outage_without_cache_is_503(api, scenario):
     r = await api.get("/weather", params={"cell": CELL})
     assert r.status_code == 503
     assert "indisponible" in r.json()["detail"]
+    assert "Retry-After" not in r.headers
+
+
+@pytest.mark.asyncio
+async def test_quota_429_is_503_with_retry_after(api, scenario):
+    scenario.fail, scenario.fail_status = {"forecast"}, 429
+    r = await api.get("/weather", params={"cell": CELL})
+    assert r.status_code == 503
+    assert r.headers["Retry-After"] == "42"
+
+
+@pytest.mark.asyncio
+async def test_bbox_too_large_is_422(api, monkeypatch):
+    from champis_api.routers import weather as router
+
+    monkeypatch.setattr(router, "MAX_BBOX_CELLS", 1)
+    r = await api.get(
+        "/weather/bbox", params={"min_lon": 0, "min_lat": 40, "max_lon": 10, "max_lat": 50}
+    )
+    assert r.status_code == 422
+    assert "zoomez" in r.json()["detail"]
 
 
 # ------------------------------------------------------------------ séries et percentiles

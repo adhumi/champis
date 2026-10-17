@@ -2,15 +2,20 @@
 
 Trois jeux de données par cellule, chacun normalisé puis mis en cache (`cache.py`) :
 
-- `forecast` : API prévision, `past_days=92&forecast_days=8` (J inclus → J+7), séries journalières +
-  humidité du sol (moyenne journalière pondérée des couches 0–1, 1–3 et 3–9 cm, poids 1/2/6 : c'est
-  la couche 0–9 cm, l'équivalent prévision du 0–7 cm ERA5-Land). Le modèle de prévision ne remonte
-  que ~60 jours : au-delà, l'API renvoie `null`. Seau de 6 h.
-- `archive` : API archive (ERA5-Land), **toutes les variables** de J−200 à J−1 (journalières +
-  humidité 0–7 cm horaire moyennée par jour). Sert là où la prévision est nulle (mémoire estivale,
-  bout de fenêtre pluie des girolles) ; décision du 17 oct. 2026. Un seau par jour.
-- `soil_clim` : API archive, humidité du sol 0–7 cm horaire sur 10 ans, réduite en 11 quantiles
-  par mois ; sert à exprimer l'humidité du jour en percentile. Permanent (seau `v1`).
+- `forecast` : API prévision, `past_days=60&forecast_days=8` (J inclus → J+7), séries journalières +
+  humidité du sol (moyenne journalière pondérée des couches horaires 0–1, 1–3 et 3–9 cm, poids
+  1/2/6 : c'est la couche 0–9 cm, l'équivalent prévision du 0–7 cm ERA5-Land). Le modèle de
+  prévision ne remonte que ~60 jours : au-delà, l'API renvoie `null`. Seau de 6 h.
+- `archive` : API archive (ERA5-Land), **toutes les variables journalières** de J−200 à J−1, dont
+  `soil_moisture_0_to_7cm_mean`. Comble les `null` de la prévision (mémoire estivale, bout de
+  fenêtre pluie des girolles) ; décision du 17 oct. 2026. Un seau par jour.
+- `soil_clim` : API archive, `soil_moisture_0_to_7cm_mean` journalier sur 10 ans, réduit en 11
+  quantiles par mois ; sert à exprimer l'humidité du jour en percentile. Permanent (seau `v2`).
+
+Quotas : Open-Meteo pondère chaque requête par le nombre de points et la longueur de la période
+(gratuit ≈ 600 appels/min, 5 000/h, 10 000/j). D'où : pas d'horaire hors prévision, lots bornés,
+un intervalle minimal entre requêtes, et un 429 traité comme une indisponibilité (cache périmé ou
+503 avec `Retry-After`), jamais une boucle de réessais.
 
 Si Open-Meteo est injoignable, on sert la dernière réponse connue avec `stale=True` ; sans
 aucune réponse connue, `WeatherUnavailableError`.
@@ -18,7 +23,9 @@ aucune réponse connue, `WeatherUnavailableError`.
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -35,14 +42,16 @@ log = logging.getLogger(__name__)
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 TIMEZONE = "Europe/Paris"
-PAST_DAYS = 92
+PAST_DAYS = 60  # le modèle de prévision ne remonte pas plus loin ; l'archive prend le relais
 FORECAST_DAYS = 8  # J inclus : J+1 … J+7
 ARCHIVE_START_OFFSET = 200  # J−200 : couvre mémoire (90) + pluie (28) + persistance (12) + J−3
 CLIMATOLOGY_YEARS = 10
 QUANTILES = [i / 10 for i in range(11)]
 BATCH_POINTS = 100
-BATCH_CLIMATOLOGY = 10
-BATCH_ARCHIVE = 20  # 200 j × 24 h de sol par point
+BATCH_CLIMATOLOGY = 10  # 10 ans journaliers par point
+BATCH_ARCHIVE = 50  # 200 j journaliers par point
+MIN_REQUEST_INTERVAL_S = 0.25  # lissage : jamais de rafale vers Open-Meteo
+SOIL_DAILY = "soil_moisture_0_to_7cm_mean"
 SOIL_LAYER_WEIGHTS = {
     "soil_moisture_0_to_1cm": 1,
     "soil_moisture_1_to_3cm": 2,
@@ -61,6 +70,10 @@ DAILY_VARS = [
 
 class WeatherUnavailableError(Exception):
     """Open-Meteo injoignable et aucune réponse en cache pour cette cellule."""
+
+    def __init__(self, message: str, retry_after_s: int | None = None):
+        super().__init__(message)
+        self.retry_after_s = retry_after_s
 
 
 @dataclass
@@ -81,6 +94,8 @@ class OpenMeteoClient:
         self.http = http
         self.cache = cache
         self.now = now or (lambda: datetime.now().astimezone())
+        self._lock = asyncio.Lock()
+        self._last_request = 0.0
 
     def today(self) -> date:
         return self.now().date()
@@ -94,7 +109,7 @@ class OpenMeteoClient:
         buckets = {
             "forecast": bucket_now(now),
             "archive": today.isoformat(),
-            "soil_clim": "v1",
+            "soil_clim": "v2",
         }
         out: dict[str, dict[str, Any]] = {c.id: {"stale": False} for c in cells}
         for kind, bucket in buckets.items():
@@ -113,11 +128,14 @@ class OpenMeteoClient:
                 try:
                     payloads = await self._fetch(kind, batch, today)
                 except (httpx.HTTPError, ValueError) as e:
+                    retry_after = _retry_after(e)
                     log.warning("Open-Meteo %s injoignable (%s) : cache périmé", kind, e)
                     for c in batch:
                         last = self.cache.latest(c.id, kind)
                         if last is None:
-                            raise WeatherUnavailableError(f"{kind} indisponible pour {c.id}") from e
+                            raise WeatherUnavailableError(
+                                f"{kind} indisponible pour {c.id}", retry_after
+                            ) from e
                         out[c.id][kind] = last[0]
                         out[c.id]["stale"] = True
                     continue
@@ -144,20 +162,24 @@ class OpenMeteoClient:
             url, norm = FORECAST_URL, _normalize_forecast
         elif kind == "archive":
             params |= {
-                "daily": ",".join(DAILY_VARS),
-                "hourly": "soil_moisture_0_to_7cm",
+                "daily": ",".join([*DAILY_VARS, SOIL_DAILY]),
                 "start_date": (today - timedelta(days=ARCHIVE_START_OFFSET)).isoformat(),
                 "end_date": (today - timedelta(days=1)).isoformat(),
             }
             url, norm = ARCHIVE_URL, _normalize_archive
         else:
             params |= {
-                "hourly": "soil_moisture_0_to_7cm",
+                "daily": SOIL_DAILY,
                 "start_date": f"{today.year - CLIMATOLOGY_YEARS}-01-01",
                 "end_date": f"{today.year - 1}-12-31",
             }
             url, norm = ARCHIVE_URL, _normalize_soil_climatology
-        r = await self.http.get(url, params=params, timeout=60.0)
+        async with self._lock:  # une requête à la fois, espacées : pas de rafale
+            wait = self._last_request + MIN_REQUEST_INTERVAL_S - time.monotonic()
+            if wait > 0:
+                await asyncio.sleep(wait)
+            self._last_request = time.monotonic()
+            r = await self.http.get(url, params=params, timeout=60.0)
         r.raise_for_status()
         body = r.json()
         items = body if isinstance(body, list) else [body]
@@ -170,33 +192,32 @@ class OpenMeteoClient:
 
 
 def _normalize_forecast(body: dict[str, Any]) -> dict[str, Any]:
-    return _normalize_daily(body, SOIL_LAYER_WEIGHTS)
-
-
-def _normalize_archive(body: dict[str, Any]) -> dict[str, Any]:
-    return _normalize_daily(body, {"soil_moisture_0_to_7cm": 1})
-
-
-def _normalize_daily(body: dict[str, Any], soil_layers: dict[str, int]) -> dict[str, Any]:
-    """Séries journalières + humidité du sol = moyenne journalière pondérée des couches horaires.
-
-    Les `null` d'Open-Meteo sont conservés tels quels : c'est `weather_service` qui décide
-    quelle source comble quoi, et refuse quand aucune n'a la valeur.
-    """
-    d = body["daily"]
+    """Prévision : journalier + sol = moyenne journalière pondérée des couches horaires."""
     h = body["hourly"]
-    w_total = sum(soil_layers.values())
+    w_total = sum(SOIL_LAYER_WEIGHTS.values())
     soil_by_day: dict[str, list[float]] = {}
     for i, ts in enumerate(h["time"]):
-        vals = [h[k][i] for k in soil_layers]
+        vals = [h[k][i] for k in SOIL_LAYER_WEIGHTS]
         if any(v is None for v in vals):
             continue
-        v = sum(soil_layers[k] * h[k][i] for k in soil_layers) / w_total
+        v = sum(SOIL_LAYER_WEIGHTS[k] * h[k][i] for k in SOIL_LAYER_WEIGHTS) / w_total
         soil_by_day.setdefault(ts[:10], []).append(v)
+    d = body["daily"]
     soil = [
         (sum(soil_by_day[day]) / len(soil_by_day[day])) if soil_by_day.get(day) else None
         for day in d["time"]
     ]
+    return _daily(body, soil)
+
+
+def _normalize_archive(body: dict[str, Any]) -> dict[str, Any]:
+    """Archive ERA5-Land : tout en journalier, sol 0–7 cm moyen fourni tel quel."""
+    return _daily(body, body["daily"][SOIL_DAILY])
+
+
+def _daily(body: dict[str, Any], soil: list[float | None]) -> dict[str, Any]:
+    """Les `null` d'Open-Meteo sont conservés : `weather_service` décide quelle source comble quoi."""
+    d = body["daily"]
     return {
         "elevation": float(body["elevation"]),
         "dates": d["time"],
@@ -211,18 +232,28 @@ def _normalize_daily(body: dict[str, Any], soil_layers: dict[str, int]) -> dict[
 
 
 def _normalize_soil_climatology(body: dict[str, Any]) -> dict[str, Any]:
-    """11 quantiles (0, 10, … 100 %) de l'humidité 0–7 cm par mois civil."""
-    h = body["hourly"]
+    """11 quantiles (0, 10, … 100 %) de l'humidité 0–7 cm journalière par mois civil, sur 10 ans."""
+    d = body["daily"]
     by_month: dict[int, list[float]] = {m: [] for m in range(1, 13)}
-    for ts, v in zip(h["time"], h["soil_moisture_0_to_7cm"], strict=True):
+    for ts, v in zip(d["time"], d[SOIL_DAILY], strict=True):
         if v is not None:
             by_month[int(ts[5:7])].append(v)
     months = {}
     for m, vals in by_month.items():
-        if len(vals) < 24 * 28:  # moins d'un mois d'heures : climatologie inexploitable
+        if len(vals) < 28 * 5:  # moins de 5 mois sur 10 ans : climatologie inexploitable
             raise ValueError(f"climatologie du sol trop courte pour le mois {m}")
         months[str(m)] = [float(q) for q in np.quantile(vals, QUANTILES)]
     return {"months": months}
+
+
+def _retry_after(e: Exception) -> int | None:
+    """Délai conseillé par Open-Meteo sur un 429, sinon None."""
+    if isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 429:
+        try:
+            return int(e.response.headers.get("Retry-After", "60"))
+        except ValueError:
+            return 60
+    return None
 
 
 def soil_percentile(value: float | None, clim: dict[str, Any], day: date) -> float | None:
