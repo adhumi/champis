@@ -34,7 +34,6 @@ uv run uvicorn champis_api.app:app --reload     # /species, /weather, /weather/b
 
 ## Ce qui n'est pas encore là
 
-- Le scoring M × Φ dans la carte web et l'appel à l'API : `web/` n'affiche que T pour l'instant.
 - Le déploiement Railway (service, volume pour le cache, tâche nocturne) et `/departements`, `/tiles`, `/observations`.
 - Le contrôle GBIF et le recalibrage pH (`pipeline/check/`).
 

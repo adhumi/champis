@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Champis — potentiel terrain</title>
+  <title>Champis — carte</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <style>
     :root { --bg: #fff; --fg: #1a1a1a; --muted: #666; --border: #ddd; }
@@ -19,7 +19,8 @@
     }
     #panel h1 { font-size: 16px; margin: 0 0 8px; }
     #panel label { display: block; margin: 8px 0 2px; color: var(--muted); font-size: 12px; }
-    #panel select, #panel input[type=range] { width: 100%; }
+    #panel select, #panel input[type=range], #panel input[type=text] { width: 100%; box-sizing: border-box; }
+    #weather-status { margin-top: 4px; font-size: 12px; color: var(--muted); }
     #drop {
       margin-top: 10px; padding: 14px 8px; border: 2px dashed var(--border); border-radius: 6px;
       text-align: center; color: var(--muted); font-size: 12px; cursor: pointer;
@@ -38,7 +39,7 @@
 <body>
   <div id="map"></div>
   <aside id="panel">
-    <h1>Champis — potentiel terrain T</h1>
+    <h1>Champis</h1>
     <label for="layer">Couche</label>
     <select id="layer" disabled><option>Aucune tuile chargée</option></select>
     <label for="basemap">Fond</label>
@@ -47,6 +48,18 @@
       <option value="ortho">Orthophoto IGN</option>
       <option value="osm">OpenStreetMap</option>
     </select>
+    <label for="mode">Affichage</label>
+    <select id="mode">
+      <option value="T">Potentiel terrain T</option>
+      <option value="S">Score du jour S = T × M_eff × Φ</option>
+    </select>
+    <div id="weather" hidden>
+      <label for="api">API (<code>/weather/bbox</code>)</label>
+      <input id="api" type="text" value="http://127.0.0.1:8000" />
+      <label for="day">Jour <span id="day-label"></span></label>
+      <input id="day" type="range" min="-3" max="7" step="1" value="0" />
+      <div id="weather-status"></div>
+    </div>
     <label for="opacity">Opacité</label>
     <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.75" />
     <div id="drop">
