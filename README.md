@@ -34,7 +34,7 @@ uv run uvicorn champis_api.app:app --reload     # /species, /weather, /weather/b
 
 ## Déploiement
 
-Railway, un seul service (`Dockerfile`, `railway.toml`), volume sur `/data` pour le cache météo, pré-chauffe intégrée : voir `api/README.md › Déploiement Railway`.
+Railway, un seul service (`Dockerfile`, `railway.toml`), volume sur `/data` pour le cache météo, pré-chauffe intégrée, clé Open-Meteo (plan Standard) ; l'historique météo est amorcé une fois depuis ton poste (`champis-api seed`) puis accumulé par le service : voir `api/README.md`.
 
 ## Ce qui n'est pas encore là
 

@@ -1,21 +1,21 @@
-"""Client Open-Meteo : le seul module qui parle à api.open-meteo.com (skill open-meteo).
+"""Client Open-Meteo : le seul module qui parle à Open-Meteo (skill open-meteo).
 
-Trois jeux de données par cellule, chacun normalisé puis mis en cache (`cache.py`) :
+Décision du 17 oct. 2026, « amorcer, puis accumuler » : en service, l'API n'appelle **que la
+prévision** (plan payant, clé API, hôte `customer-api`). Chaque réponse apporte ~60 jours de
+passé, rangés dans l'historique SQLite (`cache.history`) ; au-delà, l'historique a été amorcé une
+fois par `champis-api seed` depuis l'archive ERA5-Land gratuite (hors Railway), qui fournit aussi
+la climatologie du sol (10 ans → 11 quantiles par mois). L'archive n'est donc jamais appelée en
+service : l'API historique n'est pas dans le plan Standard, et l'IP de sortie Railway est bridée
+sur l'API gratuite.
 
-- `forecast` : API prévision, `past_days=60&forecast_days=8` (J inclus → J+7), séries journalières +
-  humidité du sol (moyenne journalière pondérée des couches horaires 0–1, 1–3 et 3–9 cm, poids
-  1/2/6 : c'est la couche 0–9 cm, l'équivalent prévision du 0–7 cm ERA5-Land). Le modèle de
-  prévision ne remonte que ~60 jours : au-delà, l'API renvoie `null`. Seau de 12 h.
-- `archive` : API archive (ERA5-Land), **toutes les variables journalières** de J−200 à J−1, dont
-  `soil_moisture_0_to_7cm_mean`. Comble les `null` de la prévision (mémoire estivale, bout de
-  fenêtre pluie des girolles) ; décision du 17 oct. 2026. Un seau par jour.
-- `soil_clim` : API archive, `soil_moisture_0_to_7cm_mean` journalier sur 10 ans, réduit en 11
-  quantiles par mois ; sert à exprimer l'humidité du jour en percentile. Permanent (seau `v2`).
+- `forecast` : `past_days=60&forecast_days=8` (J inclus → J+7), séries journalières + humidité du
+  sol (moyenne journalière pondérée des couches horaires 0–1, 1–3 et 3–9 cm, poids 1/2/6 ≈ 0–9 cm,
+  l'équivalent prévision du 0–7 cm ERA5-Land). Seau de 12 h.
+- `archive` et `soil_clim` : amorçage uniquement (`fetch_seed`), toujours sur l'API gratuite.
 
-Quotas : Open-Meteo pondère chaque requête par le nombre de points et la longueur de la période
-(gratuit ≈ 600 appels/min, 5 000/h, 10 000/j). D'où : pas d'horaire hors prévision, lots bornés,
-un intervalle minimal entre requêtes, et un 429 traité comme une indisponibilité (cache périmé ou
-503 avec `Retry-After`), jamais une boucle de réessais.
+Quotas : Open-Meteo pondère chaque requête par le nombre de points et la longueur de la période.
+D'où : lots bornés, un intervalle minimal entre requêtes, un 429 traité comme une indisponibilité
+(cache périmé ou 503 avec `Retry-After`), un seul réessai sur 429 court.
 
 Si Open-Meteo est injoignable, on sert la dernière réponse connue avec `stale=True` ; sans
 aucune réponse connue, `WeatherUnavailableError`.
@@ -35,16 +35,15 @@ from typing import Any
 import httpx
 import numpy as np
 
-from .cache import WeatherCache, bucket_now
+from .cache import HISTORY_VARS, WeatherCache, bucket_now
 from .grid import Cell
 
 log = logging.getLogger(__name__)
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
-# Plan payant (clé API, décision du 17 oct. 2026) : hôtes dédiés, quota propre à la clé
+# Plan payant Standard (clé API, décision du 17 oct. 2026) : prévision seule, quota propre à la clé
 CUSTOMER_FORECAST_URL = "https://customer-api.open-meteo.com/v1/forecast"
-CUSTOMER_ARCHIVE_URL = "https://customer-archive-api.open-meteo.com/v1/archive"
 TIMEZONE = "Europe/Paris"
 PAST_DAYS = 60  # le modèle de prévision ne remonte pas plus loin ; l'archive prend le relais
 FORECAST_DAYS = 8  # J inclus : J+1 … J+7
@@ -52,8 +51,6 @@ ARCHIVE_START_OFFSET = 200  # J−200 : couvre mémoire (90) + pluie (28) + pers
 CLIMATOLOGY_YEARS = 10
 QUANTILES = [i / 10 for i in range(11)]
 BATCH_POINTS = 100
-BATCH_CLIMATOLOGY = 10  # 10 ans journaliers par point
-BATCH_ARCHIVE = 50  # 200 j journaliers par point
 MIN_REQUEST_INTERVAL_S = 0.25  # lissage : jamais de rafale vers Open-Meteo
 RETRY_MAX_WAIT_S = 10  # un seul réessai, et seulement si Open-Meteo demande une courte attente
 SOIL_DAILY = "soil_moisture_0_to_7cm_mean"
@@ -91,8 +88,8 @@ class FetchResult:
 @dataclass
 class CellRaw:
     forecast: dict[str, Any]  # dates, t_mean, t_min, t_max, rain, snow, et0, soil (None possible)
-    archive: dict[str, Any]  # même structure, J−200 → J−1
-    soil_clim: dict[str, Any]
+    history: dict[str, dict[str, float]]  # jour → variables, jours passés accumulés + amorcés
+    soil_clim: dict[str, Any]  # {"months": {"1": [11 quantiles], …}}
     stale: bool
 
 
@@ -111,7 +108,7 @@ class OpenMeteoClient:
         self.min_interval_s = min_interval_s
         self.api_key = api_key or None
         self.forecast_url = CUSTOMER_FORECAST_URL if self.api_key else FORECAST_URL
-        self.archive_url = CUSTOMER_ARCHIVE_URL if self.api_key else ARCHIVE_URL
+        self.archive_url = ARCHIVE_URL  # amorçage seulement, API gratuite (hors plan Standard)
         self._lock = asyncio.Lock()
         self._last_request = 0.0
 
@@ -131,54 +128,68 @@ class OpenMeteoClient:
     async def fetch_cells_partial(self, cells: Iterable[Cell]) -> FetchResult:
         """Ce qu'on peut : les cellules complètes d'un côté, les indisponibles de l'autre.
 
-        Une cellule dont un jeu manque (Open-Meteo injoignable et rien en cache) ne bloque pas
-        les autres : `/weather/bbox` peint ce qu'il a.
+        Une cellule est complète quand elle a une prévision (fraîche ou périmée) et une
+        climatologie amorcée. Les jours passés de chaque prévision fraîche sont rangés dans
+        l'historique au passage.
         """
         cells = list(cells)
         now = self.now()
         today = now.date()
-        buckets = {
-            "forecast": bucket_now(now),
-            "archive": today.isoformat(),
-            "soil_clim": "v2",
-        }
-        out: dict[str, dict[str, Any]] = {c.id: {"stale": False} for c in cells}
+        bucket = bucket_now(now)
+        forecasts: dict[str, dict[str, Any]] = {}
+        stale: set[str] = set()
         unavailable: dict[str, str] = {}
         retry_after: int | None = None
-        for kind, bucket in buckets.items():
-            missing: list[Cell] = []
-            for c in cells:
-                if c.id in unavailable:
-                    continue
-                cached = self.cache.get(c.id, kind, bucket)
-                if cached is None:
-                    missing.append(c)
-                else:
-                    out[c.id][kind] = cached
-            size = {"soil_clim": BATCH_CLIMATOLOGY, "archive": BATCH_ARCHIVE}.get(
-                kind, BATCH_POINTS
+        missing: list[Cell] = []
+        for c in cells:
+            cached = self.cache.get(c.id, "forecast", bucket)
+            if cached is None:
+                missing.append(c)
+            else:
+                forecasts[c.id] = cached
+        for i in range(0, len(missing), BATCH_POINTS):
+            batch = missing[i : i + BATCH_POINTS]
+            try:
+                payloads = await self._fetch_with_one_retry("forecast", batch, today)
+            except (httpx.HTTPError, ValueError) as e:
+                ra = _retry_after(e)
+                retry_after = max(retry_after or 0, ra) if ra is not None else retry_after
+                log.warning("Open-Meteo forecast injoignable (%s) : cache périmé", _redact(e))
+                for c in batch:
+                    last = self.cache.latest(c.id, "forecast")
+                    if last is None:
+                        unavailable[c.id] = f"prévision indisponible pour {c.id}"
+                    else:
+                        forecasts[c.id] = last[0]
+                        stale.add(c.id)
+                continue
+            for c, p in zip(batch, payloads, strict=True):
+                self.cache.put(c.id, "forecast", bucket, p, now)
+                self.cache.put_history(c.id, _past_rows(p, today), "forecast")
+                forecasts[c.id] = p
+        raws: dict[str, CellRaw] = {}
+        for c in cells:
+            if c.id not in forecasts:
+                continue
+            clim = self.cache.soil_clim(c.id)
+            if clim is None:
+                unavailable[c.id] = (
+                    f"climatologie du sol manquante pour {c.id} : amorçage requis "
+                    "(champis-api seed)"
+                )
+                continue
+            history = self.cache.history(
+                c.id, today - timedelta(days=ARCHIVE_START_OFFSET), today - timedelta(days=1)
             )
-            for i in range(0, len(missing), size):
-                batch = missing[i : i + size]
-                try:
-                    payloads = await self._fetch_with_one_retry(kind, batch, today)
-                except (httpx.HTTPError, ValueError) as e:
-                    ra = _retry_after(e)
-                    retry_after = max(retry_after or 0, ra) if ra is not None else retry_after
-                    log.warning("Open-Meteo %s injoignable (%s) : cache périmé", kind, _redact(e))
-                    for c in batch:
-                        last = self.cache.latest(c.id, kind)
-                        if last is None:
-                            unavailable[c.id] = f"{kind} indisponible pour {c.id}"
-                        else:
-                            out[c.id][kind] = last[0]
-                            out[c.id]["stale"] = True
-                    continue
-                for c, p in zip(batch, payloads, strict=True):
-                    self.cache.put(c.id, kind, bucket, p, now)
-                    out[c.id][kind] = p
-        raws = {cid: CellRaw(**v) for cid, v in out.items() if cid not in unavailable}
+            raws[c.id] = CellRaw(forecasts[c.id], history, clim, c.id in stale)
         return FetchResult(raws, unavailable, retry_after)
+
+    async def fetch_seed(self, cell: Cell, today: date) -> tuple[dict[str, dict], dict[str, Any]]:
+        """Amorçage d'une cellule depuis l'archive gratuite : (jours J−200 → J−1, climatologie)."""
+        archive = (await self._fetch("archive", [cell], today))[0]
+        clim = (await self._fetch("soil_clim", [cell], today))[0]
+        rows = {d: {v: archive[v][i] for v in HISTORY_VARS} for i, d in enumerate(archive["dates"])}
+        return rows, clim
 
     async def _fetch_with_one_retry(
         self, kind: str, batch: list[Cell], today: date
@@ -202,7 +213,7 @@ class OpenMeteoClient:
             "longitude": ",".join(f"{c.lon:.4f}" for c in batch),
             "timezone": TIMEZONE,
         }
-        if self.api_key:
+        if self.api_key and kind == "forecast":
             params["apikey"] = self.api_key
         if kind == "forecast":
             params |= {
@@ -296,6 +307,15 @@ def _normalize_soil_climatology(body: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"climatologie du sol trop courte pour le mois {m}")
         months[str(m)] = [float(q) for q in np.quantile(vals, QUANTILES)]
     return {"months": months}
+
+
+def _past_rows(forecast: dict[str, Any], today: date) -> dict[str, dict[str, float | None]]:
+    """Les jours strictement passés d'une prévision, prêts pour `cache.put_history`."""
+    return {
+        d: {v: forecast[v][i] for v in HISTORY_VARS}
+        for i, d in enumerate(forecast["dates"])
+        if date.fromisoformat(d) < today
+    }
 
 
 def _redact(e: Exception) -> str:

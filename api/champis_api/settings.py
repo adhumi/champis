@@ -19,6 +19,10 @@ class Settings:
         os.environ.get("CHAMPIS_WEATHER_GRID", DATA_DIR / "weather_grid.json")
     )
     cache_db: Path = Path(os.environ.get("CHAMPIS_CACHE_DB", DATA_DIR / "weather_cache.db"))
+    # Amorçage (historique J−200 → J−1 + climatologie du sol), produit par `champis-api seed`
+    weather_seed: Path = Path(
+        os.environ.get("CHAMPIS_WEATHER_SEED", DATA_DIR / "weather_seed.json")
+    )
     cors_origins: tuple[str, ...] = tuple(
         o for o in os.environ.get("CHAMPIS_CORS_ORIGINS", "*").split(",") if o
     )

@@ -83,11 +83,38 @@ def scenario() -> Scenario:
     return Scenario(elevation=600.0)
 
 
+def seed_from_scenario(cache: WeatherCache, scenario: Scenario, cell_ids: list[str]) -> None:
+    """Équivalent de `champis-api seed` sans HTTP : historique J−200 → J−1 et climatologie."""
+    rows = {}
+    for k in range(200, 0, -1):
+        d = TODAY - timedelta(days=k)
+        rows[d.isoformat()] = {
+            "t_mean": scenario.t_mean(d),
+            "t_min": scenario.t_min(d),
+            "t_max": scenario.t_max(d),
+            "rain": scenario.rain(d),
+            "snow": scenario.snow(d),
+            "et0": scenario.et0(d),
+            "soil": scenario.soil(d),
+        }
+    months = {str(m): list(scenario.clim_quantiles) for m in range(1, 13)}
+    for cid in cell_ids:
+        cache.put_history(cid, rows, "seed")
+        cache.put_soil_clim(cid, months)
+
+
 def make_client(
-    scenario: Scenario, cache: WeatherCache | None = None, now: datetime = NOW
+    scenario: Scenario,
+    cache: WeatherCache | None = None,
+    now: datetime = NOW,
+    seeded: bool = True,
+    api_key: str | None = None,
 ) -> OpenMeteoClient:
+    cache = cache or WeatherCache()
+    if seeded:
+        seed_from_scenario(cache, scenario, [c["id"] for c in GRID["cells"]])
     http = httpx.AsyncClient(transport=transport(scenario, TODAY))
-    return OpenMeteoClient(http, cache or WeatherCache(), now=lambda: now)
+    return OpenMeteoClient(http, cache, now=lambda: now, api_key=api_key)
 
 
 @pytest.fixture

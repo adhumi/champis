@@ -169,20 +169,18 @@ async def test_cache_hits_within_bucket(grid, scenario):
     client = make_client(scenario)
     cells = [grid.get(CELL), grid.get("c_0935_6680")]
     await client.fetch_cells(cells)
-    assert sorted(scenario.calls) == [
-        "archive",
-        "climatology",
-        "forecast",
-    ]  # 2 points, 1 appel chacun
+    assert scenario.calls == [
+        "forecast"
+    ]  # 2 points, un seul appel ; l'archive n'est jamais appelée
     await client.fetch_cells(cells)
-    assert len(scenario.calls) == 3  # rien de nouveau dans le même seau de 12 h
+    assert len(scenario.calls) == 1  # rien de nouveau dans le même seau de 12 h
 
 
 @pytest.mark.asyncio
 async def test_outage_serves_stale(grid, scenario):
     cache = WeatherCache()
     fresh = (await make_client(scenario, cache).fetch_cells([_cell(grid)]))[CELL]
-    scenario.fail = {"forecast", "archive", "climatology"}
+    scenario.fail = {"forecast"}
     later = make_client(scenario, cache, now=NOW + timedelta(hours=13))  # seau suivant
     stale = (await later.fetch_cells([_cell(grid)]))[CELL]
     assert stale.stale is True
@@ -219,7 +217,7 @@ async def test_short_429_is_retried_once(grid, scenario):
 async def test_bbox_partial_when_a_cold_cell_fails(api, grid, scenario, client):
     """Une cellule en cache + une cellule froide en 429 : la première est servie, la seconde listée."""
     await client.fetch_cells([_cell(grid)])  # c_0930_6680 complète en cache
-    scenario.fail, scenario.fail_status = {"climatology"}, 429
+    scenario.fail, scenario.fail_status = {"forecast"}, 429
     r = await api.get(
         "/weather/bbox",
         params={"min_lon": 6.0, "min_lat": 47.0, "max_lon": 6.5, "max_lat": 47.3, "day": J},
@@ -257,11 +255,11 @@ def test_soil_percentile():
 
 
 @pytest.mark.asyncio
-async def test_forecast_nulls_are_filled_from_archive(grid):
-    """Le modèle de prévision ne remonte que ~60 j : avant, l'archive ERA5-Land prend le relais."""
+async def test_forecast_nulls_are_filled_from_history(grid):
+    """Le modèle de prévision ne remonte que ~60 j : avant, l'historique amorcé prend le relais."""
     cut = TODAY - timedelta(days=60)
     sc = Scenario(elevation=600.0, forecast_null_before=cut)
-    # pluie mémoire uniquement dans l'archive (J−100) : doit compter dans `memory`
+    # pluie mémoire uniquement dans l'historique (J−100) : doit compter dans `memory`
     sc.override(rain={TODAY - timedelta(days=100): 80.0})
     raw = (await make_client(sc).fetch_cells([_cell(grid)]))[CELL]
     s = build_series(raw)
@@ -273,11 +271,61 @@ async def test_forecast_nulls_are_filled_from_archive(grid):
 
 
 @pytest.mark.asyncio
+async def test_forecast_past_days_accumulate_in_history(grid, scenario):
+    """Chaque prévision range ses ~60 jours passés : demain, l'historique couvre un jour de plus."""
+    client = make_client(scenario, seeded=False)
+    assert client.cache.history_days(CELL) == 0
+    scenario.fail = set()
+    res = await client.fetch_cells_partial([_cell(grid)])
+    assert CELL in res.unavailable and "amorçage" in res.unavailable[CELL]  # pas de climatologie
+    assert client.cache.history_days(CELL) == 60  # mais le passé de la prévision est rangé
+    rows = client.cache.history(CELL, TODAY - timedelta(days=60), TODAY)
+    assert (TODAY - timedelta(days=1)).isoformat() in rows and TODAY.isoformat() not in rows
+
+
+def test_seed_never_overwrites_forecast_history():
+    from champis_api.cache import WeatherCache
+
+    cache = WeatherCache()
+    day = {"t_mean": 1, "t_min": 0, "t_max": 2, "rain": 5.0, "snow": 0, "et0": 1, "soil": 0.3}
+    cache.put_history("c", {"2026-09-01": day}, "forecast")
+    cache.put_history("c", {"2026-09-01": {**day, "rain": 99.0}, "2026-08-31": day}, "seed")
+    rows = cache.history("c", date(2026, 8, 31), date(2026, 9, 1))
+    assert rows["2026-09-01"]["rain"] == 5.0 and rows["2026-08-31"]["rain"] == 5.0
+    cache.put_history(
+        "c", {"2026-09-01": {**day, "rain": None}}, "forecast"
+    )  # jour incomplet ignoré
+    assert cache.history("c", date(2026, 9, 1), date(2026, 9, 1))["2026-09-01"]["rain"] == 5.0
+
+
+@pytest.mark.asyncio
+async def test_seed_command_writes_file_and_imports(grid, scenario, tmp_path):
+    """`champis-api seed` : archive gratuite → fichier versionné → import SQLite au démarrage."""
+    from champis_api.cache import WeatherCache
+    from champis_api.seed import import_seed, load_seed, seed
+
+    client = make_client(
+        scenario, seeded=False, api_key="test-key"
+    )  # la clé ne sert qu'à la prévision
+    out = tmp_path / "weather_seed.json"
+    data = await seed(grid, client, out, today=TODAY)
+    assert set(data["cells"]) == set(grid.cells)
+    assert sorted(scenario.calls) == ["archive", "archive", "climatology", "climatology"]
+    assert len(load_seed(out)["cells"][CELL]["history"]) == 200
+    # reprise : rien à refaire
+    await seed(grid, client, out, today=TODAY)
+    assert len(scenario.calls) == 4
+    cache = WeatherCache()
+    assert import_seed(cache, out) == 2
+    assert cache.history_days(CELL) == 200 and cache.soil_clim(CELL) is not None
+
+
+@pytest.mark.asyncio
 async def test_missing_in_both_sources_is_an_error(grid, scenario):
     raw = (await make_client(scenario).fetch_cells([_cell(grid)]))[CELL]
-    for src in (raw.forecast, raw.archive):
-        i = src["dates"].index((TODAY - timedelta(days=30)).isoformat())
-        src["rain"][i] = None
+    k = (TODAY - timedelta(days=30)).isoformat()
+    raw.forecast["rain"][raw.forecast["dates"].index(k)] = None
+    raw.history[k]["rain"] = None
     with pytest.raises(SeriesGapError, match="`rain_sum` manquant sur 2026-09-17"):
         build_series(raw)
 
@@ -301,7 +349,7 @@ async def test_warm_fills_cache_then_costs_nothing(grid, scenario):
 async def test_warm_reports_unavailable(grid, scenario):
     from champis_api.warm import warm
 
-    scenario.fail = {"climatology"}
+    scenario.fail = {"forecast"}
     report = await warm(grid, make_client(scenario))
     assert not report.ok
     assert set(report.unavailable) == set(grid.cells)
@@ -309,17 +357,12 @@ async def test_warm_reports_unavailable(grid, scenario):
 
 @pytest.mark.asyncio
 async def test_api_key_switches_to_customer_hosts(grid, scenario):
-    import httpx
-    from champis_api.cache import WeatherCache
-    from champis_api.weather_client import OpenMeteoClient
-    from fixtures.open_meteo import transport
-
-    http = httpx.AsyncClient(transport=transport(scenario, TODAY))
-    client = OpenMeteoClient(http, WeatherCache(), now=lambda: NOW, api_key="test-key")
+    client = make_client(scenario, api_key="test-key")
     assert client.forecast_url.startswith("https://customer-api.")
+    assert client.archive_url.startswith("https://archive-api.")  # l'archive reste gratuite
     raws = await client.fetch_cells([_cell(grid)])
-    assert raws[CELL].stale is False  # la clé est acceptée par les hôtes customer-*
-    bad = OpenMeteoClient(http, WeatherCache(), now=lambda: NOW, api_key="mauvaise")
+    assert raws[CELL].stale is False  # la clé est acceptée par customer-api
+    bad = make_client(scenario, api_key="mauvaise")
     with pytest.raises(WeatherUnavailableError):
         await bad.fetch_cells([_cell(grid)])
 
