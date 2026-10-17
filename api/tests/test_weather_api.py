@@ -305,3 +305,31 @@ async def test_warm_reports_unavailable(grid, scenario):
     report = await warm(grid, make_client(scenario))
     assert not report.ok
     assert set(report.unavailable) == set(grid.cells)
+
+
+# ------------------------------------------------------------------ déploiement : web statique, planificateur
+
+
+@pytest.mark.asyncio
+async def test_static_web_is_served(api):
+    r = await api.get("/web/")
+    assert r.status_code == 200 and "<title>Champis" in r.text
+    assert (await api.get("/shared/palette.json")).json()["version"] == 1
+    assert (await api.get("/species/boletus_edulis.json")).json()["id"] == "boletus_edulis"
+
+
+def test_next_warm_picks_next_local_hour():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from champis_api.app import next_warm
+
+    paris = ZoneInfo("Europe/Paris")
+    now = datetime(2026, 10, 17, 14, 30, tzinfo=paris)
+    assert next_warm(now, (3, 15)) == datetime(2026, 10, 17, 15, tzinfo=paris)
+    assert next_warm(datetime(2026, 10, 17, 15, 0, tzinfo=paris), (3, 15)) == datetime(
+        2026, 10, 18, 3, tzinfo=paris
+    )
+    assert next_warm(datetime(2026, 10, 17, 23, 59, tzinfo=paris), (3,)) == datetime(
+        2026, 10, 18, 3, tzinfo=paris
+    )

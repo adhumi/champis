@@ -13,11 +13,26 @@ uv run uvicorn champis_api.app:app --reload            # http://127.0.0.1:8000/d
 0 3,15 * * *  cd /chemin/champis && uv run champis-api warm >> data/warm.log 2>&1
 ```
 
+## Déploiement Railway
+
+Un seul service, `Dockerfile` et `railway.toml` à la racine du dépôt (spec › Backend sur Railway).
+
+1. Versionner la grille météo : `uv run champis-pipeline weather-grid --depts 25` puis `git add data/weather_grid.json` (seule exception à `data/` ignoré ; quelques dizaines de ko).
+2. Railway → New Project → Deploy from GitHub repo `adhumi/champis`, branche `main`. Le build utilise le `Dockerfile`.
+3. Ajouter un **volume** monté sur `/data` (le cache SQLite `weather_cache.db` y vit ; sans volume, chaque déploiement repart à froid).
+4. Variables déjà fixées dans l'image : `CHAMPIS_WEATHER_GRID`, `CHAMPIS_CACHE_DB=/data/weather_cache.db`, `CHAMPIS_WARM_HOURS=3,15` (pré-chauffe intégrée à 3 h et 15 h Paris, pas de second service). Optionnel : `CHAMPIS_WARM_ON_START=1` pour chauffer au premier déploiement (puis à retirer : chaque redéploiement relancerait un passage complet), `CHAMPIS_CORS_ORIGINS` pour restreindre.
+5. Health check : `/health`. La carte est servie par le même service sur `/web/` (l'URL de l'API y est pré-remplie avec l'origine de la page).
+
+Les PMTiles ne sont pas encore servis par le service (`/tiles` et le bucket viennent plus tard) : sur la carte déployée, on les glisse depuis son disque comme en local.
+
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `CHAMPIS_WEATHER_GRID` | `data/weather_grid.json` | Cellules météo (pipeline, étape `weather-grid`) |
 | `CHAMPIS_CACHE_DB` | `data/weather_cache.db` | Cache SQLite des réponses Open-Meteo |
 | `CHAMPIS_CORS_ORIGINS` | `*` | Origines autorisées, séparées par des virgules |
+| `CHAMPIS_WARM_HOURS` | *(vide)* | Heures Paris de la pré-chauffe intégrée, ex. `3,15` ; vide = cron externe (`champis-api warm`) |
+| `CHAMPIS_WARM_ON_START` | `0` | `1` : pré-chauffe au démarrage |
+| `CHAMPIS_SERVE_WEB` | `1` | Servir `web/`, `shared/`, `species/` en statique |
 
 ## Endpoints
 

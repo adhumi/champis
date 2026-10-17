@@ -32,9 +32,13 @@ Pour regarder le résultat : `python3 -m http.server 8000` à la racine du dép�
 uv run uvicorn champis_api.app:app --reload     # /species, /weather, /weather/bbox — voir api/README.md
 ```
 
+## Déploiement
+
+Railway, un seul service (`Dockerfile`, `railway.toml`), volume sur `/data` pour le cache météo, pré-chauffe intégrée : voir `api/README.md › Déploiement Railway`.
+
 ## Ce qui n'est pas encore là
 
-- Le déploiement Railway (service, volume pour le cache, tâche nocturne) et `/departements`, `/tiles`, `/observations`.
+- `/departements`, `/tiles` (bucket + URL présignées), `/observations`.
 - Le contrôle GBIF et le recalibrage pH (`pipeline/check/`).
 
 ## Licences des données
