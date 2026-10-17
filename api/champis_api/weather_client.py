@@ -2,11 +2,13 @@
 
 Trois jeux de données par cellule, chacun normalisé puis mis en cache (`cache.py`) :
 
-- `forecast`  : API prévision, `past_days=92&forecast_days=8` (J inclus → J+7), séries journalières + humidité du
-  sol (moyenne journalière pondérée des couches 0–1, 1–3 et 3–9 cm, poids 1/2/6 : c'est la
-  couche 0–9 cm, l'équivalent prévision du 0–7 cm ERA5-Land). Seau de 6 h.
-- `archive_rain` : API archive (ERA5-Land), `rain_sum` de J−200 à J−93 pour la mémoire estivale.
-  Un seau par jour.
+- `forecast` : API prévision, `past_days=92&forecast_days=8` (J inclus → J+7), séries journalières +
+  humidité du sol (moyenne journalière pondérée des couches 0–1, 1–3 et 3–9 cm, poids 1/2/6 : c'est
+  la couche 0–9 cm, l'équivalent prévision du 0–7 cm ERA5-Land). Le modèle de prévision ne remonte
+  que ~60 jours : au-delà, l'API renvoie `null`. Seau de 6 h.
+- `archive` : API archive (ERA5-Land), **toutes les variables** de J−200 à J−1 (journalières +
+  humidité 0–7 cm horaire moyennée par jour). Sert là où la prévision est nulle (mémoire estivale,
+  bout de fenêtre pluie des girolles) ; décision du 17 oct. 2026. Un seau par jour.
 - `soil_clim` : API archive, humidité du sol 0–7 cm horaire sur 10 ans, réduite en 11 quantiles
   par mois ; sert à exprimer l'humidité du jour en percentile. Permanent (seau `v1`).
 
@@ -40,6 +42,7 @@ CLIMATOLOGY_YEARS = 10
 QUANTILES = [i / 10 for i in range(11)]
 BATCH_POINTS = 100
 BATCH_CLIMATOLOGY = 10
+BATCH_ARCHIVE = 20  # 200 j × 24 h de sol par point
 SOIL_LAYER_WEIGHTS = {
     "soil_moisture_0_to_1cm": 1,
     "soil_moisture_1_to_3cm": 2,
@@ -62,8 +65,8 @@ class WeatherUnavailableError(Exception):
 
 @dataclass
 class CellRaw:
-    forecast: dict[str, Any]
-    archive_rain: dict[str, Any]
+    forecast: dict[str, Any]  # dates, t_mean, t_min, t_max, rain, snow, et0, soil (None possible)
+    archive: dict[str, Any]  # même structure, J−200 → J−1
     soil_clim: dict[str, Any]
     stale: bool
 
@@ -90,7 +93,7 @@ class OpenMeteoClient:
         today = now.date()
         buckets = {
             "forecast": bucket_now(now),
-            "archive_rain": today.isoformat(),
+            "archive": today.isoformat(),
             "soil_clim": "v1",
         }
         out: dict[str, dict[str, Any]] = {c.id: {"stale": False} for c in cells}
@@ -102,7 +105,9 @@ class OpenMeteoClient:
                     missing.append(c)
                 else:
                     out[c.id][kind] = cached
-            size = BATCH_CLIMATOLOGY if kind == "soil_clim" else BATCH_POINTS
+            size = {"soil_clim": BATCH_CLIMATOLOGY, "archive": BATCH_ARCHIVE}.get(
+                kind, BATCH_POINTS
+            )
             for i in range(0, len(missing), size):
                 batch = missing[i : i + size]
                 try:
@@ -137,13 +142,14 @@ class OpenMeteoClient:
                 "forecast_days": FORECAST_DAYS,
             }
             url, norm = FORECAST_URL, _normalize_forecast
-        elif kind == "archive_rain":
+        elif kind == "archive":
             params |= {
-                "daily": "rain_sum",
+                "daily": ",".join(DAILY_VARS),
+                "hourly": "soil_moisture_0_to_7cm",
                 "start_date": (today - timedelta(days=ARCHIVE_START_OFFSET)).isoformat(),
-                "end_date": (today - timedelta(days=PAST_DAYS + 1)).isoformat(),
+                "end_date": (today - timedelta(days=1)).isoformat(),
             }
-            url, norm = ARCHIVE_URL, _normalize_archive_rain
+            url, norm = ARCHIVE_URL, _normalize_archive
         else:
             params |= {
                 "hourly": "soil_moisture_0_to_7cm",
@@ -164,15 +170,28 @@ class OpenMeteoClient:
 
 
 def _normalize_forecast(body: dict[str, Any]) -> dict[str, Any]:
+    return _normalize_daily(body, SOIL_LAYER_WEIGHTS)
+
+
+def _normalize_archive(body: dict[str, Any]) -> dict[str, Any]:
+    return _normalize_daily(body, {"soil_moisture_0_to_7cm": 1})
+
+
+def _normalize_daily(body: dict[str, Any], soil_layers: dict[str, int]) -> dict[str, Any]:
+    """Séries journalières + humidité du sol = moyenne journalière pondérée des couches horaires.
+
+    Les `null` d'Open-Meteo sont conservés tels quels : c'est `weather_service` qui décide
+    quelle source comble quoi, et refuse quand aucune n'a la valeur.
+    """
     d = body["daily"]
     h = body["hourly"]
+    w_total = sum(soil_layers.values())
     soil_by_day: dict[str, list[float]] = {}
     for i, ts in enumerate(h["time"]):
-        vals = [h[k][i] for k in SOIL_LAYER_WEIGHTS]
+        vals = [h[k][i] for k in soil_layers]
         if any(v is None for v in vals):
             continue
-        w = sum(SOIL_LAYER_WEIGHTS.values())
-        v = sum(SOIL_LAYER_WEIGHTS[k] * h[k][i] for k in SOIL_LAYER_WEIGHTS) / w
+        v = sum(soil_layers[k] * h[k][i] for k in soil_layers) / w_total
         soil_by_day.setdefault(ts[:10], []).append(v)
     soil = [
         (sum(soil_by_day[day]) / len(soil_by_day[day])) if soil_by_day.get(day) else None
@@ -189,11 +208,6 @@ def _normalize_forecast(body: dict[str, Any]) -> dict[str, Any]:
         "et0": d["et0_fao_evapotranspiration"],
         "soil": soil,
     }
-
-
-def _normalize_archive_rain(body: dict[str, Any]) -> dict[str, Any]:
-    d = body["daily"]
-    return {"dates": d["time"], "rain": d["rain_sum"]}
 
 
 def _normalize_soil_climatology(body: dict[str, Any]) -> dict[str, Any]:
