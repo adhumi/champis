@@ -211,9 +211,26 @@ def test_soil_percentile():
 
 
 @pytest.mark.asyncio
-async def test_series_gap_is_an_error(grid, scenario):
+async def test_forecast_nulls_are_filled_from_archive(grid):
+    """Le modèle de prévision ne remonte que ~60 j : avant, l'archive ERA5-Land prend le relais."""
+    cut = TODAY - timedelta(days=60)
+    sc = Scenario(elevation=600.0, forecast_null_before=cut)
+    # pluie mémoire uniquement dans l'archive (J−100) : doit compter dans `memory`
+    sc.override(rain={TODAY - timedelta(days=100): 80.0})
+    raw = (await make_client(sc).fetch_cells([_cell(grid)]))[CELL]
+    s = build_series(raw)
+    assert s.dates[0] == TODAY - timedelta(days=200)
+    assert s.dates[-1] == TODAY + timedelta(days=7)
+    assert s.rain[s.i(TODAY - timedelta(days=100))] == 80.0
+    resp = cell_weather(_cell(grid), raw, ["boletus_edulis"], TODAY)
+    assert _alt(resp, "boletus_edulis", TODAY, 450)["M_eff"] > 0
+
+
+@pytest.mark.asyncio
+async def test_missing_in_both_sources_is_an_error(grid, scenario):
     raw = (await make_client(scenario).fetch_cells([_cell(grid)]))[CELL]
-    raw.archive_rain["dates"] = raw.archive_rain["dates"][:-3]  # l'archive s'arrête trop tôt
-    raw.archive_rain["rain"] = raw.archive_rain["rain"][:-3]
-    with pytest.raises(SeriesGapError):
+    for src in (raw.forecast, raw.archive):
+        i = src["dates"].index((TODAY - timedelta(days=30)).isoformat())
+        src["rain"][i] = None
+    with pytest.raises(SeriesGapError, match="`rain_sum` manquant sur 2026-09-17"):
         build_series(raw)

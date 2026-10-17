@@ -24,53 +24,64 @@ class SeriesGapError(Exception):
     """Trou ou troncature dans les séries : jamais une approximation silencieuse (SCHEMA.md)."""
 
 
-def build_series(raw: CellRaw) -> DailySeries:
-    """Archive (pluie seule, J−200 → J−93) puis prévision (tout, J−92 → J+7), sans trou.
+VARS = ("t_mean", "t_min", "t_max", "rain", "snow", "et0", "soil")
+OPEN_METEO_NAMES = {
+    "t_mean": "temperature_2m_mean",
+    "t_min": "temperature_2m_min",
+    "t_max": "temperature_2m_max",
+    "rain": "rain_sum",
+    "snow": "snowfall_sum",
+    "et0": "et0_fao_evapotranspiration",
+    "soil": "soil_moisture",
+}
 
-    Avant la fenêtre prévision, seule la pluie est lue (facteur `memory`) ; les autres variables
-    sont mises à 0 et ne sont jamais consultées : les fenêtres des autres facteurs (≤ 32 j) ne
-    remontent pas au-delà de J−3−12−32 = J−47.
+
+def build_series(raw: CellRaw) -> DailySeries:
+    """Fusion par variable et par jour : prévision si présente, sinon archive ERA5-Land.
+
+    Le modèle de prévision ne remonte que ~60 jours ; avant, l'archive prend le relais (mémoire
+    estivale, bout de fenêtre pluie des girolles). De J−60 à J+7 tout vient de la prévision : pas
+    de discontinuité au jour J. Une valeur absente des deux sources est une erreur (SCHEMA.md :
+    jamais une approximation silencieuse), qui nomme la variable et les dates.
     """
-    f, a = raw.forecast, raw.archive_rain
-    f_dates = [date.fromisoformat(d) for d in f["dates"]]
-    a_dates = [date.fromisoformat(d) for d in a["dates"]]
-    first_f = f_dates[0]
-    keep = [i for i, d in enumerate(a_dates) if d < first_f]
-    if keep and a_dates[keep[-1]] + timedelta(days=1) != first_f:
-        raise SeriesGapError(
-            f"trou entre l'archive ({a_dates[keep[-1]]}) et la prévision ({first_f})"
-        )
-    n_a = len(keep)
-    zeros = [0.0] * n_a
-    kept_dates = [a_dates[i] for i in keep]
-    rain = _nums("archive rain_sum", [a["rain"][i] for i in keep], kept_dates) + _nums(
-        "rain_sum", f["rain"], f_dates
-    )
+    f, a = raw.forecast, raw.archive
+    f_idx = {d: i for i, d in enumerate(f["dates"])}
+    a_idx = {d: i for i, d in enumerate(a["dates"])}
+    first = min(a["dates"][0], f["dates"][0])
+    last = max(a["dates"][-1], f["dates"][-1])
+    dates = _date_range(date.fromisoformat(first), date.fromisoformat(last))
+    merged: dict[str, list[float]] = {}
+    for var in VARS:
+        values, missing = [], []
+        for d in dates:
+            k = d.isoformat()
+            v = f[var][f_idx[k]] if k in f_idx else None
+            if v is None and k in a_idx:
+                v = a[var][a_idx[k]]
+            if v is None:
+                missing.append(k)
+            values.append(v)
+        if missing:
+            raise SeriesGapError(f"`{OPEN_METEO_NAMES[var]}` manquant sur {_summary(missing)}")
+        merged[var] = values
     soil_pct = [
-        soil_percentile(v, raw.soil_clim, d) for v, d in zip(f["soil"], f_dates, strict=True)
+        soil_percentile(v, raw.soil_clim, d) for v, d in zip(merged["soil"], dates, strict=True)
     ]
-    missing = [d.isoformat() for v, d in zip(soil_pct, f_dates, strict=True) if v is None]
-    if missing:
-        raise SeriesGapError(f"humidité du sol manquante dans la prévision : {_summary(missing)}")
     return DailySeries(
-        dates=kept_dates + f_dates,
-        t_mean=zeros + _nums("temperature_2m_mean", f["t_mean"], f_dates),
-        t_min=zeros + _nums("temperature_2m_min", f["t_min"], f_dates),
-        t_max=zeros + _nums("temperature_2m_max", f["t_max"], f_dates),
-        rain=rain,
-        snow=zeros + _nums("snowfall_sum", f["snow"], f_dates),
-        et0=zeros + _nums("et0_fao_evapotranspiration", f["et0"], f_dates),
-        soil_moisture_pct=zeros + [float(v) for v in soil_pct],  # type: ignore[arg-type]
+        dates=dates,
+        t_mean=[float(v) for v in merged["t_mean"]],
+        t_min=[float(v) for v in merged["t_min"]],
+        t_max=[float(v) for v in merged["t_max"]],
+        rain=[float(v) for v in merged["rain"]],
+        snow=[float(v) for v in merged["snow"]],
+        et0=[float(v) for v in merged["et0"]],
+        soil_moisture_pct=[float(v) for v in soil_pct],  # type: ignore[arg-type]
         cell_elevation_m=float(f["elevation"]),
     )
 
 
-def _nums(name: str, values: list[Any], dates: list[date]) -> list[float]:
-    """Convertit une série ; une valeur manquante est une erreur qui nomme la variable et les dates."""
-    missing = [d.isoformat() for v, d in zip(values, dates, strict=True) if v is None]
-    if missing:
-        raise SeriesGapError(f"`{name}` manquant sur {_summary(missing)}")
-    return [float(v) for v in values]
+def _date_range(start: date, end: date) -> list[date]:
+    return [start + timedelta(days=i) for i in range((end - start).days + 1)]
 
 
 def _summary(dates: list[str]) -> str:

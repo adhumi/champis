@@ -11,10 +11,10 @@ Un seul module client : `api/champis_api/weather_client.py`. Personne d'autre n'
 
 | API | URL | Sert à | Pourquoi |
 | --- | --- | --- | --- |
-| Prévision | `https://api.open-meteo.com/v1/forecast` avec `past_days=92&forecast_days=7` | Toute la fenêtre J−92 → J+7 : temp, rain, trigger, humidité du sol, frost, water_balance, heat, persistance | Même modèle avant et après J : pas de discontinuité le jour J |
-| Archive (ERA5-Land) | `https://archive-api.open-meteo.com/v1/archive` | Mémoire estivale (J−180 → J−92) et climatologie de l'humidité du sol (10 ans, même mois) | Seule source profonde ; ~11 km, lissée |
+| Prévision | `https://api.open-meteo.com/v1/forecast` avec `past_days=92&forecast_days=8` | J−60 → J+7 : temp, rain, trigger, humidité du sol, frost, water_balance, heat, persistance | Même modèle avant et après J : pas de discontinuité le jour J. **Le modèle ne remonte que ~60 j : au-delà l'API renvoie `null`** (constaté le 17 oct. 2026 sur le Doubs) |
+| Archive (ERA5-Land) | `https://archive-api.open-meteo.com/v1/archive` | Toutes les variables J−200 → J−1 (comble les `null` de la prévision : mémoire estivale J−118 → J−28, bout de fenêtre pluie des girolles) et climatologie de l'humidité du sol (10 ans, même mois) | Seule source profonde ; ~11 km, lissée |
 
-Ne jamais mélanger les deux pour une même variable d'une même fenêtre.
+Fusion par variable et par jour (`weather_service.build_series`) : **prévision si présente, sinon archive**. Les fenêtres courtes (≤ 47 j avant J−3) restent donc 100 % prévision ; seule la mémoire, et pour les girolles l'extrémité de la fenêtre pluie, mélangent les deux modèles — décision du 17 oct. 2026, assumée dans la spec.
 
 ## Variables (`daily=`)
 

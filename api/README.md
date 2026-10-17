@@ -28,11 +28,13 @@ Le client choisit la classe d'altitude de son pixel ; le score affiché est `T �
 
 | Jeu | API | Fenêtre | Cache |
 | --- | --- | --- | --- |
-| `forecast` | prévision, `past_days=92&forecast_days=8` | J−92 → J+7 : températures, `rain_sum`, neige, ET0, humidité du sol 0–9 cm (moyenne journalière pondérée 1/2/6 des couches 0–1, 1–3, 3–9 cm) | 6 h |
-| `archive_rain` | archive ERA5-Land | J−200 → J−93, `rain_sum` seul (mémoire estivale) | 1 jour |
+| `forecast` | prévision, `past_days=92&forecast_days=8` | J−92 → J+7 : températures, `rain_sum`, neige, ET0, humidité du sol 0–9 cm (moyenne journalière pondérée 1/2/6 des couches 0–1, 1–3, 3–9 cm). **Le modèle ne remonte que ~60 j : avant, l'API renvoie `null`** | 6 h |
+| `archive` | archive ERA5-Land | J−200 → J−1, toutes les variables (humidité 0–7 cm horaire moyennée par jour) | 1 jour |
 | `soil_clim` | archive ERA5-Land | 10 ans d'humidité 0–7 cm horaire → 11 quantiles par mois | permanent |
 
-L'humidité du jour est exprimée en percentile de la climatologie du mois (interpolation linéaire entre quantiles). Appels groupés jusqu'à 100 points (10 pour la climatologie). Open-Meteo injoignable → dernière réponse connue avec `"stale": true` ; aucune réponse connue → 503. Série incomplète (trou archive/prévision, valeur manquante) → 502, jamais une approximation silencieuse.
+**Fusion** (`weather_service.build_series`, décision du 17 oct. 2026) : par variable et par jour, la prévision si elle a la valeur, sinon l'archive. De J−60 à J+7 tout vient donc du modèle de prévision (pas de discontinuité au jour J) ; avant J−60 — mémoire estivale, bout de fenêtre pluie des girolles — c'est ERA5-Land. Une valeur absente des deux → 502 qui nomme la variable et les dates.
+
+L'humidité du jour est exprimée en percentile de la climatologie du mois (interpolation linéaire entre quantiles). Appels groupés jusqu'à 100 points (10 pour la climatologie). Open-Meteo injoignable → dernière réponse connue avec `"stale": true` ; aucune réponse connue → 503. Valeur absente des deux sources → 502, jamais une approximation silencieuse.
 
 ## Tests
 
