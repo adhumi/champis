@@ -1,6 +1,6 @@
 """CLI : `champis-pipeline <étape> --dept 25 [--species boletus_edulis] [--force]`.
 
-Étapes : download · grid · terrain · tiles · all · summary
+Étapes : download · grid · terrain · tiles · weather-grid · all · summary
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ import json
 import logging
 import sys
 
-from . import download, rasterize, terrain, tiles
+from . import download, rasterize, terrain, tiles, weather_grid
 from .species import list_species
 
 
@@ -47,6 +47,10 @@ def cmd_tiles(args) -> None:
         print(tiles.build(sid, args.depts, args.force))
 
 
+def cmd_weather_grid(args) -> None:
+    print(weather_grid.build(args.depts, args.species))
+
+
 def cmd_summary(args) -> None:
     from .config import T_DIR
     from .species import species_hash
@@ -62,6 +66,7 @@ def cmd_all(args) -> None:
     cmd_terrain(args)
     args.depts = [args.dept]
     cmd_tiles(args)
+    cmd_weather_grid(args)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -80,9 +85,10 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name)
         p.add_argument("--dept", required=True)
         p.set_defaults(fn=fn)
-    p = sub.add_parser("tiles")
-    p.add_argument("--depts", nargs="+", required=True)
-    p.set_defaults(fn=cmd_tiles)
+    for name, fn in (("tiles", cmd_tiles), ("weather-grid", cmd_weather_grid)):
+        p = sub.add_parser(name)
+        p.add_argument("--depts", nargs="+", required=True)
+        p.set_defaults(fn=fn)
     args = ap.parse_args(argv)
     args.fn(args)
     return 0
