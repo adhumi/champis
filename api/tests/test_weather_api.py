@@ -207,6 +207,31 @@ async def test_quota_429_is_503_with_retry_after(api, scenario):
 
 
 @pytest.mark.asyncio
+async def test_short_429_is_retried_once(grid, scenario):
+    scenario.fail, scenario.fail_status, scenario.fail_once = {"forecast"}, 429, True
+    scenario.retry_after = "0"
+    raws = await make_client(scenario).fetch_cells([_cell(grid)])
+    assert raws[CELL].stale is False
+    assert scenario.calls.count("forecast") == 2
+
+
+@pytest.mark.asyncio
+async def test_bbox_partial_when_a_cold_cell_fails(api, grid, scenario, client):
+    """Une cellule en cache + une cellule froide en 429 : la première est servie, la seconde listée."""
+    await client.fetch_cells([_cell(grid)])  # c_0930_6680 complète en cache
+    scenario.fail, scenario.fail_status = {"climatology"}, 429
+    r = await api.get(
+        "/weather/bbox",
+        params={"min_lon": 6.0, "min_lat": 47.0, "max_lon": 6.5, "max_lat": 47.3, "day": J},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert [c["cell"]["id"] for c in body["cells"]] == [CELL]
+    assert body["unavailable"] == ["c_0935_6680"]
+    assert body["retry_after"] == 42
+
+
+@pytest.mark.asyncio
 async def test_bbox_too_large_is_422(api, monkeypatch):
     from champis_api.routers import weather as router
 

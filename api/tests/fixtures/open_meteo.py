@@ -39,6 +39,8 @@ class Scenario:
     )
     fail: set[str] = field(default_factory=set)  # {"forecast", "archive", "climatology"}
     fail_status: int = 503  # 429 pour simuler le quota Open-Meteo
+    fail_once: bool = False  # la panne ne dure qu'une requête (limite par minute)
+    retry_after: str = "42"
     calls: list[str] = field(default_factory=list)
     # jours de prévision renvoyés `null` (toutes variables) : le modèle ne remonte que ~60 j
     forecast_null_before: date | None = None
@@ -127,7 +129,9 @@ def transport(sc: Scenario, today: date) -> httpx.MockTransport:
                 body = _archive_body(sc, start, end)
         sc.calls.append(kind)
         if kind in sc.fail:
-            headers = {"Retry-After": "42"} if sc.fail_status == 429 else {}
+            if sc.fail_once:
+                sc.fail = set()
+            headers = {"Retry-After": sc.retry_after} if sc.fail_status == 429 else {}
             return httpx.Response(sc.fail_status, text="Open-Meteo indisponible", headers=headers)
         return httpx.Response(200, json=[body] * n if n > 1 else body)
 
