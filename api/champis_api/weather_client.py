@@ -41,6 +41,9 @@ log = logging.getLogger(__name__)
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
+# Plan payant (clé API, décision du 17 oct. 2026) : hôtes dédiés, quota propre à la clé
+CUSTOMER_FORECAST_URL = "https://customer-api.open-meteo.com/v1/forecast"
+CUSTOMER_ARCHIVE_URL = "https://customer-archive-api.open-meteo.com/v1/archive"
 TIMEZONE = "Europe/Paris"
 PAST_DAYS = 60  # le modèle de prévision ne remonte pas plus loin ; l'archive prend le relais
 FORECAST_DAYS = 8  # J inclus : J+1 … J+7
@@ -99,11 +102,15 @@ class OpenMeteoClient:
         cache: WeatherCache,
         now: Callable[[], datetime] | None = None,
         min_interval_s: float = MIN_REQUEST_INTERVAL_S,
+        api_key: str | None = None,
     ):
         self.http = http
         self.cache = cache
         self.now = now or (lambda: datetime.now().astimezone())
         self.min_interval_s = min_interval_s
+        self.api_key = api_key or None
+        self.forecast_url = CUSTOMER_FORECAST_URL if self.api_key else FORECAST_URL
+        self.archive_url = CUSTOMER_ARCHIVE_URL if self.api_key else ARCHIVE_URL
         self._lock = asyncio.Lock()
         self._last_request = 0.0
 
@@ -194,6 +201,8 @@ class OpenMeteoClient:
             "longitude": ",".join(f"{c.lon:.4f}" for c in batch),
             "timezone": TIMEZONE,
         }
+        if self.api_key:
+            params["apikey"] = self.api_key
         if kind == "forecast":
             params |= {
                 "daily": ",".join(DAILY_VARS),
@@ -201,21 +210,21 @@ class OpenMeteoClient:
                 "past_days": PAST_DAYS,
                 "forecast_days": FORECAST_DAYS,
             }
-            url, norm = FORECAST_URL, _normalize_forecast
+            url, norm = self.forecast_url, _normalize_forecast
         elif kind == "archive":
             params |= {
                 "daily": ",".join([*DAILY_VARS, SOIL_DAILY]),
                 "start_date": (today - timedelta(days=ARCHIVE_START_OFFSET)).isoformat(),
                 "end_date": (today - timedelta(days=1)).isoformat(),
             }
-            url, norm = ARCHIVE_URL, _normalize_archive
+            url, norm = self.archive_url, _normalize_archive
         else:
             params |= {
                 "daily": SOIL_DAILY,
                 "start_date": f"{today.year - CLIMATOLOGY_YEARS}-01-01",
                 "end_date": f"{today.year - 1}-12-31",
             }
-            url, norm = ARCHIVE_URL, _normalize_soil_climatology
+            url, norm = self.archive_url, _normalize_soil_climatology
         async with self._lock:  # une requête à la fois, espacées : pas de rafale
             wait = self._last_request + self.min_interval_s - time.monotonic()
             if wait > 0:

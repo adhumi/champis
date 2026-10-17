@@ -23,7 +23,10 @@ async def _warm(interval: float) -> int:
     cache = WeatherCache(settings.cache_db)
     try:
         async with httpx.AsyncClient(headers={"User-Agent": "champis-api warm"}) as http:
-            report = await warm(grid, OpenMeteoClient(http, cache, min_interval_s=interval))
+            client = OpenMeteoClient(
+                http, cache, min_interval_s=interval, api_key=settings.open_meteo_api_key
+            )
+            report = await warm(grid, client)
     finally:
         cache.close()
     print(

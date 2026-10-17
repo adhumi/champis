@@ -7,7 +7,7 @@ from datetime import date, timedelta
 import pytest
 from champis_api.cache import WeatherCache
 from champis_api.scoring import phenology_window
-from champis_api.weather_client import soil_percentile
+from champis_api.weather_client import WeatherUnavailableError, soil_percentile
 from champis_api.weather_service import SeriesGapError, build_series, cell_weather
 from champis_pipeline.scoring import trapezoid
 from champis_pipeline.species import load_species
@@ -305,6 +305,23 @@ async def test_warm_reports_unavailable(grid, scenario):
     report = await warm(grid, make_client(scenario))
     assert not report.ok
     assert set(report.unavailable) == set(grid.cells)
+
+
+@pytest.mark.asyncio
+async def test_api_key_switches_to_customer_hosts(grid, scenario):
+    import httpx
+    from champis_api.cache import WeatherCache
+    from champis_api.weather_client import OpenMeteoClient
+    from fixtures.open_meteo import transport
+
+    http = httpx.AsyncClient(transport=transport(scenario, TODAY))
+    client = OpenMeteoClient(http, WeatherCache(), now=lambda: NOW, api_key="test-key")
+    assert client.forecast_url.startswith("https://customer-api.")
+    raws = await client.fetch_cells([_cell(grid)])
+    assert raws[CELL].stale is False  # la clé est acceptée par les hôtes customer-*
+    bad = OpenMeteoClient(http, WeatherCache(), now=lambda: NOW, api_key="mauvaise")
+    with pytest.raises(WeatherUnavailableError):
+        await bad.fetch_cells([_cell(grid)])
 
 
 # ------------------------------------------------------------------ déploiement : web statique, planificateur
