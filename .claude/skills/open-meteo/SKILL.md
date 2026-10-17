@@ -11,14 +11,14 @@ Un seul module client : `api/champis_api/weather_client.py`. Personne d'autre n'
 
 | API | URL | Sert à | Pourquoi |
 | --- | --- | --- | --- |
-| Prévision | `https://api.open-meteo.com/v1/forecast` avec `past_days=92&forecast_days=8` | J−60 → J+7 : temp, rain, trigger, humidité du sol, frost, water_balance, heat, persistance | Même modèle avant et après J : pas de discontinuité le jour J. **Le modèle ne remonte que ~60 j : au-delà l'API renvoie `null`** (constaté le 17 oct. 2026 sur le Doubs) |
-| Archive (ERA5-Land) | `https://archive-api.open-meteo.com/v1/archive` | Toutes les variables J−200 → J−1 (comble les `null` de la prévision : mémoire estivale J−118 → J−28, bout de fenêtre pluie des girolles) et climatologie de l'humidité du sol (10 ans, même mois) | Seule source profonde ; ~11 km, lissée |
+| Prévision | `https://api.open-meteo.com/v1/forecast` avec `past_days=60&forecast_days=8` | J−60 → J+7 : temp, rain, trigger, humidité du sol, frost, water_balance, heat, persistance | Même modèle avant et après J : pas de discontinuité le jour J. Le modèle ne remonte que ~60 j (au-delà `null`, constaté le 17 oct. 2026) |
+| Archive (ERA5-Land) | `https://archive-api.open-meteo.com/v1/archive`, **journalier uniquement** (`daily=…,soil_moisture_0_to_7cm_mean`) | Toutes les variables J−200 → J−1 (comble les `null` de la prévision : mémoire estivale, bout de fenêtre pluie des girolles) et climatologie de l'humidité du sol (10 ans, même mois) | Seule source profonde ; ~11 km, lissée |
 
 Fusion par variable et par jour (`weather_service.build_series`) : **prévision si présente, sinon archive**. Les fenêtres courtes (≤ 47 j avant J−3) restent donc 100 % prévision ; seule la mémoire, et pour les girolles l'extrémité de la fenêtre pluie, mélangent les deux modèles — décision du 17 oct. 2026, assumée dans la spec.
 
 ## Variables (`daily=`)
 
-`temperature_2m_mean,temperature_2m_min,temperature_2m_max,rain_sum,snowfall_sum,et0_fao_evapotranspiration` + `hourly=soil_moisture_0_to_7cm` (moyenne journalière calculée côté API ; en prévision la couche s'appelle `soil_moisture_0_to_1cm` / `1_to_3cm` / `3_to_9cm` : prendre la moyenne pondérée 0–9 cm et le documenter). `timezone=Europe/Paris`. Toujours lire `elevation` de la réponse : c'est l'altitude de la cellule, nécessaire à la correction.
+`temperature_2m_mean,temperature_2m_min,temperature_2m_max,rain_sum,snowfall_sum,et0_fao_evapotranspiration`. Humidité du sol : en archive, `daily=soil_moisture_0_to_7cm_mean` (journalier, jamais horaire : trop lourd pour le quota) ; en prévision il n'y a que l'horaire par couche `soil_moisture_0_to_1cm` / `1_to_3cm` / `3_to_9cm` → moyenne journalière pondérée 1/2/6 (≈ 0–9 cm). `timezone=Europe/Paris`. Toujours lire `elevation` de la réponse : c'est l'altitude de la cellule, nécessaire à la correction.
 
 **`rain_sum`, jamais `precipitation_sum`.** Un jour avec `snowfall_sum > 0` n'est pas un jour de pluie déclenchante.
 
@@ -26,7 +26,7 @@ Fusion par variable et par jour (`weather_service.build_series`) : **prévision 
 
 - Les cellules sont les points de `data/weather_grid.json` (étape `weather-grid` du pipeline : carrés de 5 km alignés Lambert-93 où `T > 0` pour au moins une espèce ; `{version: 1, cell_m: 5000, cells: [{id, lat, lon, alt_classes, elevation_m}]}`, `id` = coin SO en km, `alt_classes` = centres des classes de 300 m sous la forêt). ~25 000 cellules France. Lu par `champis_api.grid`.
 - Cache des réponses brutes Open-Meteo **6 h par cellule**, clé `cell_id:date_utc_bucket`, stockage SQLite (`weather_cache.db` sur le volume Railway). Le scoring se recalcule à partir du cache, jamais de nouvel appel pour changer d'espèce ou de jour.
-- Appels groupés : Open-Meteo accepte jusqu'à ~100 points par requête (`latitude=a,b,c&longitude=…`) ; `/weather/bbox` regroupe par 100.
+- **Quotas** : Open-Meteo pondère chaque requête par le nombre de points **et** la longueur de la période (gratuit ≈ 600 appels pondérés/min, 5 000/h, 10 000/j). Règles : jamais d'horaire hors prévision ; lots de 100 (prévision) / 50 (archive) / 10 (climatologie) points ; 250 ms minimum entre deux requêtes ; `/weather/bbox` plafonné à 40 cellules (422 « zoomez ») ; un 429 est une indisponibilité (cache périmé, sinon 503 + `Retry-After`), jamais une boucle de réessais. Le passage France entière (25 000 cellules) ne tient pas dans le quota gratuit avec une tâche nocturne complète : point ouvert de la spec.
 - Tâche nocturne (Railway cron, 03:00) : rafraîchit toutes les cellules et précalcule les indices par département. En journée, un appel `/weather` sur une cellule froide déclenche un fetch à la demande.
 - Si Open-Meteo est injoignable : servir le cache périmé avec `"stale": true` dans la réponse, jamais une erreur 500 côté client.
 

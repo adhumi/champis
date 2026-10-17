@@ -14,6 +14,8 @@ from ..weather_service import SeriesGapError, cell_weather
 
 router = APIRouter(prefix="/weather", tags=["weather"])
 
+MAX_BBOX_CELLS = 40  # au-delà, zoomer : protège le quota Open-Meteo sur les cellules froides
+
 
 def _grid(request: Request) -> WeatherGrid:
     return request.app.state.champis.grid
@@ -46,7 +48,8 @@ async def _compute(
         today = client.today()
         return [cell_weather(c, raws[c.id], species, today, detail=detail) for c in cells]
     except WeatherUnavailableError as e:
-        raise HTTPException(503, f"météo indisponible : {e}") from e
+        headers = {"Retry-After": str(e.retry_after_s)} if e.retry_after_s else None
+        raise HTTPException(503, f"météo indisponible : {e}", headers=headers) from e
     except SeriesGapError as e:
         raise HTTPException(502, f"séries Open-Meteo incomplètes : {e}") from e
 
@@ -90,6 +93,10 @@ async def get_weather_bbox(
     `day` filtre sur un seul jour (défaut : les 11 jours J−3 → J+7).
     """
     cells = grid.in_bbox(min_lon, min_lat, max_lon, max_lat)
+    if len(cells) > MAX_BBOX_CELLS:
+        raise HTTPException(
+            422, f"{len(cells)} cellules dans l'emprise, maximum {MAX_BBOX_CELLS} : zoomez"
+        )
     results = await _compute(client, cells, species, detail=False)
     out = []
     for r in results:
