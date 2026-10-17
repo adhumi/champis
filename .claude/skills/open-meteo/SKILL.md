@@ -24,7 +24,7 @@ Ne jamais mélanger les deux pour une même variable d'une même fenêtre.
 
 ## Grille et cache
 
-- Les cellules sont les points de `data/weather_grid.json` (produit par le pipeline : centroïdes ~5 km des zones où `T > 0` pour au moins une espèce, avec `id`, `lat`, `lon`, `alt_classes` = classes de 300 m présentes dans la cellule). ~25 000 cellules France.
+- Les cellules sont les points de `data/weather_grid.json` (étape `weather-grid` du pipeline : carrés de 5 km alignés Lambert-93 où `T > 0` pour au moins une espèce ; `{version: 1, cell_m: 5000, cells: [{id, lat, lon, alt_classes, elevation_m}]}`, `id` = coin SO en km, `alt_classes` = centres des classes de 300 m sous la forêt). ~25 000 cellules France. Lu par `champis_api.grid`.
 - Cache des réponses brutes Open-Meteo **6 h par cellule**, clé `cell_id:date_utc_bucket`, stockage SQLite (`weather_cache.db` sur le volume Railway). Le scoring se recalcule à partir du cache, jamais de nouvel appel pour changer d'espèce ou de jour.
 - Appels groupés : Open-Meteo accepte jusqu'à ~100 points par requête (`latitude=a,b,c&longitude=…`) ; `/weather/bbox` regroupe par 100.
 - Tâche nocturne (Railway cron, 03:00) : rafraîchit toutes les cellules et précalcule les indices par département. En journée, un appel `/weather` sur une cellule froide déclenche un fetch à la demande.
@@ -39,7 +39,7 @@ Pour chaque classe d'altitude `a` de la cellule (centres 150, 450, 750… m) : `
 Règles dans `species/SCHEMA.md` et skill `champis-model`. Rappels d'implémentation :
 - Fenêtres glissantes calculées pour chaque J de J−`persistence.days` à J+7 (la persistance a besoin des M passés).
 - `trigger` : parcourir tous les événements (`≥ event_mm` sur `event_days` jours consécutifs, hors neige) des `lag_days.max` derniers jours ; facteur = max des trapèzes.
-- `soil_moisture_pct` : percentile de la valeur du jour dans la distribution ERA5-Land de la cellule pour le même mois sur 10 ans (précalculée par le pipeline dans `weather_grid.json` sous forme de 11 quantiles ; interpolation linéaire).
+- `soil_moisture_pct` : percentile de la valeur du jour (prévision, 0–9 cm) dans la distribution ERA5-Land 0–7 cm de la cellule pour le même mois sur 10 ans : 11 quantiles par mois, calculés **à la demande par l'API** (une requête archive par cellule, groupée par 10) et cachés à vie dans SQLite (`soil_clim`), interpolation linéaire. Deux modèles différents : seul le percentile est utilisé, jamais la valeur absolue (décision du 17 oct. 2026).
 - `water_balance` : `Σ(rain_sum − et0)` sur `window_days`.
 - `memory` : cumul `rain_sum` sur `[J−118, J−28]` (archive).
 - Réponse `/weather` : pour chaque jour, `M`, `Φ`, `M_eff` par classe d'altitude **et le détail des facteurs** (`temp`, `rain`, `trigger`, `soil_moisture`, `frost`, `water_balance`, `heat`, `memory`) : la fiche « pourquoi c'est vert » en dépend.
