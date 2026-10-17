@@ -331,8 +331,10 @@ def test_error_messages_hide_the_api_key():
     req = httpx.Request(
         "GET", "https://customer-api.open-meteo.com/v1/forecast?lat=1&apikey=SECRET&x=1"
     )
-    e = httpx.HTTPStatusError("403", request=req, response=httpx.Response(403, request=req))
-    assert "SECRET" not in _redact(e) and "apikey=***" in _redact(e)
+    with pytest.raises(httpx.HTTPStatusError) as info:
+        httpx.Response(403, request=req).raise_for_status()
+    assert "SECRET" in str(info.value)  # httpx met l'URL complète dans le message…
+    assert "SECRET" not in _redact(info.value) and "apikey=***" in _redact(info.value)
 
 
 # ------------------------------------------------------------------ déploiement : web statique, planificateur
