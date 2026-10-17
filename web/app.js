@@ -1,6 +1,8 @@
-/* Carte jetable de la phase 1 : affiche le potentiel terrain T (PMTiles gris 8 bits) colorisé
- * côté client avec shared/palette.json. Aucune valeur de modèle ici : palette, seuils, encodage
- * des tuiles et noms d'espèces sont lus depuis le dépôt (servir la racine du dépôt, voir README). */
+/* Carte jetable des phases 1–2 : potentiel terrain T (PMTiles gris 8 bits) colorisé côté client
+ * avec shared/palette.json, et score du jour S = T × M_eff × Φ avec les valeurs de l'API
+ * (/weather/bbox : M_eff et Φ par cellule 5 km, jour et classe d'altitude). Aucune valeur de
+ * modèle ici : palette, seuils, encodage des tuiles et noms d'espèces sont lus depuis le dépôt,
+ * M et Φ depuis l'API (servir la racine du dépôt, voir README). */
 
 const TILE = 256;
 const MIN_ZOOM = 6;
@@ -38,7 +40,15 @@ let palette; // shared/palette.json
 let classes; // seuils triés décroissants avec rgb pré-parsé
 const species = new Map(); // id → { pm, names, group }
 let currentKey = null; // "s:<id>" ou "g:<group>"
+let tileVersion = 0; // incrémenté pour forcer le rendu quand la météo ou le jour change
 const transparentTile = makeTransparentTile();
+
+// Météo : réponse de /weather/bbox pour l'emprise courante.
+// cells : id → { lat, lon, elevation_m, alt_classes, stale, species: { sid: { date: { alt: {M_eff, phi} } } } }
+const weather = { today: null, cells: new Map(), error: null };
+const mode = () => $("mode").value; // "T" ou "S"
+const dayOffset = () => +$("day").value;
+const WEATHER_BLOCK = 16; // la cellule météo est cherchée par bloc de 16 px, pas par pixel
 
 // ---------------------------------------------------------------- palette
 
@@ -98,22 +108,90 @@ function layerSpecies(key) {
   return [...species.values()].filter((s) => s.group?.id === name);
 }
 
-/** T d'une couche sur une tuile : une espèce, ou max des espèces du groupe (règle 9 du modèle). */
-async function layerT(key, z, x, y) {
-  const arrays = [];
+/** T de chaque espèce de la couche sur une tuile : [{ sid, t: Float32Array }]. */
+async function speciesT(key, z, x, y) {
+  const out = [];
   for (const s of layerSpecies(key)) {
     const t = await s.pm.getZxy(z, x, y);
-    if (t?.data) arrays.push(await decodeT(t.data));
+    if (t?.data) out.push({ sid: s.id, t: await decodeT(t.data) });
   }
+  return out;
+}
+
+/** Valeur affichée par pixel : T (max du groupe) ou S = T × M_eff × Φ (max du groupe, règle 9). */
+function combine(arrays, z, x, y) {
   if (arrays.length === 0) return null;
-  const out = arrays[0];
-  for (let k = 1; k < arrays.length; k++) {
-    const a = arrays[k];
-    for (let i = 0; i < out.length; i++) {
-      if (Number.isNaN(out[i]) || a[i] > out[i]) out[i] = a[i];
+  const out = new Float32Array(TILE * TILE).fill(NaN);
+  const useWeather = mode() === "S";
+  const blocks = TILE / WEATHER_BLOCK;
+  for (const { sid, t } of arrays) {
+    // facteur météo par bloc de 16 × 16 px (une cellule météo fait 5 km : largement assez fin)
+    let w = null;
+    if (useWeather) {
+      w = new Float32Array(blocks * blocks);
+      for (let by = 0; by < blocks; by++) {
+        for (let bx = 0; bx < blocks; bx++) {
+          const [lon, lat] = tilePixelToLngLat(z, x, y, (bx + 0.5) * WEATHER_BLOCK, (by + 0.5) * WEATHER_BLOCK);
+          w[by * blocks + bx] = weatherFactor(sid, lat, lon) ?? NaN;
+        }
+      }
+    }
+    for (let i = 0; i < t.length; i++) {
+      let v = t[i];
+      if (Number.isNaN(v)) continue;
+      if (w) {
+        const f = w[Math.floor(i / TILE / WEATHER_BLOCK) * blocks + Math.floor((i % TILE) / WEATHER_BLOCK)];
+        if (Number.isNaN(f)) continue; // pas de météo pour ce pixel : transparent, jamais 0,5
+        v *= f;
+      }
+      if (Number.isNaN(out[i]) || v > out[i]) out[i] = v;
     }
   }
   return out;
+}
+
+function tilePixelToLngLat(z, x, y, px, py) {
+  const n = 2 ** z;
+  const lon = ((x + px / TILE) / n) * 360 - 180;
+  const lat = (Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + py / TILE)) / n))) * 180) / Math.PI;
+  return [lon, lat];
+}
+
+/** M_eff × Φ de l'espèce pour le point, depuis la cellule météo la plus proche ; null si inconnu. */
+function weatherFactor(sid, lat, lon) {
+  const cell = nearestCell(lat, lon);
+  if (!cell) return null;
+  const days = cell.species[sid];
+  if (!days) return null;
+  const row = days[currentDate()];
+  if (!row) return null;
+  // Classe d'altitude : celle de l'altitude médiane de la forêt de la cellule (les tuiles T ne
+  // portent pas l'altitude du pixel — limite connue, voir README).
+  const target = Math.floor(cell.elevation_m / 300) * 300 + 150;
+  const alt = cell.alt_classes.reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a));
+  const v = row[String(alt)];
+  return v ? v.M_eff * v.phi : null;
+}
+
+function nearestCell(lat, lon) {
+  let best = null;
+  let bestD = Infinity;
+  const k = Math.cos((lat * Math.PI) / 180);
+  for (const c of weather.cells.values()) {
+    const d = (c.lat - lat) ** 2 + ((c.lon - lon) * k) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = c;
+    }
+  }
+  return best;
+}
+
+function currentDate() {
+  if (!weather.today) return null;
+  const d = new Date(weather.today + "T12:00:00");
+  d.setDate(d.getDate() + dayOffset());
+  return d.toISOString().slice(0, 10);
 }
 
 async function colorize(t) {
@@ -130,10 +208,11 @@ async function colorize(t) {
 }
 
 maplibregl.addProtocol("champis", async (params) => {
-  const m = params.url.match(/^champis:\/\/([^/]+)\/(\d+)\/(\d+)\/(\d+)$/);
+  const m = params.url.match(/^champis:\/\/([^/]+)\/v\d+\/(\d+)\/(\d+)\/(\d+)$/);
   if (!m) throw new Error(`URL invalide : ${params.url}`);
-  const t = await layerT(m[1], +m[2], +m[3], +m[4]);
-  return { data: t ? await colorize(t) : await transparentTile };
+  const [z, x, y] = [+m[2], +m[3], +m[4]];
+  const v = combine(await speciesT(m[1], z, x, y), z, x, y);
+  return { data: v ? await colorize(v) : await transparentTile };
 });
 
 // ---------------------------------------------------------------- carte
@@ -163,7 +242,7 @@ function setLayer(key) {
   if (!key) return;
   map.addSource("T", {
     type: "raster",
-    tiles: [`champis://${key}/{z}/{x}/{y}`],
+    tiles: [`champis://${key}/v${++tileVersion}/{z}/{x}/{y}`],
     tileSize: TILE,
     minzoom: MIN_ZOOM,
     maxzoom: MAX_ZOOM,
@@ -185,7 +264,81 @@ $("basemap").addEventListener("change", (e) => setBasemap(e.target.value));
 $("opacity").addEventListener("input", (e) => {
   if (map.getLayer("T")) map.setPaintProperty("T", "raster-opacity", +e.target.value);
 });
-$("layer").addEventListener("change", (e) => setLayer(e.target.value));
+$("layer").addEventListener("change", (e) => {
+  setLayer(e.target.value);
+  fetchWeather();
+});
+$("mode").addEventListener("change", () => {
+  $("weather").hidden = mode() !== "S";
+  setLayer(currentKey);
+  fetchWeather();
+});
+$("day").addEventListener("input", () => {
+  updateDayLabel();
+  setLayer(currentKey);
+});
+$("api").addEventListener("change", fetchWeather);
+let moveTimer = null;
+map.on("moveend", () => {
+  clearTimeout(moveTimer);
+  moveTimer = setTimeout(fetchWeather, 300);
+});
+
+// ---------------------------------------------------------------- météo (API)
+
+function updateDayLabel() {
+  const d = currentDate();
+  const k = dayOffset();
+  $("day-label").textContent = d ? `${d} (J${k >= 0 ? "+" : ""}${k})` : "";
+}
+
+let weatherAbort = null;
+async function fetchWeather() {
+  if (mode() !== "S" || !currentKey) return;
+  const ids = layerSpecies(currentKey).map((s) => s.id);
+  if (ids.length === 0) return;
+  weatherAbort?.abort();
+  weatherAbort = new AbortController();
+  const b = map.getBounds();
+  const pad = 0.1; // ~ une cellule de marge pour le voisin le plus proche en bord d'écran
+  const q = new URLSearchParams({
+    min_lon: b.getWest() - pad,
+    min_lat: b.getSouth() - pad,
+    max_lon: b.getEast() + pad,
+    max_lat: b.getNorth() + pad,
+  });
+  for (const id of ids) q.append("species", id);
+  $("weather-status").textContent = "Météo : chargement…";
+  try {
+    const r = await fetch(`${$("api").value.replace(/\/$/, "")}/weather/bbox?${q}`, {
+      signal: weatherAbort.signal,
+    });
+    if (!r.ok) throw new Error(`${r.status} ${(await r.json()).detail ?? ""}`);
+    const body = await r.json();
+    weather.today = body.today;
+    weather.error = null;
+    for (const c of body.cells) {
+      const entry = weather.cells.get(c.cell.id) ?? {
+        ...c.cell,
+        species: {},
+      };
+      entry.stale = c.stale;
+      for (const [sid, rows] of Object.entries(c.species)) {
+        entry.species[sid] = Object.fromEntries(rows.map((row) => [row.date, row.by_alt]));
+      }
+      weather.cells.set(c.cell.id, entry);
+    }
+    const stale = body.cells.some((c) => c.stale);
+    $("weather-status").textContent =
+      `Météo : ${body.cells.length} cellule(s) dans l'emprise` + (stale ? " — cache périmé (Open-Meteo injoignable)" : "");
+    updateDayLabel();
+    setLayer(currentKey);
+  } catch (e) {
+    if (e.name === "AbortError") return;
+    weather.error = e.message;
+    $("weather-status").textContent = `Météo indisponible : ${e.message}`;
+  }
+}
 
 // ---------------------------------------------------------------- chargement des PMTiles
 
@@ -196,6 +349,7 @@ async function addSource(src, label) {
   const header = await pm.getHeader();
   const meta = await fetch(`../species/${id}.json`).then((r) => (r.ok ? r.json() : null));
   species.set(id, {
+    id,
     pm,
     names: meta?.names ?? { fr: id, la: "" },
     group: meta?.group ?? null,
@@ -223,6 +377,7 @@ async function addMany(items) {
     `${species.size} espèce(s) : ${[...species.values()].map((s) => s.names.fr).join(", ")}`,
     ...errors,
   ].join("\n");
+  fetchWeather();
 }
 
 function refreshLayerList() {
@@ -281,12 +436,34 @@ map.on("click", async (e) => {
   const py = ((1 - Math.log(Math.tan(lat) + 1 / Math.cos(lat)) / Math.PI) / 2) * n;
   const tx = Math.floor(px / TILE);
   const ty = Math.floor(py / TILE);
-  const t = await layerT(currentKey, z, tx, ty);
-  const v = t ? t[Math.floor(py % TILE) * TILE + Math.floor(px % TILE)] : NaN;
+  const i = Math.floor(py % TILE) * TILE + Math.floor(px % TILE);
+  const arrays = await speciesT(currentKey, z, tx, ty);
   probe.style.display = "block";
-  if (Number.isNaN(v)) {
-    probe.textContent = "Hors forêt / pas de donnée";
-  } else {
-    probe.textContent = `T = ${v.toFixed(3)} — ${classify(v).fr}`;
+  // meilleure espèce du groupe au point cliqué (T seul, ou S si la météo est affichée)
+  let best = null;
+  for (const { sid, t } of arrays) {
+    const T = t[i];
+    if (Number.isNaN(T)) continue;
+    const w = mode() === "S" ? weatherFactor(sid, e.lngLat.lat, e.lngLat.lng) : 1;
+    if (w === null) continue;
+    const v = T * w;
+    if (!best || v > best.v) best = { sid, T, v };
   }
+  if (!best) {
+    probe.textContent = mode() === "S" && arrays.some((a) => !Number.isNaN(a.t[i]))
+      ? "Pas de météo pour ce point"
+      : "Hors forêt / pas de donnée";
+    return;
+  }
+  const name = species.get(best.sid)?.names.fr ?? best.sid;
+  if (mode() === "T") {
+    probe.textContent = `T = ${best.T.toFixed(3)} — ${classify(best.T).fr} (${name})`;
+    return;
+  }
+  const cell = nearestCell(e.lngLat.lat, e.lngLat.lng);
+  const w = best.v / best.T;
+  probe.textContent =
+    `S = ${best.v.toFixed(3)} — ${classify(best.v).fr} (${name}, ${currentDate()}) · ` +
+    `T ${best.T.toFixed(2)} × M_eff·Φ ${w.toFixed(2)} · cellule ${cell.id}` +
+    (cell.stale ? " · météo périmée" : "");
 });

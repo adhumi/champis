@@ -28,7 +28,6 @@ Pour regarder le résultat : `python3 -m http.server 8000` à la racine du dép�
 ## Ce qui n'est pas encore là
 
 - L'API (FastAPI) : `api/champis_api/scoring.py` contient déjà M et Φ, testés ; le service HTTP et le client Open-Meteo viennent en phase 2.
-- Le scoring M × Φ dans la carte web et l'appel à l'API (phase 2) : `web/` n'affiche que T pour l'instant.
 - Le contrôle GBIF et le recalibrage pH (`pipeline/check/`).
 
 ## Licences des données
