@@ -98,7 +98,8 @@ async def test_bbox(api):
         },
     )
     body = r.json()
-    assert [c["cell"] for c in body["cells"]] == [CELL]
+    assert [c["cell"]["id"] for c in body["cells"]] == [CELL]
+    assert body["cells"][0]["cell"]["alt_classes"] == [450, 1350]
     rows = body["cells"][0]["species"]["cantharellus_cibarius"]
     assert len(rows) == 1 and rows[0]["date"] == J
     assert "factors" not in rows[0]["by_alt"]["450"]
