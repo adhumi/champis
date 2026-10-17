@@ -1,22 +1,34 @@
-"""Service champis-api : `/species`, `/weather`, `/weather/bbox`, `/health`.
+"""Service champis-api : `/species`, `/weather`, `/weather/bbox`, `/health`, et la carte web
+statique sous `/web`.
 
 Sans état hors le cache météo SQLite ; aucun calcul géographique (tout est dans les tuiles).
+Pré-chauffe intégrée (`CHAMPIS_WARM_HOURS`) : une tâche de fond lance `warm` aux heures voulues,
+ce qui évite un second service Railway et partage le volume du cache.
 """
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
+import asyncio
+import logging
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .cache import WeatherCache
 from .grid import WeatherGrid
 from .routers import species, weather
 from .settings import Settings
+from .warm import WARM_INTERVAL_S, warm
 from .weather_client import OpenMeteoClient
+
+log = logging.getLogger(__name__)
+PARIS = ZoneInfo("Europe/Paris")
 
 
 @dataclass
@@ -38,12 +50,18 @@ def create_app(settings: Settings | None = None, state: State | None = None) -> 
         settings.cache_db.parent.mkdir(parents=True, exist_ok=True)
         cache = WeatherCache(settings.cache_db)
         async with httpx.AsyncClient(headers={"User-Agent": "champis-api"}) as http:
-            app.state.champis = State(
-                grid=WeatherGrid.load(settings.weather_grid),
-                client=OpenMeteoClient(http, cache),
-                cache=cache,
+            grid = WeatherGrid.load(settings.weather_grid)
+            app.state.champis = State(grid=grid, client=OpenMeteoClient(http, cache), cache=cache)
+            warmer = OpenMeteoClient(http, cache, min_interval_s=WARM_INTERVAL_S)
+            task = asyncio.create_task(
+                warm_scheduler(grid, warmer, settings.warm_hours, settings.warm_on_start)
             )
-            yield
+            try:
+                yield
+            finally:
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
         cache.close()
 
     app = FastAPI(title="Champis API", lifespan=lifespan)
@@ -57,7 +75,52 @@ def create_app(settings: Settings | None = None, state: State | None = None) -> 
     async def health() -> dict[str, str | int]:
         return {"status": "ok", "cells": len(app.state.champis.grid)}
 
+    if settings.serve_web:
+        # La page lit ../shared/palette.json et ../species/<id>.json : mêmes chemins qu'en local.
+        for name in ("web", "shared", "species"):
+            app.mount(f"/{name}", StaticFiles(directory=settings.repo_root / name, html=True))
+
     return app
+
+
+def next_warm(now: datetime, hours: tuple[int, ...]) -> datetime:
+    """Prochaine occurrence (heure locale Paris) parmi `hours`, strictement après `now`."""
+    local = now.astimezone(PARIS)
+    candidates = []
+    for d in (0, 1):
+        day = (local + timedelta(days=d)).date()
+        for h in hours:
+            t = datetime(day.year, day.month, day.day, h, tzinfo=PARIS)
+            if t > local:
+                candidates.append(t)
+    return min(candidates)
+
+
+async def warm_scheduler(
+    grid: WeatherGrid, client: OpenMeteoClient, hours: tuple[int, ...], on_start: bool
+) -> None:
+    if on_start:
+        await _warm_once(grid, client)
+    if not hours:
+        return
+    while True:
+        at = next_warm(datetime.now(PARIS), hours)
+        log.info("prochaine pré-chauffe à %s", at.isoformat(timespec="minutes"))
+        await asyncio.sleep((at - datetime.now(PARIS)).total_seconds())
+        await _warm_once(grid, client)
+
+
+async def _warm_once(grid: WeatherGrid, client: OpenMeteoClient) -> None:
+    try:
+        report = await warm(grid, client)
+        log.info(
+            "pré-chauffe terminée : %d cellules, %d indisponibles, %d périmées",
+            report.cells,
+            len(report.unavailable),
+            report.stale,
+        )
+    except Exception:
+        log.exception("pré-chauffe en échec")
 
 
 app = create_app()

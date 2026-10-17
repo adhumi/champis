@@ -277,6 +277,12 @@ $("day").addEventListener("input", () => {
   updateDayLabel();
   setLayer(currentKey);
 });
+// API : même origine quand la page est servie par champis-api (Railway, uvicorn) ; en dev avec
+// `python -m http.server` sur un autre port, l'API locale par défaut.
+$("api").value =
+  /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.port !== "8000"
+    ? "http://127.0.0.1:8000"
+    : location.origin;
 $("api").addEventListener("change", fetchWeather);
 let moveTimer = null;
 map.on("moveend", () => {

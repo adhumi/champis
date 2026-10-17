@@ -27,7 +27,7 @@ http://localhost:3000/web/?tiles=../data/tiles/T-boletus_edulis-…pmtiles,../da
 uv run uvicorn champis_api.app:app          # dans un autre terminal, voir api/README.md
 ```
 
-Affichage → « Score du jour » : la page appelle `GET /weather/bbox` sur l'emprise visible (URL de l'API modifiable dans le panneau, `http://127.0.0.1:8000` par défaut) et colorise `T × M_eff × Φ`. Le curseur de jour va de J−3 à J+7 sans nouvel appel : l'API renvoie les 11 jours d'un coup. Pour un groupe, le score est le max sur les espèces de `T_e × M_eff_e × Φ_e` (règle 9). Un pixel sans cellule météo reste transparent (jamais 0,5 inventé) ; « cache périmé » s'affiche quand l'API sert son cache faute d'Open-Meteo.
+Affichage → « Score du jour » : la page appelle `GET /weather/bbox` sur l'emprise visible (URL de l'API modifiable dans le panneau : l'origine de la page quand elle est servie par champis-api, sinon `http://127.0.0.1:8000`) et colorise `T × M_eff × Φ`. Le curseur de jour va de J−3 à J+7 sans nouvel appel : l'API renvoie les 11 jours d'un coup. Pour un groupe, le score est le max sur les espèces de `T_e × M_eff_e × Φ_e` (règle 9). Un pixel sans cellule météo reste transparent (jamais 0,5 inventé) ; « cache périmé » s'affiche quand l'API sert son cache faute d'Open-Meteo.
 
 **Limite connue** : les tuiles T ne portent pas l'altitude du pixel ; la classe d'altitude utilisée est celle de l'altitude médiane de la forêt de la cellule (`elevation_m`). Le gel « seulement en altitude » n'est donc pas visible à l'intérieur d'une cellule. À trancher dans la spec : une couche PMTiles de classes d'altitude produite par le pipeline.
 
