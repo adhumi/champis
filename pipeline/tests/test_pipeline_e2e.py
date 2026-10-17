@@ -1,0 +1,175 @@
+"""Chaîne complète sur un mini-département synthétique (sans réseau) : grid → terrain → tiles."""
+
+from __future__ import annotations
+
+import sqlite3
+from pathlib import Path
+
+import geopandas as gpd
+import numpy as np
+import pytest
+import rasterio
+from champis_pipeline import config, rasterize, terrain, tiles
+from champis_pipeline.config import CRS_CALC, Grid
+from champis_pipeline.scoring import NODATA_U8, decode_u8
+from champis_pipeline.species import host_index
+from rasterio.transform import from_origin
+from shapely.geometry import box
+
+DEPT = "99"
+
+
+@pytest.fixture
+def sandbox(tmp_path: Path, monkeypatch):
+    """Redirige data/ vers tmp et fabrique BD Forêt + SoilGrids + MNT synthétiques (10 km × 10 km)."""
+    for name in ("DATA_DIR", "RAW_DIR", "GRID_DIR", "T_DIR", "TILES_DIR"):
+        monkeypatch.setattr(config, name, tmp_path / name.lower())
+    monkeypatch.setattr(
+        rasterize,
+        "dept_dirs",
+        lambda d: {"raw": tmp_path / "raw" / d, "grid": tmp_path / "grid" / d},
+    )
+    monkeypatch.setattr(terrain, "dept_dirs", rasterize.dept_dirs)
+    monkeypatch.setattr(terrain, "T_DIR", tmp_path / "t")
+    monkeypatch.setattr(tiles, "T_DIR", tmp_path / "t")
+    monkeypatch.setattr(tiles, "TILES_DIR", tmp_path / "tiles")
+
+    # Doubs approximatif en Lambert-93 : x ≈ 930 000, y ≈ 6 680 000
+    x0, y0 = 930_000.0, 6_680_000.0
+    polys = [
+        (box(x0, y0, x0 + 5000, y0 + 10000), "FF1-09-09"),  # hêtraie ouest
+        (box(x0 + 5000, y0 + 5000, x0 + 10000, y0 + 10000), "FF2G61-61"),  # sapinière NE
+        (box(x0 + 5000, y0, x0 + 10000, y0 + 5000), "FF2-64-64"),  # douglas SE
+        (box(x0 + 2000, y0 + 2000, x0 + 2500, y0 + 2500), "FF0"),  # coupe rase dans la hêtraie
+    ]
+    gdf = gpd.GeoDataFrame(
+        {"CODE_TFV": [c for _, c in polys]}, geometry=[g for g, _ in polys], crs=CRS_CALC
+    )
+    shp = tmp_path / "raw" / DEPT / "FORMATION_VEGETALE.shp"
+    shp.parent.mkdir(parents=True)
+    gdf.to_file(shp)
+
+    grid = Grid.aligned(x0, y0, x0 + 10000, y0 + 10000, pad_m=0)
+
+    # SoilGrids synthétique en 4326, 250 m : pH 5,0 à l'ouest, 7,5 à l'est
+    bbox = rasterize.grid_bbox_4326(grid)
+    w, s_, e, n = bbox
+    cols, rows = 60, 60
+    ph = np.zeros((rows, cols), dtype=np.int16)
+    ph[:, : cols // 2] = 50
+    ph[:, cols // 2 :] = 75
+    ph_path = tmp_path / "raw" / "ph.tif"
+    with rasterio.open(
+        ph_path,
+        "w",
+        driver="GTiff",
+        width=cols,
+        height=rows,
+        count=1,
+        dtype="int16",
+        crs="EPSG:4326",
+        transform=from_origin(w, n, (e - w) / cols, (n - s_) / rows),
+        nodata=0,
+    ) as d:
+        d.write(ph, 1)
+
+    # MNT synthétique en 4326 : pente régulière montant vers le nord, 600 → 1 200 m
+    dem = np.linspace(1200, 600, rows)[:, None].repeat(cols, axis=1).astype(np.float32)
+    dem_path = tmp_path / "raw" / "dem.tif"
+    with rasterio.open(
+        dem_path,
+        "w",
+        driver="GTiff",
+        width=cols,
+        height=rows,
+        count=1,
+        dtype="float32",
+        crs="EPSG:4326",
+        transform=from_origin(w, n, (e - w) / cols, (n - s_) / rows),
+        nodata=-9999,
+    ) as d:
+        d.write(dem, 1)
+
+    return {"shp": shp, "grid": grid, "ph": ph_path, "dem": dem_path, "tmp": tmp_path}
+
+
+def test_grid_terrain_tiles(sandbox):
+    shp, grid = sandbox["shp"], sandbox["grid"]
+    host_p, _cover_p = rasterize.host_cover(DEPT, shp, grid)
+    rasterize.ph(DEPT, sandbox["ph"], grid)
+    rasterize.dem_products(DEPT, [sandbox["dem"]], grid)
+
+    with rasterio.open(host_p) as s:
+        host = s.read(1)
+    assert host.shape == (400, 400)
+    assert host[200, 100] == host_index("hetre")
+    assert host[100, 300] == host_index("sapin_epicea")
+    assert host[300, 300] == host_index("douglas")
+    assert host[310, 90] == host_index("sans_couvert")  # petit polygone gagne sur la hêtraie
+    assert np.sum(host == NODATA_U8) == 0  # tout le carré est couvert
+
+    with rasterio.open(sandbox["tmp"] / "grid" / DEPT / "aspect.tif") as s:
+        aspect = s.read(1)
+    # pente vers le sud (altitude décroît vers le sud) → exposition S = classe 4
+    assert np.median(aspect[50:350, 50:350]) == 4
+
+    t_path = terrain.compute(DEPT, "boletus_edulis")
+    with rasterio.open(t_path) as s:
+        t = decode_u8(s.read(1))
+    t_hetre, t_sapin, t_douglas, t_coupe = t[200, 100], t[100, 300], t[300, 300], t[310, 90]
+    assert t_hetre > 0.7
+    assert t_sapin > 0.5
+    assert t_douglas < t_sapin < t_hetre
+    assert t_coupe < 0.1
+
+    summ = terrain.summary(t_path)
+    assert summ["forest_ha"] == pytest.approx(10_000, rel=0.01)
+
+    pm = tiles.build("boletus_edulis", [DEPT])
+    assert pm.exists() and pm.stat().st_size > 1000
+    mbt = sqlite3.connect(next(pm.parent.rglob("T.mbtiles")))
+    zooms = dict(
+        mbt.execute("SELECT zoom_level, COUNT(*) FROM tiles GROUP BY zoom_level").fetchall()
+    )
+    assert set(zooms) == set(range(tiles.MIN_ZOOM, tiles.MAX_ZOOM + 1))
+    assert zooms[15] > zooms[10] >= 1
+
+
+def test_tile_position_and_value(sandbox):
+    """La tuile XYZ contenant la hêtraie existe dans le PMTiles et porte la bonne valeur ; hors emprise : rien."""
+    import io
+
+    import mercantile
+    from PIL import Image
+    from pmtiles.reader import MmapSource, Reader
+    from rasterio.warp import transform as rio_transform
+
+    shp, grid = sandbox["shp"], sandbox["grid"]
+    rasterize.host_cover(DEPT, shp, grid)
+    rasterize.ph(DEPT, sandbox["ph"], grid)
+    rasterize.dem_products(DEPT, [sandbox["dem"]], grid)
+    t_path = terrain.compute(DEPT, "boletus_edulis")
+    pm = tiles.build("boletus_edulis", [DEPT])
+
+    # centre de la hêtraie en Lambert-93 → WGS84 → tuile z15
+    x, y = 930_000 + 2_500, 6_680_000 + 7_500
+    (lon,), (lat,) = rio_transform(CRS_CALC, "EPSG:4326", [x], [y])
+    t = mercantile.tile(lon, lat, 15)
+    with open(pm, "rb") as f:
+        reader = Reader(MmapSource(f))
+        png = reader.get(15, t.x, t.y)
+        assert png is not None
+        img = Image.open(io.BytesIO(png)).convert("LA")
+        # pixel du centre de la tuile ≈ position de (lon, lat) dans la tuile
+        b = mercantile.bounds(t)
+        px = int((lon - b.west) / (b.east - b.west) * 256)
+        py = int((b.north - lat) / (b.north - b.south) * 256)
+        lum, alpha = img.getpixel((px, py))
+        assert alpha == 255
+        with rasterio.open(t_path) as s:
+            expected = next(s.sample([(x, y)]))[0]
+        assert abs(int(lum) - int(expected)) <= 1
+        # tuile 20 km à l'ouest : hors emprise
+        (lon2,), (lat2,) = rio_transform(CRS_CALC, "EPSG:4326", [x - 20_000], [y])
+        t2 = mercantile.tile(lon2, lat2, 15)
+        assert reader.get(15, t2.x, t2.y) is None

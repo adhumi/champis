@@ -1,0 +1,334 @@
+{
+  "schema_version": 1,
+  "description": "Correspondance BD Forêt V2 (IGN) → vocabulaire interne 'hosts' + classe de couvert, utilisée par le pipeline pour rasteriser l'essence dominante. Jointure sur CODE_TFV uniquement (jamais sur le libellé TFV : apostrophes variables). Source : descriptif de contenu BD Forêt V2.0 (IGN, rév. nov. 2018), 32 postes.",
+  "notes": [
+    "'Pur' = ≥ 75 % du couvert libre relatif (étage dominant) : jusqu'à 25 % d'autres essences peuvent coexister, et le sous-étage n'est jamais décrit.",
+    "Essence recherchée seulement en forêt fermée ≥ 2 ha ; en dessous : 'îlots' (FF1-00, FF2-00) sans essence.",
+    "Regroupements non séparables dans la donnée : sapin/épicéa (G61), chênes décidus pédonculé/sessile/pubescent/tauzin (G01), chêne vert/liège (G06), laricio/noir (G53), à crochets/cembro (G58), 'autre feuillu' (bouleau, charme, tilleul, aulne, noisetier… mais aussi frêne, érable, merisier).",
+    "Aucune information d'âge ou de structure (futaie/taillis) : seule FF0/FO0 signale une coupe ou une jeune plantation.",
+    "BD Forêt V3 (35 classes, essences dès 0,5 ha) en bêta 2026 : conserver cette couche d'abstraction 'hosts' pour la migrer sans toucher aux fichiers espèces.",
+    "Sous-étage non décrit : en Provence, les pinèdes de pin d'Alep, sylvestre ou noir cachent souvent un sous-étage de chêne vert ou pubescent, hôte réel de B. aereus et des girolles calcicoles ; les poids des pins en tiennent compte (B. aereus)."
+  ],
+  "hosts": {
+    "chenes_decidus": {
+      "fr": "Chênes décidus (pédonculé, sessile, pubescent, tauzin, rouge)",
+      "ecm": true
+    },
+    "chenes_sempervirents": {
+      "fr": "Chênes sempervirents (vert, liège)",
+      "ecm": true
+    },
+    "hetre": {
+      "fr": "Hêtre",
+      "ecm": true
+    },
+    "chataignier": {
+      "fr": "Châtaignier",
+      "ecm": true
+    },
+    "robinier": {
+      "fr": "Robinier",
+      "ecm": false
+    },
+    "autre_feuillu": {
+      "fr": "Autre feuillu pur (bouleau, charme, tilleul, aulne, noisetier ECM ; frêne, érable, merisier non ECM)",
+      "ecm": "mixte"
+    },
+    "melange_feuillus": {
+      "fr": "Mélange de feuillus sans essence dominante",
+      "ecm": "probable"
+    },
+    "feuillus_indet": {
+      "fr": "Feuillus, essence non déterminée (îlot < 2 ha ou forêt ouverte)",
+      "ecm": "probable"
+    },
+    "pin_maritime": {
+      "fr": "Pin maritime",
+      "ecm": true
+    },
+    "pin_sylvestre": {
+      "fr": "Pin sylvestre",
+      "ecm": true
+    },
+    "pin_laricio_noir": {
+      "fr": "Pin laricio ou pin noir",
+      "ecm": true
+    },
+    "pin_alep": {
+      "fr": "Pin d'Alep",
+      "ecm": true
+    },
+    "pin_crochets_cembro": {
+      "fr": "Pin à crochets ou pin cembro",
+      "ecm": true
+    },
+    "autre_pin": {
+      "fr": "Autre pin pur",
+      "ecm": true
+    },
+    "melange_pins": {
+      "fr": "Mélange de pins",
+      "ecm": true
+    },
+    "sapin_epicea": {
+      "fr": "Sapin ou épicéa (non distingués)",
+      "ecm": true
+    },
+    "meleze": {
+      "fr": "Mélèze",
+      "ecm": true
+    },
+    "douglas": {
+      "fr": "Douglas",
+      "ecm": true
+    },
+    "autre_conifere": {
+      "fr": "Autre conifère pur hors pin : en PACA presque toujours la cédraie (ECM, mais sans Boletus edulis/aereus ni Cantharellus documentés) ; ailleurs plantations de cyprès, thuya, séquoia (non ECM)",
+      "ecm": "faible"
+    },
+    "melange_coniferes": {
+      "fr": "Mélange de conifères sans essence dominante",
+      "ecm": "probable"
+    },
+    "melange_coniferes_hors_pins": {
+      "fr": "Mélange de conifères hors pins (sapin, épicéa, douglas, mélèze…), surtout en montagne",
+      "ecm": "probable"
+    },
+    "coniferes_indet": {
+      "fr": "Conifères, essence non déterminée (îlot < 2 ha ou forêt ouverte)",
+      "ecm": "probable"
+    },
+    "mixte_feuillus_dom": {
+      "fr": "Mixte, feuillus prépondérants (50–75 %)",
+      "ecm": "probable"
+    },
+    "mixte_coniferes_dom": {
+      "fr": "Mixte, conifères prépondérants (50–75 %)",
+      "ecm": "probable"
+    },
+    "mixte_indet": {
+      "fr": "Mixte feuillus/conifères, forêt ouverte",
+      "ecm": "probable"
+    },
+    "peupleraie": {
+      "fr": "Peupleraie cultivée",
+      "ecm": false
+    },
+    "lande": {
+      "fr": "Lande ligneuse basse (bruyères, genêts, cistes, arbousier…)",
+      "ecm": "faible"
+    },
+    "herbacee": {
+      "fr": "Formation herbacée (pelouse, pâturage)",
+      "ecm": false
+    },
+    "sans_couvert": {
+      "fr": "Forêt sans couvert arboré (coupe rase, tempête, incendie, jeune plantation)",
+      "ecm": "faible"
+    }
+  },
+  "covers": {
+    "fermee": "Forêt fermée, couvert ≥ 40 %",
+    "ouverte": "Forêt ouverte, couvert 10–40 %",
+    "sans_couvert": "Couvert < 10 % après coupe ou incident",
+    "plantation": "Peupleraie",
+    "non_foret": "Lande ou formation herbacée"
+  },
+  "bdforet_v2": {
+    "FF0": {
+      "host": "sans_couvert",
+      "cover": "sans_couvert",
+      "tfv": "Forêt fermée sans couvert arboré"
+    },
+    "FF1-00": {
+      "host": "feuillus_indet",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de feuillus purs en îlots"
+    },
+    "FF1G01-01": {
+      "host": "chenes_decidus",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de chênes décidus purs"
+    },
+    "FF1G06-06": {
+      "host": "chenes_sempervirents",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de chênes sempervirents purs"
+    },
+    "FF1-09-09": {
+      "host": "hetre",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de hêtre pur"
+    },
+    "FF1-10-10": {
+      "host": "chataignier",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de châtaignier pur"
+    },
+    "FF1-14-14": {
+      "host": "robinier",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de robinier pur"
+    },
+    "FF1-49-49": {
+      "host": "autre_feuillu",
+      "cover": "fermee",
+      "tfv": "Forêt fermée d'un autre feuillu pur"
+    },
+    "FF1-00-00": {
+      "host": "melange_feuillus",
+      "cover": "fermee",
+      "tfv": "Forêt fermée à mélange de feuillus"
+    },
+    "FF2-00": {
+      "host": "coniferes_indet",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de conifères purs en îlots"
+    },
+    "FF2-51-51": {
+      "host": "pin_maritime",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de pin maritime pur"
+    },
+    "FF2-52-52": {
+      "host": "pin_sylvestre",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de pin sylvestre pur"
+    },
+    "FF2G53-53": {
+      "host": "pin_laricio_noir",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de pin laricio ou pin noir pur"
+    },
+    "FF2-57-57": {
+      "host": "pin_alep",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de pin d'Alep pur"
+    },
+    "FF2G58-58": {
+      "host": "pin_crochets_cembro",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de pin à crochets ou pin cembro pur"
+    },
+    "FF2-81-81": {
+      "host": "autre_pin",
+      "cover": "fermee",
+      "tfv": "Forêt fermée d'un autre pin pur"
+    },
+    "FF2-80-80": {
+      "host": "melange_pins",
+      "cover": "fermee",
+      "tfv": "Forêt fermée à mélange de pins purs"
+    },
+    "FF2G61-61": {
+      "host": "sapin_epicea",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de sapin ou épicéa"
+    },
+    "FF2-63-63": {
+      "host": "meleze",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de mélèze pur"
+    },
+    "FF2-64-64": {
+      "host": "douglas",
+      "cover": "fermee",
+      "tfv": "Forêt fermée de douglas pur"
+    },
+    "FF2-91-91": {
+      "host": "autre_conifere",
+      "cover": "fermee",
+      "tfv": "Forêt fermée d'un autre conifère pur autre que pin"
+    },
+    "FF2-90-90": {
+      "host": "melange_coniferes_hors_pins",
+      "cover": "fermee",
+      "tfv": "Forêt fermée à mélange d'autres conifères"
+    },
+    "FF2-00-00": {
+      "host": "melange_coniferes",
+      "cover": "fermee",
+      "tfv": "Forêt fermée à mélange de conifères"
+    },
+    "FF31": {
+      "host": "mixte_feuillus_dom",
+      "cover": "fermee",
+      "tfv": "Forêt fermée à mélange de feuillus prépondérants et conifères"
+    },
+    "FF32": {
+      "host": "mixte_coniferes_dom",
+      "cover": "fermee",
+      "tfv": "Forêt fermée à mélange de conifères prépondérants et feuillus"
+    },
+    "FO0": {
+      "host": "sans_couvert",
+      "cover": "sans_couvert",
+      "tfv": "Forêt ouverte sans couvert arboré"
+    },
+    "FO1": {
+      "host": "feuillus_indet",
+      "cover": "ouverte",
+      "tfv": "Forêt ouverte de feuillus purs"
+    },
+    "FO2": {
+      "host": "coniferes_indet",
+      "cover": "ouverte",
+      "tfv": "Forêt ouverte de conifères purs"
+    },
+    "FO3": {
+      "host": "mixte_indet",
+      "cover": "ouverte",
+      "tfv": "Forêt ouverte à mélange de feuillus et conifères"
+    },
+    "FP": {
+      "host": "peupleraie",
+      "cover": "plantation",
+      "tfv": "Peupleraie"
+    },
+    "LA4": {
+      "host": "lande",
+      "cover": "non_foret",
+      "tfv": "Lande"
+    },
+    "LA6": {
+      "host": "herbacee",
+      "cover": "non_foret",
+      "tfv": "Formation herbacée"
+    }
+  },
+  "clc_2018_fallback": {
+    "description": "Hors emprise BD Forêt (ou polygone absent), Corine Land Cover 2018 niveau 3 ; UMC 25 ha, aucune essence. Tout code absent de cette table (vignes 221, vergers 222, oliveraies 223, cultures, bâti, eau…) → host 'herbacee' (poids 0 pour toutes les espèces) : hors forêt, T = 0. Alternative plus fine et annuelle : OSO (CESBIO, 10 m).",
+    "311": {
+      "host": "feuillus_indet",
+      "cover": "fermee"
+    },
+    "312": {
+      "host": "coniferes_indet",
+      "cover": "fermee"
+    },
+    "313": {
+      "host": "mixte_indet",
+      "cover": "fermee"
+    },
+    "321": {
+      "host": "herbacee",
+      "cover": "non_foret"
+    },
+    "322": {
+      "host": "lande",
+      "cover": "non_foret"
+    },
+    "323": {
+      "host": "lande",
+      "cover": "non_foret"
+    },
+    "324": {
+      "host": "sans_couvert",
+      "cover": "sans_couvert"
+    },
+    "default": {
+      "host": "herbacee",
+      "cover": "non_foret"
+    }
+  }
+}

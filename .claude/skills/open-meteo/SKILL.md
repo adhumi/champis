@@ -1,0 +1,51 @@
+---
+name: open-meteo
+description: Comment Champis consomme Open-Meteo (variables, deux API, correction d'altitude, cache, quotas) et calcule l'indice météo M. À lire avant tout code qui appelle Open-Meteo ou touche api/champis_api/weather*.
+---
+
+# Open-Meteo dans Champis
+
+Un seul module client : `api/champis_api/weather_client.py`. Personne d'autre n'appelle Open-Meteo. Licence CC-BY 4.0, usage non commercial sans clé ; ~10 000 appels/jour. Mention « Weather data by Open-Meteo.com » dans l'« à propos » des clients.
+
+## Deux API, deux rôles
+
+| API | URL | Sert à | Pourquoi |
+| --- | --- | --- | --- |
+| Prévision | `https://api.open-meteo.com/v1/forecast` avec `past_days=92&forecast_days=7` | Toute la fenêtre J−92 → J+7 : temp, rain, trigger, humidité du sol, frost, water_balance, heat, persistance | Même modèle avant et après J : pas de discontinuité le jour J |
+| Archive (ERA5-Land) | `https://archive-api.open-meteo.com/v1/archive` | Mémoire estivale (J−180 → J−92) et climatologie de l'humidité du sol (10 ans, même mois) | Seule source profonde ; ~11 km, lissée |
+
+Ne jamais mélanger les deux pour une même variable d'une même fenêtre.
+
+## Variables (`daily=`)
+
+`temperature_2m_mean,temperature_2m_min,temperature_2m_max,rain_sum,snowfall_sum,et0_fao_evapotranspiration` + `hourly=soil_moisture_0_to_7cm` (moyenne journalière calculée côté API ; en prévision la couche s'appelle `soil_moisture_0_to_1cm` / `1_to_3cm` / `3_to_9cm` : prendre la moyenne pondérée 0–9 cm et le documenter). `timezone=Europe/Paris`. Toujours lire `elevation` de la réponse : c'est l'altitude de la cellule, nécessaire à la correction.
+
+**`rain_sum`, jamais `precipitation_sum`.** Un jour avec `snowfall_sum > 0` n'est pas un jour de pluie déclenchante.
+
+## Grille et cache
+
+- Les cellules sont les points de `data/weather_grid.json` (produit par le pipeline : centroïdes ~5 km des zones où `T > 0` pour au moins une espèce, avec `id`, `lat`, `lon`, `alt_classes` = classes de 300 m présentes dans la cellule). ~25 000 cellules France.
+- Cache des réponses brutes Open-Meteo **6 h par cellule**, clé `cell_id:date_utc_bucket`, stockage SQLite (`weather_cache.db` sur le volume Railway). Le scoring se recalcule à partir du cache, jamais de nouvel appel pour changer d'espèce ou de jour.
+- Appels groupés : Open-Meteo accepte jusqu'à ~100 points par requête (`latitude=a,b,c&longitude=…`) ; `/weather/bbox` regroupe par 100.
+- Tâche nocturne (Railway cron, 03:00) : rafraîchit toutes les cellules et précalcule les indices par département. En journée, un appel `/weather` sur une cellule froide déclenche un fetch à la demande.
+- Si Open-Meteo est injoignable : servir le cache périmé avec `"stale": true` dans la réponse, jamais une erreur 500 côté client.
+
+## Correction d'altitude
+
+Pour chaque classe d'altitude `a` de la cellule (centres 150, 450, 750… m) : `t_corr = t_cell − 0,006 × (a − elevation_cell)` appliqué à mean, min et max. L'API renvoie `M` **par classe d'altitude** ; le client choisit la classe du pixel. Sans cela, le gel n'est jamais détecté en montagne.
+
+## Calcul de `M` (`api/champis_api/scoring.py`)
+
+Règles dans `species/SCHEMA.md` et skill `champis-model`. Rappels d'implémentation :
+- Fenêtres glissantes calculées pour chaque J de J−`persistence.days` à J+7 (la persistance a besoin des M passés).
+- `trigger` : parcourir tous les événements (`≥ event_mm` sur `event_days` jours consécutifs, hors neige) des `lag_days.max` derniers jours ; facteur = max des trapèzes.
+- `soil_moisture_pct` : percentile de la valeur du jour dans la distribution ERA5-Land de la cellule pour le même mois sur 10 ans (précalculée par le pipeline dans `weather_grid.json` sous forme de 11 quantiles ; interpolation linéaire).
+- `water_balance` : `Σ(rain_sum − et0)` sur `window_days`.
+- `memory` : cumul `rain_sum` sur `[J−118, J−28]` (archive).
+- Réponse `/weather` : pour chaque jour, `M`, `Φ`, `M_eff` par classe d'altitude **et le détail des facteurs** (`temp`, `rain`, `trigger`, `soil_moisture`, `frost`, `water_balance`, `heat`, `memory`) : la fiche « pourquoi c'est vert » en dépend.
+
+## Tests
+
+- Fixtures JSON de réponses Open-Meteo enregistrées (`tests/fixtures/open_meteo/*.json`), jamais d'appel réseau dans `pytest`.
+- Scénarios obligatoires : grosse pluie puis beau temps (trigger optimal, water_balance neutre), petite pluie récente après grosse pluie ancienne (le max gagne), épisode neigeux (pas de trigger), gel en altitude seulement (correction), Open-Meteo en panne (stale).
+- Vecteurs de parité : skill `scoring-parity`.
