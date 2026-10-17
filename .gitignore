@@ -1,4 +1,4 @@
-data/
+data/*
 !data/weather_grid.json
 reports/
 .venv/
