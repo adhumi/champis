@@ -84,7 +84,8 @@ async def get_weather_bbox(
     max_lat: float,
     day: date | None = None,
 ) -> dict[str, Any]:
-    """Par cellule de l'emprise : `M_eff` et `phi` par classe d'altitude, sans détail des facteurs.
+    """Par cellule de l'emprise (id, lat, lon, alt_classes, elevation_m) : `M_eff` et `phi` par classe
+    d'altitude, sans détail des facteurs.
 
     `day` filtre sur un seul jour (défaut : les 11 jours J−3 → J+7).
     """
@@ -97,7 +98,7 @@ async def get_weather_bbox(
             if day is not None:
                 rows = [row for row in rows if row["date"] == day.isoformat()]
             sp[sid] = rows
-        out.append({"cell": r["cell"]["id"], "stale": r["stale"], "species": sp})
+        out.append({"cell": r["cell"], "stale": r["stale"], "species": sp})
     return {
         "today": client.today().isoformat(),
         "scoring_version": results[0]["scoring_version"] if results else None,
