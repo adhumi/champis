@@ -10,7 +10,7 @@ Prérequis : Python 3.12+, [uv](https://docs.astral.sh/uv/), ~5 Go de disque pou
 
 ```bash
 uv sync --group dev
-uv run pytest                      # 45 tests, dont une chaîne complète sur un département synthétique
+uv run pytest                      # 53 tests, dont une chaîne complète sur un département synthétique
 uv run champis-pipeline all --dept 25
 ```
 
@@ -23,14 +23,13 @@ uv run champis-pipeline all --dept 25
 
 Puis `uv run champis-pipeline summary --dept 25` donne la surface par classe (excellent → très faible) par espèce : premier regard sur la crédibilité avant toute carte.
 
-Pour regarder le résultat sans attendre le site : ouvrir un PMTiles dans [pmtiles.io](https://pmtiles.io) (glisser-déposer) ; les tuiles sont des PNG gris, 0 = noir = T 0, 254 = blanc = T 1.
+Pour regarder le résultat : `python3 -m http.server 8000` à la racine du dépôt, ouvrir <http://localhost:8000/web/> et y glisser les PMTiles (voir `web/README.md`). Sans serveur, [pmtiles.io](https://pmtiles.io) les affiche en gris brut : 0 = noir = T 0, 254 = blanc = T 1.
 
 ## Ce qui n'est pas encore là
 
 - L'API (FastAPI) : `api/champis_api/scoring.py` contient déjà M et Φ, testés ; le service HTTP et le client Open-Meteo viennent en phase 2.
-- La carte web jetable de la phase 1 (`web/`), qui lira les PMTiles et appellera Open-Meteo.
+- Le scoring M × Φ dans la carte web et l'appel à l'API (phase 2) : `web/` n'affiche que T pour l'instant.
 - Le contrôle GBIF et le recalibrage pH (`pipeline/check/`).
-- Les pixels de contrôle du Doubs (`pipeline/tests/control_pixels.json`) : à fournir par un cueilleur qui connaît le terrain.
 
 ## Licences des données
 
