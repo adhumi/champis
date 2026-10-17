@@ -293,6 +293,7 @@ function updateDayLabel() {
 }
 
 let weatherAbort = null;
+let retryTimer = null;
 async function fetchWeather() {
   if (mode() !== "S" || !currentKey) return;
   const ids = layerSpecies(currentKey).map((s) => s.id);
@@ -329,8 +330,17 @@ async function fetchWeather() {
       weather.cells.set(c.cell.id, entry);
     }
     const stale = body.cells.some((c) => c.stale);
+    const missing = body.unavailable?.length ?? 0;
     $("weather-status").textContent =
-      `Météo : ${body.cells.length} cellule(s) dans l'emprise` + (stale ? " — cache périmé (Open-Meteo injoignable)" : "");
+      `Météo : ${body.cells.length} cellule(s) dans l'emprise` +
+      (stale ? " — cache périmé (Open-Meteo injoignable)" : "") +
+      (missing
+        ? ` — ${missing} sans météo (quota Open-Meteo${body.retry_after ? `, réessai dans ${body.retry_after} s` : ""})`
+        : "");
+    if (missing && body.retry_after && body.retry_after <= 120) {
+      clearTimeout(retryTimer);
+      retryTimer = setTimeout(fetchWeather, body.retry_after * 1000 + 500);
+    }
     updateDayLabel();
     setLayer(currentKey);
   } catch (e) {

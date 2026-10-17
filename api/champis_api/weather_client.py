@@ -51,6 +51,7 @@ BATCH_POINTS = 100
 BATCH_CLIMATOLOGY = 10  # 10 ans journaliers par point
 BATCH_ARCHIVE = 50  # 200 j journaliers par point
 MIN_REQUEST_INTERVAL_S = 0.25  # lissage : jamais de rafale vers Open-Meteo
+RETRY_MAX_WAIT_S = 10  # un seul réessai, et seulement si Open-Meteo demande une courte attente
 SOIL_DAILY = "soil_moisture_0_to_7cm_mean"
 SOIL_LAYER_WEIGHTS = {
     "soil_moisture_0_to_1cm": 1,
@@ -74,6 +75,13 @@ class WeatherUnavailableError(Exception):
     def __init__(self, message: str, retry_after_s: int | None = None):
         super().__init__(message)
         self.retry_after_s = retry_after_s
+
+
+@dataclass
+class FetchResult:
+    raws: dict[str, CellRaw]  # cellules complètes
+    unavailable: dict[str, str]  # cellule → raison (Open-Meteo injoignable, rien en cache)
+    retry_after_s: int | None  # délai conseillé par Open-Meteo sur un 429, s'il y en a eu un
 
 
 @dataclass
@@ -105,6 +113,19 @@ class OpenMeteoClient:
     # ------------------------------------------------------------------ public
 
     async def fetch_cells(self, cells: Iterable[Cell]) -> dict[str, CellRaw]:
+        """Toutes les cellules ou rien : lève `WeatherUnavailableError` à la première indisponible."""
+        res = await self.fetch_cells_partial(cells)
+        if res.unavailable:
+            _cid, reason = next(iter(res.unavailable.items()))
+            raise WeatherUnavailableError(reason, res.retry_after_s)
+        return res.raws
+
+    async def fetch_cells_partial(self, cells: Iterable[Cell]) -> FetchResult:
+        """Ce qu'on peut : les cellules complètes d'un côté, les indisponibles de l'autre.
+
+        Une cellule dont un jeu manque (Open-Meteo injoignable et rien en cache) ne bloque pas
+        les autres : `/weather/bbox` peint ce qu'il a.
+        """
         cells = list(cells)
         now = self.now()
         today = now.date()
@@ -114,9 +135,13 @@ class OpenMeteoClient:
             "soil_clim": "v2",
         }
         out: dict[str, dict[str, Any]] = {c.id: {"stale": False} for c in cells}
+        unavailable: dict[str, str] = {}
+        retry_after: int | None = None
         for kind, bucket in buckets.items():
             missing: list[Cell] = []
             for c in cells:
+                if c.id in unavailable:
+                    continue
                 cached = self.cache.get(c.id, kind, bucket)
                 if cached is None:
                     missing.append(c)
@@ -128,23 +153,38 @@ class OpenMeteoClient:
             for i in range(0, len(missing), size):
                 batch = missing[i : i + size]
                 try:
-                    payloads = await self._fetch(kind, batch, today)
+                    payloads = await self._fetch_with_one_retry(kind, batch, today)
                 except (httpx.HTTPError, ValueError) as e:
-                    retry_after = _retry_after(e)
+                    ra = _retry_after(e)
+                    retry_after = max(retry_after or 0, ra) if ra is not None else retry_after
                     log.warning("Open-Meteo %s injoignable (%s) : cache périmé", kind, e)
                     for c in batch:
                         last = self.cache.latest(c.id, kind)
                         if last is None:
-                            raise WeatherUnavailableError(
-                                f"{kind} indisponible pour {c.id}", retry_after
-                            ) from e
-                        out[c.id][kind] = last[0]
-                        out[c.id]["stale"] = True
+                            unavailable[c.id] = f"{kind} indisponible pour {c.id}"
+                        else:
+                            out[c.id][kind] = last[0]
+                            out[c.id]["stale"] = True
                     continue
                 for c, p in zip(batch, payloads, strict=True):
                     self.cache.put(c.id, kind, bucket, p, now)
                     out[c.id][kind] = p
-        return {cid: CellRaw(**v) for cid, v in out.items()}
+        raws = {cid: CellRaw(**v) for cid, v in out.items() if cid not in unavailable}
+        return FetchResult(raws, unavailable, retry_after)
+
+    async def _fetch_with_one_retry(
+        self, kind: str, batch: list[Cell], today: date
+    ) -> list[dict[str, Any]]:
+        """Sur un 429 à courte attente (limite par minute), attendre et réessayer une fois."""
+        try:
+            return await self._fetch(kind, batch, today)
+        except httpx.HTTPStatusError as e:
+            ra = _retry_after(e)
+            if ra is None or ra > RETRY_MAX_WAIT_S:
+                raise
+            log.info("Open-Meteo 429, réessai dans %d s", ra)
+            await asyncio.sleep(ra)
+            return await self._fetch(kind, batch, today)
 
     # ------------------------------------------------------------------ requêtes
 

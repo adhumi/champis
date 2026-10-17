@@ -9,7 +9,7 @@ from champis_pipeline.species import list_species
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from ..grid import Cell, WeatherGrid
-from ..weather_client import OpenMeteoClient, WeatherUnavailableError
+from ..weather_client import OpenMeteoClient
 from ..weather_service import SeriesGapError, cell_weather
 
 router = APIRouter(prefix="/weather", tags=["weather"])
@@ -42,16 +42,23 @@ Species = Annotated[list[str], Depends(_species)]
 
 async def _compute(
     client: OpenMeteoClient, cells: list[Cell], species: list[str], detail: bool
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], dict[str, str], int | None]:
+    """(résultats des cellules disponibles, indisponibles → raison, Retry-After éventuel)."""
+    res = await client.fetch_cells_partial(cells)
+    today = client.today()
     try:
-        raws = await client.fetch_cells(cells)
-        today = client.today()
-        return [cell_weather(c, raws[c.id], species, today, detail=detail) for c in cells]
-    except WeatherUnavailableError as e:
-        headers = {"Retry-After": str(e.retry_after_s)} if e.retry_after_s else None
-        raise HTTPException(503, f"météo indisponible : {e}", headers=headers) from e
+        results = [
+            cell_weather(c, res.raws[c.id], species, today, detail=detail)
+            for c in cells
+            if c.id in res.raws
+        ]
     except SeriesGapError as e:
         raise HTTPException(502, f"séries Open-Meteo incomplètes : {e}") from e
+    return results, res.unavailable, res.retry_after_s
+
+
+def _retry_headers(retry_after: int | None) -> dict[str, str] | None:
+    return {"Retry-After": str(retry_after)} if retry_after else None
 
 
 @router.get("")
@@ -73,7 +80,13 @@ async def get_weather(
             raise HTTPException(404, "grille météo vide")
     else:
         raise HTTPException(422, "préciser cell=<id> ou lat=&lon=")
-    return (await _compute(client, [c], species, detail=True))[0]
+    results, unavailable, retry_after = await _compute(client, [c], species, detail=True)
+    if unavailable:
+        reason = next(iter(unavailable.values()))
+        raise HTTPException(
+            503, f"météo indisponible : {reason}", headers=_retry_headers(retry_after)
+        )
+    return results[0]
 
 
 @router.get("/bbox")
@@ -90,14 +103,16 @@ async def get_weather_bbox(
     """Par cellule de l'emprise (id, lat, lon, alt_classes, elevation_m) : `M_eff` et `phi` par classe
     d'altitude, sans détail des facteurs.
 
-    `day` filtre sur un seul jour (défaut : les 11 jours J−3 → J+7).
+    `day` filtre sur un seul jour (défaut : les 11 jours J−3 → J+7). Les cellules dont la météo
+    manque (Open-Meteo injoignable, rien en cache) sont listées dans `unavailable` au lieu de
+    faire échouer la réponse ; `retry_after` (s) quand Open-Meteo l'a indiqué.
     """
     cells = grid.in_bbox(min_lon, min_lat, max_lon, max_lat)
     if len(cells) > MAX_BBOX_CELLS:
         raise HTTPException(
             422, f"{len(cells)} cellules dans l'emprise, maximum {MAX_BBOX_CELLS} : zoomez"
         )
-    results = await _compute(client, cells, species, detail=False)
+    results, unavailable, retry_after = await _compute(client, cells, species, detail=False)
     out = []
     for r in results:
         sp = {}
@@ -110,4 +125,6 @@ async def get_weather_bbox(
         "today": client.today().isoformat(),
         "scoring_version": results[0]["scoring_version"] if results else None,
         "cells": out,
+        "unavailable": sorted(unavailable),
+        "retry_after": retry_after,
     }
