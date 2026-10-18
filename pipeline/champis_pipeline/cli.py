@@ -1,6 +1,6 @@
 """CLI : `champis-pipeline <étape> --dept 25 [--species boletus_edulis] [--force]`.
 
-Étapes : download · grid · terrain · tiles · weather-grid · all · summary · check · explain
+Étapes : download · grid · terrain · tiles · weather-grid · all · summary · check · explain · batch
 """
 
 from __future__ import annotations
@@ -98,6 +98,19 @@ def cmd_check(args) -> None:
             )
 
 
+def cmd_batch(args) -> None:
+    """download → grid → terrain sur plusieurs départements en parallèle (reprise automatique)."""
+    from . import batch
+
+    depts = batch.parse_depts(args.depts)
+    status = batch.batch(depts, args.species, jobs=args.jobs, force=args.force)
+    failed = [d for d in depts if not status.get(d, {}).get("ok")]
+    print(f"{len(depts) - len(failed)}/{len(depts)} départements ok ; état : {batch.STATUS_FILE}")
+    if failed:
+        print("échecs : " + " ".join(failed))
+        raise SystemExit(1)
+
+
 def cmd_all(args) -> None:
     cmd_download(args)
     cmd_grid(args)
@@ -133,6 +146,10 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name, parents=[common])
         p.add_argument("--depts", nargs="+", required=True)
         p.set_defaults(fn=fn)
+    p = sub.add_parser("batch", parents=[common])
+    p.add_argument("--depts", nargs="+", required=True, help="codes ou `all`")
+    p.add_argument("--jobs", type=int, default=2, help="départements en parallèle (~2 Go chacun)")
+    p.set_defaults(fn=cmd_batch)
     args = ap.parse_args(argv)
     args.fn(args)
     return 0

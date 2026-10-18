@@ -7,12 +7,13 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 from pathlib import Path
 
 import httpx
-from tqdm import tqdm
 
 from .config import RAW_DIR, bdforet_url
+from .progress import tqdm
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ def _download(url: str, dest: Path, expected_md5: str | None = None) -> Path:
             log.info("présent : %s", dest.name)
             return dest
         log.warning("md5 différent, retéléchargement : %s", dest.name)
-    tmp = dest.with_suffix(dest.suffix + ".part")
+    tmp = dest.with_suffix(f"{dest.suffix}.{os.getpid()}.part")  # plusieurs processus (batch)
     with httpx.stream("GET", url, follow_redirects=True, timeout=120) as r:
         r.raise_for_status()
         total = int(r.headers.get("content-length", 0))
@@ -35,7 +36,7 @@ def _download(url: str, dest: Path, expected_md5: str | None = None) -> Path:
             for chunk in r.iter_bytes(1 << 20):
                 f.write(chunk)
                 bar.update(len(chunk))
-    tmp.rename(dest)
+    os.replace(tmp, dest)  # le dernier arrivé gagne, les deux fichiers sont identiques
     if expected_md5 and _md5(dest) != expected_md5:
         raise RuntimeError(f"md5 incorrect pour {dest}")
     return dest

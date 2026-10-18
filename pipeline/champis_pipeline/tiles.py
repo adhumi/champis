@@ -28,10 +28,10 @@ from rasterio.merge import merge
 from rasterio.transform import from_bounds as transform_from_bounds
 from rasterio.warp import reproject, transform_bounds
 from rasterio.windows import Window, from_bounds
-from tqdm import tqdm
 
 from . import SCORING_VERSION
 from .config import CRS_TILES, T_DIR, TILES_DIR, dept_dirs
+from .progress import tqdm
 from .scoring import NODATA_U16
 from .species import species_hash
 from .weather_grid import ALT_CLASS_M

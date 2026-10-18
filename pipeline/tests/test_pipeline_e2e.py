@@ -389,3 +389,59 @@ def test_cli_species_before_or_after_subcommand(monkeypatch):
     cli.main(["terrain", "--dept", "25", "--species", "a", "--species", "b"])
     cli.main(["terrain", "--dept", "25"])
     assert seen == [(["a"], True), (["a"], True), (["a", "b"], False), (None, False)]
+
+
+def test_batch_resumes_and_isolates_failures(tmp_path):
+    """Un département en échec n'arrête pas les autres ; les « ok » ne sont pas refaits sans force."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    from champis_pipeline import batch
+
+    calls: list[str] = []
+
+    def runner(dept, species, force):
+        calls.append(dept)
+        return batch.DeptResult(dept, dept != "02", "boom" if dept == "02" else "ok", 0.1, "t")
+
+    status_path = tmp_path / "batch_status.json"
+    st = batch.batch(
+        ["01", "02", "03"],
+        None,
+        jobs=2,
+        runner=runner,
+        executor_factory=ThreadPoolExecutor,
+        status_path=status_path,
+    )
+    assert sorted(calls) == ["01", "02", "03"]
+    assert st["01"]["ok"] and not st["02"]["ok"] and st["03"]["ok"]
+    assert json.loads(status_path.read_text(encoding="utf-8"))["02"]["message"] == "boom"
+    calls.clear()
+    batch.batch(
+        ["01", "02", "03"],
+        None,
+        jobs=2,
+        runner=runner,
+        executor_factory=ThreadPoolExecutor,
+        status_path=status_path,
+    )
+    assert calls == ["02"]  # reprise : seul l'échec est rejoué
+    calls.clear()
+    batch.batch(
+        ["01"],
+        None,
+        jobs=1,
+        force=True,
+        runner=runner,
+        executor_factory=ThreadPoolExecutor,
+        status_path=status_path,
+    )
+    assert calls == ["01"]
+
+
+def test_parse_depts():
+    from champis_pipeline.batch import DEPTS_ALL, parse_depts
+
+    assert parse_depts(["all"]) == DEPTS_ALL and len(DEPTS_ALL) == 96
+    assert parse_depts(["1", "2a", "25"]) == ["01", "2A", "25"]
+    with pytest.raises(SystemExit):
+        parse_depts(["99"])

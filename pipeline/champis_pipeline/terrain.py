@@ -8,9 +8,9 @@ from pathlib import Path
 import numpy as np
 import rasterio
 from rasterio.windows import Window
-from tqdm import tqdm
 
 from .config import BLOCK, T_DIR, dept_dirs
+from .progress import tqdm
 from .scoring import NODATA_U8, encode_u8, terrain_potential
 from .species import load_species, species_hash
 
