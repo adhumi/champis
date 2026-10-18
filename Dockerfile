@@ -19,7 +19,9 @@ COPY mapping mapping
 COPY shared shared
 COPY web web
 COPY data/weather_grid.json data/weather_grid.json
-COPY data/weather_seed.json data/weather_seed.json
+# Optionnel : le motif [n] rend le COPY tolérant si l'amorçage n'est pas encore versionné
+# (l'API démarre alors en avertissant, toutes les cellules sont indisponibles).
+COPY data/weather_seed.jso[n] data/
 RUN uv sync
 
 ENV CHAMPIS_WEATHER_GRID=/app/data/weather_grid.json \
