@@ -528,7 +528,10 @@ map.on("click", async (e) => {
   }
   const name = species.get(best.sid)?.names.fr ?? best.sid;
   if (mode() === "T") {
-    probe.textContent = `T = ${best.T.toFixed(3)} — ${classify(best.T).fr} (${name})`;
+    // sans météo, la classe vient de la couche A seule (pas de cellule pour s'y rabattre)
+    const { class_m, nodata } = palette.alt_encoding;
+    const alt = altIdx !== null && altIdx !== nodata ? ` · altitude ${altIdx * class_m}–${(altIdx + 1) * class_m} m` : "";
+    probe.textContent = `T = ${best.T.toFixed(3)} — ${classify(best.T).fr} (${name})${alt}`;
     return;
   }
   const cell = nearestCell(e.lngLat.lat, e.lngLat.lng);
