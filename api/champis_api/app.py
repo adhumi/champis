@@ -40,8 +40,17 @@ class State:
     cache: WeatherCache
 
 
+def _configure_logging() -> None:
+    """Uvicorn ne règle que ses propres loggers : sans ceci, les INFO de champis_api sont muets."""
+    root = logging.getLogger()
+    if not root.handlers:
+        logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    logging.getLogger("champis_api").setLevel(logging.INFO)
+
+
 def create_app(settings: Settings | None = None, state: State | None = None) -> FastAPI:
     settings = settings or Settings()
+    _configure_logging()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -85,7 +94,8 @@ def create_app(settings: Settings | None = None, state: State | None = None) -> 
 
     @app.get("/health")
     async def health() -> dict[str, str | int]:
-        return {"status": "ok", "cells": len(app.state.champis.grid)}
+        st = app.state.champis
+        return {"status": "ok", "cells": len(st.grid), "seeded": st.cache.seeded_cells()}
 
     if settings.serve_web:
 

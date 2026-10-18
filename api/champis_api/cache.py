@@ -144,5 +144,9 @@ class WeatherCache:
         ).fetchone()
         return {"months": json.loads(row[0])} if row else None
 
+    def seeded_cells(self) -> int:
+        """Cellules disposant d'une climatologie du sol, donc amorcées."""
+        return self.db.execute("SELECT COUNT(*) FROM soil_clim").fetchone()[0]
+
     def close(self) -> None:
         self.db.close()
