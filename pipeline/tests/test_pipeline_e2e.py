@@ -514,3 +514,25 @@ def test_publish_uploads_once_and_builds_manifest(tmp_path):
     assert parse_tile_name("random.pmtiles") is None
     with pytest.raises(FileNotFoundError):
         publish.publish(bucket, ["01"], ["boletus_edulis"], tiles_dir=tmp_path)
+
+
+def test_s3_config_from_env_accepts_railway_generic_names(monkeypatch):
+    from champis_pipeline.storage import S3Config
+
+    for k in (
+        "CHAMPIS_S3_ENDPOINT",
+        "CHAMPIS_S3_BUCKET",
+        "CHAMPIS_S3_REGION",
+        "AWS_ENDPOINT_URL",
+        "AWS_S3_BUCKET_NAME",
+        "AWS_DEFAULT_REGION",
+    ):
+        monkeypatch.delenv(k, raising=False)
+    assert S3Config.from_env() is None
+    monkeypatch.setenv("AWS_ENDPOINT_URL", "https://storage.railway.app")
+    monkeypatch.setenv("AWS_S3_BUCKET_NAME", "champis-tiles")
+    cfg = S3Config.from_env()
+    assert cfg.endpoint == "https://storage.railway.app" and cfg.bucket == "champis-tiles"
+    assert cfg.region == "auto"
+    monkeypatch.setenv("CHAMPIS_S3_BUCKET", "autre")  # CHAMPIS_* prime
+    assert S3Config.from_env().bucket == "autre"

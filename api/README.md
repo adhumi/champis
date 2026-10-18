@@ -31,8 +31,7 @@ Les PMTiles ne sont pas encore servis par le service (`/tiles` et le bucket vien
 | `CHAMPIS_WEATHER_SEED` | `data/weather_seed.json` | Amorçage (`champis-api seed`), importé au démarrage |
 | `CHAMPIS_CACHE_DB` | `data/weather_cache.db` | Cache SQLite des réponses Open-Meteo |
 | `CHAMPIS_OPEN_METEO_API_KEY` | *(vide)* | Clé du plan payant Open-Meteo (Standard) : prévision sur `customer-api` avec quota dédié ; vide = API gratuite |
-| `CHAMPIS_S3_ENDPOINT`, `CHAMPIS_S3_BUCKET` | *(vides)* | Bucket Railway des PMTiles (onglet Credentials : endpoint `https://storage.railway.app`, nom) ; vides = `/tiles` répond `configured: false` |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | *(vides)* | Identifiants du bucket (noms standard boto3) ; `CHAMPIS_S3_REGION` défaut `auto` |
+| `AWS_ENDPOINT_URL`, `AWS_S3_BUCKET_NAME`, `AWS_DEFAULT_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | *(vides)* | Bucket Railway des PMTiles, tels que les injecte « Connect Service to Bucket » avec le préréglage **AWS SDK (Generic)** ; vides = `/tiles` répond `configured: false`. `CHAMPIS_S3_ENDPOINT` / `CHAMPIS_S3_BUCKET` / `CHAMPIS_S3_REGION` priment s'ils sont posés |
 | `CHAMPIS_TILES_MODE` | `presign` | `presign` : URL présignées lues par le navigateur ; `proxy` : relais `/tiles/{name}` (si le bucket n'envoie pas les en-têtes CORS) |
 | `CHAMPIS_TILES_URL_HOURS` | `24` | Durée des URL présignées |
 | `CHAMPIS_CORS_ORIGINS` | `*` | Origines autorisées, séparées par des virgules |
@@ -44,7 +43,7 @@ Les PMTiles ne sont pas encore servis par le service (`/tiles` et le bucket vien
 
 Les tuiles ne tiennent ni dans l'image ni dans le dépôt (France ≈ 2–4 Go par espèce) : elles vont dans un **Railway Storage Bucket** (S3-compatible, privé, sortie gratuite par URL présignées). Procédure :
 
-1. Créer le bucket dans le projet Railway, relier ses identifiants au service API (variables ci-dessus), et les exporter aussi sur ton poste pour la publication.
+1. Créer le bucket dans le projet Railway, « Connect Service to Bucket » → service API, préréglage **AWS SDK (Generic)** ; exporter les cinq mêmes variables sur ton poste pour la publication.
 2. Après `champis-pipeline tiles --depts …` : `uv run champis-pipeline publish --depts … [--species …]` téléverse les PMTiles manquants et réécrit `tiles/manifest.json` (`{version, generated, depts_by_hash, tiles:[{kind, species, hash, scoring_version, depts_hash, name, key, bytes}]}`).
 3. La carte appelle `GET /tiles` au chargement et ouvre chaque fichier par son URL ; le glisser-déposer reste disponible. Si le navigateur refuse les URL présignées (CORS absent sur le bucket), passer `CHAMPIS_TILES_MODE=proxy` : l'API relaie les requêtes `Range` via `/tiles/{name}` (sortie service facturée, à éviter si `presign` marche).
 

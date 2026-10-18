@@ -4,10 +4,13 @@ Spec › Points ouverts › hébergement des PMTiles (18 oct. 2026). Le bucket e
 reçoit des URL présignées via `GET /tiles` (API), ou passe par le relais `GET /tiles/{name}`.
 Configuration par variables d'environnement, lues ici et par l'API :
 
-    CHAMPIS_S3_ENDPOINT   https://storage.railway.app (onglet Credentials du bucket)
-    CHAMPIS_S3_BUCKET     nom du bucket
-    CHAMPIS_S3_REGION     défaut « auto »
-    AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY   identifiants du bucket (noms standard boto3)
+    AWS_ENDPOINT_URL        https://storage.railway.app — ou CHAMPIS_S3_ENDPOINT
+    AWS_S3_BUCKET_NAME      nom du bucket                 — ou CHAMPIS_S3_BUCKET
+    AWS_DEFAULT_REGION      défaut « auto »               — ou CHAMPIS_S3_REGION
+    AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY   identifiants du bucket
+
+Les noms AWS_* sont ceux du préréglage « AWS SDK (Generic) » de Railway (Connect Service to
+Bucket) ; les CHAMPIS_S3_* priment s'ils sont posés.
 
 `Bucket` n'importe boto3 qu'à la construction : les tests passent un objet au même contrat.
 """
@@ -42,16 +45,15 @@ class S3Config:
     @classmethod
     def from_env(cls) -> S3Config | None:
         """None si le bucket n'est pas configuré (développement local, tests)."""
-        endpoint, bucket = (
-            os.environ.get("CHAMPIS_S3_ENDPOINT"),
-            os.environ.get("CHAMPIS_S3_BUCKET"),
-        )
+        env = os.environ.get
+        endpoint = env("CHAMPIS_S3_ENDPOINT") or env("AWS_ENDPOINT_URL")
+        bucket = env("CHAMPIS_S3_BUCKET") or env("AWS_S3_BUCKET_NAME")
         if not endpoint or not bucket:
             return None
         return cls(
             endpoint=endpoint,
             bucket=bucket,
-            region=os.environ.get("CHAMPIS_S3_REGION", "auto"),
+            region=env("CHAMPIS_S3_REGION") or env("AWS_DEFAULT_REGION") or "auto",
             access_key=os.environ.get("AWS_ACCESS_KEY_ID", ""),
             secret_key=os.environ.get("AWS_SECRET_ACCESS_KEY", ""),
         )
