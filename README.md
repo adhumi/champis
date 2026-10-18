@@ -6,7 +6,7 @@ Score d'un pixel de 25 m pour une espèce et un jour : `S = T × M × Φ` — po
 
 ## Phase 1 — faire tourner le pipeline sur le Doubs
 
-Prérequis : Python 3.12+, [uv](https://docs.astral.sh/uv/), ~5 Go de disque pour un département. Pas de GDAL système à installer : rasterio embarque le sien.
+Prérequis : Python 3.12+, [uv](https://docs.astral.sh/uv/), ~5 Go de disque pour un département. Variables locales (bucket, clé Open-Meteo) : `cp .env.example .env` et compléter ; le fichier est lu par les CLI et l'API, jamais commité. Pas de GDAL système à installer : rasterio embarque le sien.
 
 ```bash
 uv sync --group dev

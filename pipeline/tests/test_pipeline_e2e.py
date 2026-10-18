@@ -536,3 +536,19 @@ def test_s3_config_from_env_accepts_railway_generic_names(monkeypatch):
     assert cfg.region == "auto"
     monkeypatch.setenv("CHAMPIS_S3_BUCKET", "autre")  # CHAMPIS_* prime
     assert S3Config.from_env().bucket == "autre"
+
+
+def test_load_env_does_not_override(tmp_path, monkeypatch):
+    from champis_pipeline import config
+
+    env = tmp_path / ".env"
+    env.write_text("AWS_S3_BUCKET_NAME=depuis-dotenv\nCHAMPIS_TEST_ONLY=1\n", encoding="utf-8")
+    monkeypatch.setattr(config, "ENV_FILE", env)
+    monkeypatch.setenv("AWS_S3_BUCKET_NAME", "depuis-environnement")
+    monkeypatch.delenv("CHAMPIS_TEST_ONLY", raising=False)
+    assert config.load_env() is True
+    import os
+
+    assert os.environ["AWS_S3_BUCKET_NAME"] == "depuis-environnement"
+    assert os.environ["CHAMPIS_TEST_ONLY"] == "1"
+    monkeypatch.delenv("CHAMPIS_TEST_ONLY")
