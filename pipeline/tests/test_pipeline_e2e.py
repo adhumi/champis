@@ -445,3 +445,20 @@ def test_parse_depts():
     assert parse_depts(["1", "2a", "25"]) == ["01", "2A", "25"]
     with pytest.raises(SystemExit):
         parse_depts(["99"])
+
+
+def test_tile_reductions():
+    """Réduction 2×2 : T = moyenne des valides, A = premier valide ; tout nodata reste nodata."""
+    from champis_pipeline.tiles import NODATA, TILE, reduce_nearest, reduce_t
+
+    children = np.full((2 * TILE, 2 * TILE), NODATA, dtype=np.uint8)
+    children[0, 0], children[0, 1], children[1, 0], children[1, 1] = 100, 200, NODATA, 50
+    children[2, 2] = 7  # bloc (1, 1) : un seul pixel valide
+    t = reduce_t(children)
+    assert t[0, 0] == round((100 + 200 + 50) / 3) and t[1, 1] == 7 and t[5, 5] == NODATA
+    a = reduce_nearest(children)
+    assert a[0, 0] == 100 and a[1, 1] == 7 and a[5, 5] == NODATA
+    children[0, 0] = NODATA
+    assert (
+        reduce_nearest(children)[0, 0] == 200
+    )  # premier valide dans l'ordre (0,0),(0,1),(1,0),(1,1)
