@@ -260,6 +260,12 @@ def _precision(r: dict[str, Any]) -> str:
             f"écartées : {rj['undated']} sans date, {rj['imprecise']} imprécises, "
             f"{rj['rounded']} arrondies"
         )
+        by_m = rj.get("imprecise_by_m") or {}
+        if by_m:
+            order = sorted(by_m, key=lambda k: float(k.strip(">").split("-")[0]))
+            parts.append(
+                "incertitudes écartées (m) : " + ", ".join(f"{k} : {by_m[k]}" for k in order)
+            )
     return " ; ".join(parts)
 
 

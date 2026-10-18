@@ -322,6 +322,7 @@ def test_gbif_check_report(sandbox, tmp_path):
     )
     assert len(occ) == 37 and len(http.calls) == 2
     assert (rejected.undated, rejected.imprecise, rejected.rounded) == (1, 1, 1)
+    assert rejected.imprecise_by_m == {"1000-5000": 1}
     assert sum(o.precision == "fine_coords" for o in occ) == 1
     assert gbif.occurrences(
         "boletus_edulis", "Boletus edulis", bbox, http, cache_dir=tmp_path / "gbif"
