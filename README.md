@@ -19,7 +19,7 @@ uv run champis-pipeline all --dept 25
 1. **download** — BD Forêt V2 du Doubs (31 Mo, flux Géoplateforme IGN), pH SoilGrids (WCS ISRIC, découpe sur l'emprise), dalles Copernicus DEM 30 m (bucket public AWS). Tout va dans `data/raw/`, rien n'est retéléchargé s'il est présent.
 2. **grid** — rasters alignés 25 m Lambert-93 dans `data/grid/25/` : `host.tif` (essence dominante), `cover.tif`, `ph.tif`, `alt.tif`, `slope.tif`, `aspect.tif`.
 3. **terrain** — `data/T/<espèce>/25-<hash>.tif`, un par espèce (7 au départ). Quelques secondes par espèce.
-4. **tiles** — `data/tiles/T-<espèce>-<hash>-p1.0.0.pmtiles`, niveaux 6–15. Quelques minutes par espèce pour un département (z15 ≈ 7 000 tuiles).
+4. **tiles** — `data/tiles/T-<espèce>-<hash>-p1.0.0-d<hash>.pmtiles`, niveaux 6–15, plus la couche `A-300m-d<hash>.pmtiles` (classe d'altitude du pixel, commune à toutes les espèces, lue par la carte pour appliquer gel et phénologie par pixel). Quelques minutes par espèce pour un département (z15 ≈ 7 000 tuiles).
 5. **weather-grid** — `data/weather_grid.json` : les cellules météo 5 km où T > 0, avec leurs classes d'altitude ; c'est l'entrée de l'API.
 
 Puis `uv run champis-pipeline summary --dept 25` donne la surface par classe (excellent → très faible) par espèce : premier regard sur la crédibilité avant toute carte.

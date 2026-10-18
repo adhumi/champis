@@ -39,6 +39,7 @@ const $ = (id) => document.getElementById(id);
 let palette; // shared/palette.json
 let classes; // seuils triés décroissants avec rgb pré-parsé
 const species = new Map(); // id → { pm, names, group }
+let altLayer = null; // PMTiles A (classes d'altitude) : { pm, label }, commun à toutes les espèces
 let currentKey = null; // "s:<id>" ou "g:<group>"
 let tileVersion = 0; // incrémenté pour forcer le rendu quand la météo ou le jour change
 const transparentTile = makeTransparentTile();
@@ -86,13 +87,17 @@ function makeTransparentTile() {
   return c.convertToBlob({ type: "image/png" }).then((b) => b.arrayBuffer());
 }
 
-/** PNG gris+alpha → Float32Array de T (NaN = nodata). */
-async function decodeT(buf) {
+async function pngPixels(buf) {
   const bmp = await createImageBitmap(new Blob([buf], { type: "image/png" }));
   const c = new OffscreenCanvas(TILE, TILE);
   const ctx = c.getContext("2d");
   ctx.drawImage(bmp, 0, 0);
-  const px = ctx.getImageData(0, 0, TILE, TILE).data;
+  return ctx.getImageData(0, 0, TILE, TILE).data;
+}
+
+/** PNG gris+alpha → Float32Array de T (NaN = nodata). */
+async function decodeT(buf) {
+  const px = await pngPixels(buf);
   const { scale, nodata } = palette.tile_encoding;
   const out = new Float32Array(TILE * TILE);
   for (let i = 0; i < out.length; i++) {
@@ -100,6 +105,22 @@ async function decodeT(buf) {
     out[i] = px[i * 4 + 3] === 0 || v === nodata ? NaN : v / scale;
   }
   return out;
+}
+
+/** PNG de la couche A → indice de classe par pixel (nodata de la palette si inconnu). */
+async function decodeAlt(buf) {
+  const px = await pngPixels(buf);
+  const { nodata } = palette.alt_encoding;
+  const out = new Uint8Array(TILE * TILE);
+  for (let i = 0; i < out.length; i++) out[i] = px[i * 4 + 3] === 0 ? nodata : px[i * 4];
+  return out;
+}
+
+/** Indices de classe d'altitude de la tuile, ou null sans couche A (ou hors de son emprise). */
+async function altTile(z, x, y) {
+  if (!altLayer) return null;
+  const t = await altLayer.pm.getZxy(z, x, y);
+  return t?.data ? decodeAlt(t.data) : null;
 }
 
 function layerSpecies(key) {
@@ -119,20 +140,22 @@ async function speciesT(key, z, x, y) {
 }
 
 /** Valeur affichée par pixel : T (max du groupe) ou S = T × M_eff × Φ (max du groupe, règle 9). */
-function combine(arrays, z, x, y) {
+function combine(arrays, z, x, y, alt) {
   if (arrays.length === 0) return null;
   const out = new Float32Array(TILE * TILE).fill(NaN);
   const useWeather = mode() === "S";
   const blocks = TILE / WEATHER_BLOCK;
   for (const { sid, t } of arrays) {
-    // facteur météo par bloc de 16 × 16 px (une cellule météo fait 5 km : largement assez fin)
+    // cellule météo par bloc de 16 × 16 px (une cellule fait 5 km : largement assez fin) ;
+    // la classe d'altitude, elle, est lue par pixel dans la couche A quand elle est chargée
     let w = null;
     if (useWeather) {
-      w = new Float32Array(blocks * blocks);
+      w = [];
       for (let by = 0; by < blocks; by++) {
         for (let bx = 0; bx < blocks; bx++) {
           const [lon, lat] = tilePixelToLngLat(z, x, y, (bx + 0.5) * WEATHER_BLOCK, (by + 0.5) * WEATHER_BLOCK);
-          w[by * blocks + bx] = weatherFactor(sid, lat, lon) ?? NaN;
+          const r = weatherRow(sid, lat, lon);
+          w.push(r ? { ...r, byClass: new Map() } : null);
         }
       }
     }
@@ -140,8 +163,15 @@ function combine(arrays, z, x, y) {
       let v = t[i];
       if (Number.isNaN(v)) continue;
       if (w) {
-        const f = w[Math.floor(i / TILE / WEATHER_BLOCK) * blocks + Math.floor((i % TILE) / WEATHER_BLOCK)];
-        if (Number.isNaN(f)) continue; // pas de météo pour ce pixel : transparent, jamais 0,5
+        const r = w[Math.floor(i / TILE / WEATHER_BLOCK) * blocks + Math.floor((i % TILE) / WEATHER_BLOCK)];
+        if (!r) continue; // pas de météo pour ce pixel : transparent, jamais 0,5
+        const k = alt ? alt[i] : null;
+        let f = r.byClass.get(k);
+        if (f === undefined) {
+          f = factorAt(r, k);
+          r.byClass.set(k, f);
+        }
+        if (f === null) continue;
         v *= f;
       }
       if (Number.isNaN(out[i]) || v > out[i]) out[i] = v;
@@ -157,20 +187,33 @@ function tilePixelToLngLat(z, x, y, px, py) {
   return [lon, lat];
 }
 
-/** M_eff × Φ de l'espèce pour le point, depuis la cellule météo la plus proche ; null si inconnu. */
-function weatherFactor(sid, lat, lon) {
+/** Cellule météo la plus proche et sa ligne (par classe d'altitude) pour l'espèce et le jour ; null si inconnu. */
+function weatherRow(sid, lat, lon) {
   const cell = nearestCell(lat, lon);
-  if (!cell) return null;
-  const days = cell.species[sid];
-  if (!days) return null;
-  const row = days[currentDate()];
-  if (!row) return null;
-  // Classe d'altitude : celle de l'altitude médiane de la forêt de la cellule (les tuiles T ne
-  // portent pas l'altitude du pixel — limite connue, voir README).
-  const target = Math.floor(cell.elevation_m / 300) * 300 + 150;
-  const alt = cell.alt_classes.reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a));
-  const v = row[String(alt)];
+  const row = cell?.species[sid]?.[currentDate()];
+  return row ? { cell, row } : null;
+}
+
+/** Centre (m) de la classe d'altitude à utiliser parmi celles que l'API a calculées pour la cellule :
+ *  celle du pixel (indice k de la couche A) ; sans couche A ou altitude inconnue, celle de
+ *  l'altitude médiane de la forêt de la cellule. */
+function altCenter(cell, k) {
+  const { class_m, nodata } = palette.alt_encoding;
+  const alt = k === null || k === undefined || k === nodata ? cell.elevation_m : (k + 0.5) * class_m;
+  const target = Math.floor(alt / class_m) * class_m + class_m / 2;
+  return cell.alt_classes.reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a));
+}
+
+/** M_eff × Φ d'une ligne météo pour la classe d'altitude du pixel ; null si l'API ne l'a pas. */
+function factorAt({ cell, row }, k) {
+  const v = row[String(altCenter(cell, k))];
   return v ? v.M_eff * v.phi : null;
+}
+
+/** M_eff × Φ de l'espèce pour un point et un indice de classe d'altitude (null = inconnu). */
+function weatherFactor(sid, lat, lon, k) {
+  const r = weatherRow(sid, lat, lon);
+  return r ? factorAt(r, k) : null;
 }
 
 function nearestCell(lat, lon) {
@@ -211,7 +254,9 @@ maplibregl.addProtocol("champis", async (params) => {
   const m = params.url.match(/^champis:\/\/([^/]+)\/v\d+\/(\d+)\/(\d+)\/(\d+)$/);
   if (!m) throw new Error(`URL invalide : ${params.url}`);
   const [z, x, y] = [+m[2], +m[3], +m[4]];
-  const v = combine(await speciesT(m[1], z, x, y), z, x, y);
+  const arrays = await speciesT(m[1], z, x, y);
+  const alt = arrays.length && mode() === "S" ? await altTile(z, x, y) : null;
+  const v = combine(arrays, z, x, y, alt);
   return { data: v ? await colorize(v) : await transparentTile };
 });
 
@@ -359,8 +404,13 @@ async function fetchWeather() {
 // ---------------------------------------------------------------- chargement des PMTiles
 
 async function addSource(src, label) {
+  if (/(?:^|\/)A-\d+m-/.test(label)) {
+    altLayer = { pm: new pmtiles.PMTiles(src), label };
+    ++tileVersion;
+    return "A";
+  }
   const id = label.match(/(?:^|\/)T-([a-z_]+)-/)?.[1];
-  if (!id) throw new Error(`Nom inattendu (T-<espèce>-…pmtiles) : ${label}`);
+  if (!id) throw new Error(`Nom inattendu (T-<espèce>-… ou A-…pmtiles) : ${label}`);
   const pm = new pmtiles.PMTiles(src);
   const header = await pm.getHeader();
   const meta = await fetch(`../species/${id}.json`).then((r) => (r.ok ? r.json() : null));
@@ -391,8 +441,12 @@ async function addMany(items) {
   }
   $("status").textContent = [
     `${species.size} espèce(s) : ${[...species.values()].map((s) => s.names.fr).join(", ")}`,
+    altLayer
+      ? "Classes d'altitude : couche A chargée (gel et phénologie par pixel)"
+      : "Sans couche A : classe d'altitude = altitude médiane de la cellule météo",
     ...errors,
   ].join("\n");
+  if (currentKey) setLayer(currentKey); // une couche A ajoutée après coup change le rendu S
   fetchWeather();
 }
 
@@ -454,13 +508,14 @@ map.on("click", async (e) => {
   const ty = Math.floor(py / TILE);
   const i = Math.floor(py % TILE) * TILE + Math.floor(px % TILE);
   const arrays = await speciesT(currentKey, z, tx, ty);
+  const altIdx = (await altTile(z, tx, ty))?.[i] ?? null;
   probe.style.display = "block";
   // meilleure espèce du groupe au point cliqué (T seul, ou S si la météo est affichée)
   let best = null;
   for (const { sid, t } of arrays) {
     const T = t[i];
     if (Number.isNaN(T)) continue;
-    const w = mode() === "S" ? weatherFactor(sid, e.lngLat.lat, e.lngLat.lng) : 1;
+    const w = mode() === "S" ? weatherFactor(sid, e.lngLat.lat, e.lngLat.lng, altIdx) : 1;
     if (w === null) continue;
     const v = T * w;
     if (!best || v > best.v) best = { sid, T, v };
@@ -478,8 +533,10 @@ map.on("click", async (e) => {
   }
   const cell = nearestCell(e.lngLat.lat, e.lngLat.lng);
   const w = best.v / best.T;
+  const altTxt = altLayer && altIdx !== null && altIdx !== palette.alt_encoding.nodata ? "" : " (médiane cellule)";
   probe.textContent =
     `S = ${best.v.toFixed(3)} — ${classify(best.v).fr} (${name}, ${currentDate()}) · ` +
-    `T ${best.T.toFixed(2)} × M_eff·Φ ${w.toFixed(2)} · cellule ${cell.id}` +
+    `T ${best.T.toFixed(2)} × M_eff·Φ ${w.toFixed(2)} · cellule ${cell.id} · ` +
+    `classe ${altCenter(cell, altIdx)} m${altTxt}` +
     (cell.stale ? " · météo périmée" : "");
 });
