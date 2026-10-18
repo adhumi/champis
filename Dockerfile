@@ -19,9 +19,11 @@ COPY mapping mapping
 COPY shared shared
 COPY web web
 COPY data/weather_grid.json data/weather_grid.json
+COPY data/weather_seed.json data/weather_seed.json
 RUN uv sync
 
 ENV CHAMPIS_WEATHER_GRID=/app/data/weather_grid.json \
+    CHAMPIS_WEATHER_SEED=/app/data/weather_seed.json \
     CHAMPIS_CACHE_DB=/data/weather_cache.db \
     CHAMPIS_WARM_HOURS=3,15 \
     PORT=8000

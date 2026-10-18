@@ -2,6 +2,7 @@
 .venv
 data/*
 !data/weather_grid.json
+!data/weather_seed.json
 reports
 **/__pycache__
 **/.pytest_cache

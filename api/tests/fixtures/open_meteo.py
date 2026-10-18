@@ -115,6 +115,8 @@ def transport(sc: Scenario, today: date) -> httpx.MockTransport:
         host = request.url.host
         if host.startswith("customer-") and q.get("apikey", [""])[0] != "test-key":
             return httpx.Response(401, json={"reason": "apikey manquante ou invalide"})
+        if host == "archive-api.open-meteo.com" and "apikey" in q:
+            return httpx.Response(400, json={"reason": "clé inattendue sur l'API gratuite"})
         if host in ("api.open-meteo.com", "customer-api.open-meteo.com"):
             kind = "forecast"
             body = _forecast_body(sc, today, int(q["past_days"][0]), int(q["forecast_days"][0]))

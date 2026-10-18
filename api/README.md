@@ -17,7 +17,7 @@ uv run uvicorn champis_api.app:app --reload            # http://127.0.0.1:8000/d
 
 Un seul service, `Dockerfile` et `railway.toml` à la racine du dépôt (spec › Backend sur Railway).
 
-1. Versionner la grille météo : `uv run champis-pipeline weather-grid --depts 25` puis `git add data/weather_grid.json` (seule exception à `data/` ignoré ; quelques dizaines de ko).
+1. Versionner la grille météo et l'amorçage : `uv run champis-pipeline weather-grid --depts 25`, `uv run champis-api seed`, puis `git add data/weather_grid.json data/weather_seed.json` (seules exceptions à `data/` ignoré ; quelques Mo). Le Dockerfile copie les deux.
 2. Railway → New Project → Deploy from GitHub repo `adhumi/champis`, branche `main`. Le build utilise le `Dockerfile`.
 3. Ajouter un **volume** monté sur `/data` (le cache SQLite `weather_cache.db` y vit ; sans volume, chaque déploiement repart à froid).
 4. Variables déjà fixées dans l'image : `CHAMPIS_WEATHER_GRID`, `CHAMPIS_CACHE_DB=/data/weather_cache.db`, `CHAMPIS_WARM_HOURS=3,15` (pré-chauffe intégrée à 3 h et 15 h Paris, pas de second service). **À ajouter : `CHAMPIS_OPEN_METEO_API_KEY`** (plan payant Open-Meteo, en variable secrète Railway : l'IP de sortie Railway est partagée et bridée sur l'API gratuite). Optionnel : `CHAMPIS_WARM_ON_START=1` pour chauffer au premier déploiement (puis à retirer : chaque redéploiement relancerait un passage complet), `CHAMPIS_CORS_ORIGINS` pour restreindre.
@@ -28,8 +28,9 @@ Les PMTiles ne sont pas encore servis par le service (`/tiles` et le bucket vien
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `CHAMPIS_WEATHER_GRID` | `data/weather_grid.json` | Cellules météo (pipeline, étape `weather-grid`) |
+| `CHAMPIS_WEATHER_SEED` | `data/weather_seed.json` | Amorçage (`champis-api seed`), importé au démarrage |
 | `CHAMPIS_CACHE_DB` | `data/weather_cache.db` | Cache SQLite des réponses Open-Meteo |
-| `CHAMPIS_OPEN_METEO_API_KEY` | *(vide)* | Clé du plan payant Open-Meteo : bascule sur `customer-api` / `customer-archive-api` avec quota dédié ; vide = API gratuite |
+| `CHAMPIS_OPEN_METEO_API_KEY` | *(vide)* | Clé du plan payant Open-Meteo (Standard) : prévision sur `customer-api` avec quota dédié ; vide = API gratuite |
 | `CHAMPIS_CORS_ORIGINS` | `*` | Origines autorisées, séparées par des virgules |
 | `CHAMPIS_WARM_HOURS` | *(vide)* | Heures Paris de la pré-chauffe intégrée, ex. `3,15` ; vide = cron externe (`champis-api warm`) |
 | `CHAMPIS_WARM_ON_START` | `0` | `1` : pré-chauffe au démarrage |
@@ -46,19 +47,24 @@ Le client choisit la classe d'altitude de son pixel ; le score affiché est `T �
 
 ## Open-Meteo (skill `open-meteo`)
 
-`weather_client.py` est le seul module qui appelle Open-Meteo. Par cellule, trois jeux de données normalisés et mis en cache dans SQLite :
+`weather_client.py` est le seul module qui appelle Open-Meteo. Décision du 17 oct. 2026, **« amorcer, puis accumuler »** :
 
-| Jeu | API | Fenêtre | Cache |
-| --- | --- | --- | --- |
-| `forecast` | prévision, `past_days=60&forecast_days=8` | J−60 → J+7 : températures, `rain_sum`, neige, ET0, humidité du sol 0–9 cm (moyenne journalière pondérée 1/2/6 des couches horaires 0–1, 1–3, 3–9 cm). Le modèle ne remonte pas plus loin | 12 h |
-| `archive` | archive ERA5-Land, journalier | J−200 → J−1, toutes les variables dont `soil_moisture_0_to_7cm_mean` | 1 jour |
-| `soil_clim` | archive ERA5-Land, journalier | 10 ans de `soil_moisture_0_to_7cm_mean` → 11 quantiles par mois | permanent |
+| Donnée | Source | Quand |
+| --- | --- | --- |
+| Prévision J−60 → J+7 (températures, `rain_sum`, neige, ET0, humidité du sol 0–9 cm) | API prévision, **plan payant Standard** (`customer-api`, clé `CHAMPIS_OPEN_METEO_API_KEY`) | En service, un appel par cellule et par seau de 12 h |
+| Historique J−200 → J−61 | Les ~60 jours passés de chaque prévision, **accumulés** dans SQLite (`history`) | Automatique, à chaque prévision fraîche |
+| Historique initial + climatologie du sol (10 ans → 11 quantiles/mois) | **Amorçage** `champis-api seed` sur l'archive ERA5-Land **gratuite**, hors Railway | Une fois par grille → `data/weather_seed.json`, versionné, importé au démarrage |
 
-**Fusion** (`weather_service.build_series`, décision du 17 oct. 2026) : par variable et par jour, la prévision si elle a la valeur, sinon l'archive. De J−60 à J+7 tout vient donc du modèle de prévision (pas de discontinuité au jour J) ; avant J−60 — mémoire estivale, bout de fenêtre pluie des girolles — c'est ERA5-Land. Une valeur absente des deux → 502 qui nomme la variable et les dates.
+L'API historique n'est pas dans le plan Standard et l'IP de sortie Railway est bridée sur l'API gratuite : en service, Railway ne parle donc **qu'à la prévision**. Les dates d'amorçage sont remplacées par la prévision dès qu'elle les couvre (même modèle avant et après J). Une valeur absente de la prévision et de l'historique → 502 nommant la variable et les dates, jamais une approximation.
 
-L'humidité du jour est exprimée en percentile de la climatologie du mois (interpolation linéaire entre quantiles).
+```bash
+uv run champis-api seed                     # depuis ton poste : ~265 cellules × 2 requêtes, 5 s d'intervalle ≈ 45 min
+git add data/weather_seed.json && git commit -m "amorçage météo Doubs" && git push
+```
 
-**Quotas.** Open-Meteo pondère chaque requête par le nombre de points et la longueur de la période (gratuit ≈ 600 appels pondérés/min, 5 000/h, 10 000/j) : une requête horaire sur 10 ans valait des milliers d'appels, d'où le 429 du premier test réel. Désormais : rien d'horaire hors prévision, lots de 100 / 50 / 10 points, 250 ms minimum entre deux requêtes, `/weather/bbox` plafonné à 40 cellules (422 « zoomez » au-delà ; les cellules en cache ne coûtent rien). Open-Meteo injoignable ou 429 → dernière réponse connue avec `"stale": true` ; aucune réponse connue → 503 (avec `Retry-After` sur un 429). Valeur absente des deux sources → 502, jamais une approximation silencieuse.
+Reprise possible (les cellules déjà dans le fichier ne sont pas refaites). Après un `weather-grid` qui ajoute des cellules, relancer `seed` : seules les nouvelles sont faites.
+
+**Quotas** : lissage 250 ms entre requêtes (2 s en pré-chauffe, 5 s en amorçage), lots de 100 points, `/weather/bbox` plafonné à 40 cellules (422 « zoomez »), 429 court réessayé une fois sinon indisponibilité (cache périmé, cellule `unavailable`, 503 + `Retry-After`). Une cellule sans climatologie amorcée est `unavailable` avec la raison « amorçage requis ».
 
 ## Tests
 

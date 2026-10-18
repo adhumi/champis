@@ -37,27 +37,25 @@ OPEN_METEO_NAMES = {
 
 
 def build_series(raw: CellRaw) -> DailySeries:
-    """Fusion par variable et par jour : prévision si présente, sinon archive ERA5-Land.
+    """Fusion par variable et par jour : prévision si présente, sinon historique accumulé.
 
-    Le modèle de prévision ne remonte que ~60 jours ; avant, l'archive prend le relais (mémoire
-    estivale, bout de fenêtre pluie des girolles). De J−60 à J+7 tout vient de la prévision : pas
-    de discontinuité au jour J. Une valeur absente des deux sources est une erreur (SCHEMA.md :
-    jamais une approximation silencieuse), qui nomme la variable et les dates.
+    La prévision couvre ~J−60 → J+7 ; avant, l'historique (jours de prévision passés accumulés,
+    amorçage ERA5-Land pour les plus anciens) prend le relais : mémoire estivale, bout de fenêtre
+    pluie des girolles. Une valeur absente des deux sources est une erreur (SCHEMA.md : jamais une
+    approximation silencieuse), qui nomme la variable et les dates.
     """
-    f, a = raw.forecast, raw.archive
+    f, h = raw.forecast, raw.history
     f_idx = {d: i for i, d in enumerate(f["dates"])}
-    a_idx = {d: i for i, d in enumerate(a["dates"])}
-    first = min(a["dates"][0], f["dates"][0])
-    last = max(a["dates"][-1], f["dates"][-1])
-    dates = _date_range(date.fromisoformat(first), date.fromisoformat(last))
+    first = min([f["dates"][0], *h]) if h else f["dates"][0]
+    dates = _date_range(date.fromisoformat(first), date.fromisoformat(f["dates"][-1]))
     merged: dict[str, list[float]] = {}
     for var in VARS:
         values, missing = [], []
         for d in dates:
             k = d.isoformat()
             v = f[var][f_idx[k]] if k in f_idx else None
-            if v is None and k in a_idx:
-                v = a[var][a_idx[k]]
+            if v is None and k in h:
+                v = h[k].get(var)
             if v is None:
                 missing.append(k)
             values.append(v)

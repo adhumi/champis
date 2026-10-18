@@ -7,14 +7,14 @@ description: Comment Champis consomme Open-Meteo (variables, deux API, correctio
 
 Un seul module client : `api/champis_api/weather_client.py`. Personne d'autre n'appelle Open-Meteo. **Plan payant avec clé API** (décision du 17 oct. 2026, après des 429 depuis l'IP partagée de Railway) : `CHAMPIS_OPEN_METEO_API_KEY` bascule le client sur `customer-api.open-meteo.com` / `customer-archive-api.open-meteo.com` (`apikey=`), quota dédié ; sans clé, API gratuite (~10 000 appels pondérés/jour) pour le dev local. Mention « Weather data by Open-Meteo.com » dans l'« à propos » des clients.
 
-## Deux API, deux rôles
+## Deux API, deux rôles — « amorcer, puis accumuler » (décision du 17 oct. 2026)
 
-| API | URL | Sert à | Pourquoi |
+| API | URL | Sert à | Quand |
 | --- | --- | --- | --- |
-| Prévision | `https://api.open-meteo.com/v1/forecast` avec `past_days=60&forecast_days=8` | J−60 → J+7 : temp, rain, trigger, humidité du sol, frost, water_balance, heat, persistance | Même modèle avant et après J : pas de discontinuité le jour J. Le modèle ne remonte que ~60 j (au-delà `null`, constaté le 17 oct. 2026) |
-| Archive (ERA5-Land) | `https://archive-api.open-meteo.com/v1/archive`, **journalier uniquement** (`daily=…,soil_moisture_0_to_7cm_mean`) | Toutes les variables J−200 → J−1 (comble les `null` de la prévision : mémoire estivale, bout de fenêtre pluie des girolles) et climatologie de l'humidité du sol (10 ans, même mois) | Seule source profonde ; ~11 km, lissée |
+| Prévision (plan payant Standard, clé) | `https://customer-api.open-meteo.com/v1/forecast` avec `past_days=60&forecast_days=8` | J−60 → J+7 : temp, rain, trigger, humidité du sol, frost, water_balance, heat, persistance. Ses jours passés sont **accumulés** dans `history` (SQLite) : au bout de quelques jours l'historique couvre J−200 avec le même modèle que la prévision | En service, Railway, un appel par cellule et par seau de 12 h |
+| Archive (ERA5-Land, API gratuite) | `https://archive-api.open-meteo.com/v1/archive`, journalier (`soil_moisture_0_to_7cm_mean` inclus) | **Amorçage seulement** (`champis-api seed`, hors Railway) : historique initial J−200 → J−1 et climatologie du sol (10 ans → 11 quantiles/mois) → `data/weather_seed.json`, versionné, importé au démarrage | Une fois par grille |
 
-Fusion par variable et par jour (`weather_service.build_series`) : **prévision si présente, sinon archive**. Les fenêtres courtes (≤ 47 j avant J−3) restent donc 100 % prévision ; seule la mémoire, et pour les girolles l'extrémité de la fenêtre pluie, mélangent les deux modèles — décision du 17 oct. 2026, assumée dans la spec.
+Pourquoi : l'API historique n'est pas dans le plan Standard, et l'IP de sortie Railway est bridée (429) sur l'API gratuite. En service, l'API ne parle donc **qu'à la prévision**. Fusion par variable et par jour (`weather_service.build_series`) : **prévision si présente, sinon historique** ; une valeur absente des deux → 502 nommant la variable et les dates.
 
 ## Variables (`daily=`)
 
@@ -24,6 +24,7 @@ Fusion par variable et par jour (`weather_service.build_series`) : **prévision 
 
 ## Grille et cache
 
+- L'historique (`history`, source `forecast` écrase, `seed` ne comble que les trous ; jours complets seulement ; purge au-delà de 400 j) et la climatologie (`soil_clim`) vivent dans le même SQLite que le cache. Une cellule sans climatologie amorcée est `unavailable` (« amorçage requis »).
 - Les cellules sont les points de `data/weather_grid.json` (étape `weather-grid` du pipeline : carrés de 5 km alignés Lambert-93 où `T > 0` pour au moins une espèce ; `{version: 1, cell_m: 5000, cells: [{id, lat, lon, alt_classes, elevation_m}]}`, `id` = coin SO en km, `alt_classes` = centres des classes de 300 m sous la forêt). ~25 000 cellules France. Lu par `champis_api.grid`.
 - Cache des réponses brutes Open-Meteo **12 h par cellule** (prévision ; archive 1 jour ; climatologie permanente), clé `cell_id:kind:bucket`, stockage SQLite (`weather_cache.db` sur le volume Railway). Le scoring se recalcule à partir du cache, jamais de nouvel appel pour changer d'espèce ou de jour. Pas de temps réel : décision du 17 oct. 2026.
 - **Quotas** : Open-Meteo pondère chaque requête par le nombre de points **et** la longueur de la période (gratuit ≈ 600 appels pondérés/min, 5 000/h, 10 000/j). Règles : jamais d'horaire hors prévision ; lots de 100 (prévision) / 50 (archive) / 10 (climatologie) points ; 250 ms minimum entre deux requêtes ; `/weather/bbox` plafonné à 40 cellules (422 « zoomez ») ; un 429 à courte attente (`Retry-After` ≤ 10 s) est réessayé **une** fois, sinon c'est une indisponibilité (cache périmé, sinon cellule `unavailable` dans `/weather/bbox`, 503 + `Retry-After` sur `/weather`) ; une cellule indisponible ne bloque jamais les autres. Le passage France entière passe par le plan payant (clé API), décidé le 17 oct. 2026.
@@ -39,7 +40,7 @@ Pour chaque classe d'altitude `a` de la cellule (centres 150, 450, 750… m) : `
 Règles dans `species/SCHEMA.md` et skill `champis-model`. Rappels d'implémentation :
 - Fenêtres glissantes calculées pour chaque J de J−`persistence.days` à J+7 (la persistance a besoin des M passés).
 - `trigger` : parcourir tous les événements (`≥ event_mm` sur `event_days` jours consécutifs, hors neige) des `lag_days.max` derniers jours ; facteur = max des trapèzes.
-- `soil_moisture_pct` : percentile de la valeur du jour (prévision, 0–9 cm) dans la distribution ERA5-Land 0–7 cm de la cellule pour le même mois sur 10 ans : 11 quantiles par mois, calculés **à la demande par l'API** (une requête archive par cellule, groupée par 10) et cachés à vie dans SQLite (`soil_clim`), interpolation linéaire. Deux modèles différents : seul le percentile est utilisé, jamais la valeur absolue (décision du 17 oct. 2026).
+- `soil_moisture_pct` : percentile de la valeur du jour (prévision, 0–9 cm) dans la distribution ERA5-Land 0–7 cm de la cellule pour le même mois sur 10 ans : 11 quantiles par mois, **amorcés une fois** par `champis-api seed` (archive gratuite, hors Railway) et importés dans SQLite (`soil_clim`), interpolation linéaire. Deux modèles différents : seul le percentile est utilisé, jamais la valeur absolue (décision du 17 oct. 2026).
 - `water_balance` : `Σ(rain_sum − et0)` sur `window_days`.
 - `memory` : cumul `rain_sum` sur `[J−118, J−28]` (archive).
 - Réponse `/weather` : pour chaque jour, `M`, `Φ`, `M_eff` par classe d'altitude **et le détail des facteurs** (`temp`, `rain`, `trigger`, `soil_moisture`, `frost`, `water_balance`, `heat`, `memory`) : la fiche « pourquoi c'est vert » en dépend.
