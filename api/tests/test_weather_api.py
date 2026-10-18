@@ -437,3 +437,130 @@ def test_next_warm_picks_next_local_hour():
     assert next_warm(datetime(2026, 10, 17, 23, 59, tzinfo=paris), (3,)) == datetime(
         2026, 10, 18, 3, tzinfo=paris
     )
+
+
+class _FakeBucket:
+    def __init__(self, manifest):
+        self.manifest = manifest
+        self.presigned: list[str] = []
+
+    def get_json(self, key):
+        return self.manifest if key == "tiles/manifest.json" else None
+
+    def presign(self, key, expires_s):
+        self.presigned.append(key)
+        return f"https://bucket.test/{key}?X-Amz-Expires={expires_s}"
+
+    def list(self, prefix):
+        return {}
+
+    def upload(self, path, key):
+        raise AssertionError
+
+    def put_json(self, key, obj):
+        raise AssertionError
+
+
+_MANIFEST = {
+    "version": 1,
+    "generated": "2026-10-18T00:00:00+00:00",
+    "depts_by_hash": {"8c1f10": ["25"]},
+    "tiles": [
+        {
+            "kind": "T",
+            "species": "boletus_edulis",
+            "hash": "42a4fdc9",
+            "scoring_version": "1.0.0",
+            "depts_hash": "8c1f10",
+            "name": "T-boletus_edulis-42a4fdc9-p1.0.0-d8c1f10.pmtiles",
+            "key": "tiles/T-boletus_edulis-42a4fdc9-p1.0.0-d8c1f10.pmtiles",
+            "bytes": 12345,
+        }
+    ],
+}
+
+
+@pytest.mark.asyncio
+async def test_tiles_without_bucket(api):
+    r = await api.get("/tiles")
+    assert r.json() == {"configured": False, "mode": None, "tiles": [], "depts_by_hash": {}}
+    assert (
+        await api.get("/tiles/T-boletus_edulis-42a4fdc9-p1.0.0-d8c1f10.pmtiles")
+    ).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_tiles_presign_mode(grid, scenario):
+    from champis_api.app import State, create_app
+
+    client = make_client(scenario)
+    bucket = _FakeBucket(_MANIFEST)
+    app = create_app(
+        state=State(
+            grid=grid,
+            client=client,
+            cache=client.cache,
+            bucket=bucket,
+            tiles_mode="presign",
+            tiles_url_hours=24,
+        )
+    )
+    async with (
+        app.router.lifespan_context(app),
+        httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c,
+    ):
+        body = (await c.get("/tiles")).json()
+    assert body["configured"] and body["mode"] == "presign"
+    assert (
+        body["tiles"][0]["url"].startswith("https://bucket.test/tiles/T-boletus_edulis")
+        and "86400" in body["tiles"][0]["url"]
+    )
+    assert body["depts_by_hash"] == {"8c1f10": ["25"]}
+    assert bucket.presigned == [_MANIFEST["tiles"][0]["key"]]
+
+
+@pytest.mark.asyncio
+async def test_tiles_proxy_mode_relays_range(grid, scenario):
+    """En mode proxy, /tiles renvoie des URL relatives et /tiles/{name} relaie Range → 206."""
+    from champis_api.app import State, create_app
+    from champis_api.weather_client import OpenMeteoClient
+
+    blob = bytes(range(256)) * 4
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.host == "bucket.test":
+            rng = req.headers.get("range")
+            if rng:
+                a, b = (int(x) for x in rng.removeprefix("bytes=").split("-"))
+                return httpx.Response(
+                    206,
+                    content=blob[a : b + 1],
+                    headers={
+                        "content-range": f"bytes {a}-{b}/{len(blob)}",
+                        "etag": '"abc"',
+                        "content-type": "application/octet-stream",
+                    },
+                )
+            return httpx.Response(200, content=blob)
+        return httpx.Response(404)
+
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    client = OpenMeteoClient(http, make_client(scenario).cache, now=lambda: NOW)
+    bucket = _FakeBucket(_MANIFEST)
+    app = create_app(
+        state=State(grid=grid, client=client, cache=client.cache, bucket=bucket, tiles_mode="proxy")
+    )
+    async with (
+        app.router.lifespan_context(app),
+        httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c,
+    ):
+        body = (await c.get("/tiles")).json()
+        assert (
+            body["mode"] == "proxy"
+            and body["tiles"][0]["url"] == f"/tiles/{_MANIFEST['tiles'][0]['name']}"
+        )
+        r = await c.get(body["tiles"][0]["url"], headers={"Range": "bytes=10-19"})
+        assert r.status_code == 206 and r.content == blob[10:20]
+        assert r.headers["content-range"] == f"bytes 10-19/{len(blob)}"
+        assert r.headers["accept-ranges"] == "bytes" and "immutable" in r.headers["cache-control"]
+        assert (await c.get("/tiles/pas-un-nom.pmtiles")).status_code == 404

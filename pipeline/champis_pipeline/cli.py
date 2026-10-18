@@ -1,6 +1,6 @@
 """CLI : `champis-pipeline <étape> --dept 25 [--species boletus_edulis] [--force]`.
 
-Étapes : download · grid · terrain · tiles · weather-grid · all · summary · check · explain · batch
+Étapes : download · grid · terrain · tiles · weather-grid · all · summary · check · explain · batch · publish
 """
 
 from __future__ import annotations
@@ -112,6 +112,20 @@ def cmd_batch(args) -> None:
         raise SystemExit(1)
 
 
+def cmd_publish(args) -> None:
+    """PMTiles de data/tiles → bucket S3 (variables CHAMPIS_S3_*, AWS_*), manifeste tiles/manifest.json."""
+    from . import batch, publish
+    from .storage import Bucket, S3Config
+
+    cfg = S3Config.from_env()
+    if cfg is None:
+        raise SystemExit("bucket non configuré : CHAMPIS_S3_ENDPOINT et CHAMPIS_S3_BUCKET requis")
+    manifest = publish.publish(Bucket(cfg), batch.parse_depts(args.depts), _species(args))
+    for t in manifest["tiles"]:
+        print(f"{t['name']}  {t['bytes'] / 1e6:.1f} Mo")
+    print(f"{len(manifest['tiles'])} fichiers dans {cfg.bucket}/{manifest and 'tiles/'}")
+
+
 def cmd_all(args) -> None:
     cmd_download(args)
     cmd_grid(args)
@@ -149,6 +163,9 @@ def main(argv: list[str] | None = None) -> int:
         if name == "tiles":
             p.add_argument("--jobs", type=int, default=None, help="processus pour le niveau 15")
         p.set_defaults(fn=fn)
+    p = sub.add_parser("publish", parents=[common])
+    p.add_argument("--depts", nargs="+", required=True, help="codes ou `all`")
+    p.set_defaults(fn=cmd_publish)
     p = sub.add_parser("batch", parents=[common])
     p.add_argument("--depts", nargs="+", required=True, help="codes ou `all`")
     p.add_argument("--jobs", type=int, default=2, help="départements en parallèle (~2 Go chacun)")
