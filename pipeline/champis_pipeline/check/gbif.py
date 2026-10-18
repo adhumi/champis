@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +29,7 @@ MAX_OFFSET = 100_000  # limite de l'API search ; au-delà il faudrait l'API down
 MAX_UNCERTAINTY_M = 100
 MIN_DECIMALS = 4  # 0,0001° ≈ 11 m en latitude, 8 m en longitude en France
 GBIF_DIR = RAW_DIR / "gbif"
-CACHE_VERSION = 2
+CACHE_VERSION = 3
 
 
 @dataclass(frozen=True)
@@ -43,13 +43,26 @@ class Occurrence:
     precision: str  # "declared" (≤ 100 m déclarés) ou "fine_coords" (inconnue, ≥ 4 décimales)
 
 
+UNCERTAINTY_BUCKETS_M = (250, 500, 1000, 5000)  # bornes des classes d'incertitude écartée
+
+
 @dataclass
 class Rejected:
-    """Compteurs des enregistrements écartés, pour le rapport."""
+    """Compteurs des enregistrements écartés, pour le rapport (et pour choisir un seuil)."""
 
     undated: int = 0
     imprecise: int = 0  # incertitude déclarée > MAX_UNCERTAINTY_M
     rounded: int = 0  # incertitude inconnue et coordonnées à moins de MIN_DECIMALS décimales
+    imprecise_by_m: dict[str, int] = field(default_factory=dict)  # "100-250", …, ">5000"
+
+
+def _uncertainty_bucket(unc_m: float) -> str:
+    lo = MAX_UNCERTAINTY_M
+    for hi in UNCERTAINTY_BUCKETS_M:
+        if unc_m <= hi:
+            return f"{lo}-{hi}"
+        lo = hi
+    return f">{lo}"
 
 
 def taxon_key(name_la: str, http: httpx.Client) -> int:
@@ -151,6 +164,8 @@ def _parse(rec: dict[str, Any], rejected: Rejected) -> Occurrence | None:
     if unc is not None:
         if float(unc) > MAX_UNCERTAINTY_M:
             rejected.imprecise += 1
+            b = _uncertainty_bucket(float(unc))
+            rejected.imprecise_by_m[b] = rejected.imprecise_by_m.get(b, 0) + 1
             return None
         precision = "declared"
     elif min(_decimals(lat), _decimals(lon)) >= MIN_DECIMALS:
