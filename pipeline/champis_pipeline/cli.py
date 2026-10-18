@@ -110,8 +110,12 @@ def cmd_all(args) -> None:
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     ap = argparse.ArgumentParser(prog="champis-pipeline")
+    # --species / --force acceptés avant ou après la sous-commande (les deux formes dans les docs)
     ap.add_argument("--species", action="append", help="id d'espèce (répétable) ; défaut : toutes")
     ap.add_argument("--force", action="store_true")
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--species", action="append", default=argparse.SUPPRESS)
+    common.add_argument("--force", action="store_true", default=argparse.SUPPRESS)
     sub = ap.add_subparsers(dest="cmd", required=True)
     for name, fn in (
         ("download", cmd_download),
@@ -122,11 +126,11 @@ def main(argv: list[str] | None = None) -> int:
         ("explain", cmd_explain),
         ("all", cmd_all),
     ):
-        p = sub.add_parser(name)
+        p = sub.add_parser(name, parents=[common])
         p.add_argument("--dept", required=True)
         p.set_defaults(fn=fn)
     for name, fn in (("tiles", cmd_tiles), ("weather-grid", cmd_weather_grid)):
-        p = sub.add_parser(name)
+        p = sub.add_parser(name, parents=[common])
         p.add_argument("--depts", nargs="+", required=True)
         p.set_defaults(fn=fn)
     args = ap.parse_args(argv)

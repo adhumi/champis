@@ -376,3 +376,16 @@ def test_explain_factors(sandbox, tmp_path):
     caps = wi["excellent_share_if_host_capped_at"]
     assert caps["0.9"] >= caps["0.8"] >= caps["0.7"]
     assert (tmp_path / "reports" / f"explain-boletus_edulis-{DEPT}.json").exists()
+
+
+def test_cli_species_before_or_after_subcommand(monkeypatch):
+    """`--species x terrain --dept 25` et `terrain --dept 25 --species x` sont équivalents."""
+    from champis_pipeline import cli
+
+    seen = []
+    monkeypatch.setattr(cli, "cmd_terrain", lambda args: seen.append((args.species, args.force)))
+    cli.main(["--species", "a", "--force", "terrain", "--dept", "25"])
+    cli.main(["terrain", "--dept", "25", "--species", "a", "--force"])
+    cli.main(["terrain", "--dept", "25", "--species", "a", "--species", "b"])
+    cli.main(["terrain", "--dept", "25"])
+    assert seen == [(["a"], True), (["a"], True), (["a", "b"], False), (None, False)]
