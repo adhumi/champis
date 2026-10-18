@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import multiprocessing
 import os
 import time
 import traceback
@@ -79,10 +80,15 @@ def batch(
     jobs: int = 2,
     force: bool = False,
     runner: Callable[[str, list[str] | None, bool], DeptResult] = run_dept,
-    executor_factory: Callable[[int], Executor] = ProcessPoolExecutor,
+    executor_factory: Callable[[int], Executor] | None = None,  # défaut : « spawn »
     status_path: Path = STATUS_FILE,
 ) -> dict[str, dict]:
     """Lance `runner` sur chaque département manquant, `jobs` à la fois ; écrit l'état au fil de l'eau."""
+    if executor_factory is None:
+
+        def executor_factory(n: int) -> Executor:
+            return ProcessPoolExecutor(n, mp_context=multiprocessing.get_context("spawn"))
+
     status = load_status(status_path)
     todo = [d for d in depts if force or status.get(d, {}).get("ok") is not True]
     log.info("batch : %d départements à faire, %d déjà ok", len(todo), len(depts) - len(todo))

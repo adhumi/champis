@@ -43,9 +43,10 @@ def cmd_terrain(args) -> None:
 
 
 def cmd_tiles(args) -> None:
+    jobs = getattr(args, "jobs", None)
     for sid in _species(args):
-        print(tiles.build(sid, args.depts, args.force))
-    print(tiles.build_alt(args.depts, args.force))  # couche A, commune à toutes les espèces
+        print(tiles.build(sid, args.depts, args.force, jobs))
+    print(tiles.build_alt(args.depts, args.force, jobs))  # couche A, commune à toutes les espèces
 
 
 def cmd_weather_grid(args) -> None:
@@ -145,6 +146,8 @@ def main(argv: list[str] | None = None) -> int:
     for name, fn in (("tiles", cmd_tiles), ("weather-grid", cmd_weather_grid)):
         p = sub.add_parser(name, parents=[common])
         p.add_argument("--depts", nargs="+", required=True)
+        if name == "tiles":
+            p.add_argument("--jobs", type=int, default=None, help="processus pour le niveau 15")
         p.set_defaults(fn=fn)
     p = sub.add_parser("batch", parents=[common])
     p.add_argument("--depts", nargs="+", required=True, help="codes ou `all`")
