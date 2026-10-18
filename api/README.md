@@ -62,7 +62,7 @@ uv run champis-api seed                     # depuis ton poste : ~265 cellules �
 git add data/weather_seed.json && git commit -m "amorçage météo Doubs" && git push
 ```
 
-Reprise possible (les cellules déjà dans le fichier ne sont pas refaites). Après un `weather-grid` qui ajoute des cellules, relancer `seed` : seules les nouvelles sont faites.
+Un 429 (quota horaire de l'archive gratuite) ne fait pas échouer la commande : elle attend (`Retry-After`, sinon 1 → 15 min) et reprend la même cellule ; laisse-la tourner. Reprise possible (les cellules déjà dans le fichier ne sont pas refaites). Après un `weather-grid` qui ajoute des cellules, relancer `seed` : seules les nouvelles sont faites.
 
 **Quotas** : lissage 250 ms entre requêtes (2 s en pré-chauffe, 5 s en amorçage), lots de 100 points, `/weather/bbox` plafonné à 40 cellules (422 « zoomez »), 429 court réessayé une fois sinon indisponibilité (cache périmé, cellule `unavailable`, 503 + `Retry-After`). Une cellule sans climatologie amorcée est `unavailable` avec la raison « amorçage requis ».
 

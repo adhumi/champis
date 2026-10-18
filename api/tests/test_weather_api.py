@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+import httpx
 import pytest
 from champis_api.cache import WeatherCache
 from champis_api.scoring import phenology_window
@@ -318,6 +319,34 @@ async def test_seed_command_writes_file_and_imports(grid, scenario, tmp_path):
     cache = WeatherCache()
     assert import_seed(cache, out) == 2
     assert cache.history_days(CELL) == 200 and cache.soil_clim(CELL) is not None
+
+
+@pytest.mark.asyncio
+async def test_seed_waits_out_a_quota_429_and_resumes_the_same_cell(grid, scenario, tmp_path):
+    """Un 429 de l'archive gratuite ne fait pas planter l'amorçage : attente puis même cellule."""
+    from champis_api.seed import seed
+
+    scenario.fail, scenario.fail_status, scenario.fail_once = {"archive"}, 429, True
+    scenario.retry_after = "120"
+    slept: list[float] = []
+
+    async def fake_sleep(s: float) -> None:
+        slept.append(s)
+
+    client = make_client(scenario, seeded=False)
+    data = await seed(grid, client, tmp_path / "seed.json", today=TODAY, sleep=fake_sleep)
+    assert set(data["cells"]) == set(grid.cells)
+    assert slept == [120.0]
+    assert scenario.calls.count("archive") == 3  # la cellule en échec est refaite, pas sautée
+
+
+@pytest.mark.asyncio
+async def test_seed_does_not_retry_a_non_quota_error(grid, scenario, tmp_path):
+    from champis_api.seed import seed
+
+    scenario.fail, scenario.fail_status = {"archive"}, 403
+    with pytest.raises(httpx.HTTPStatusError):
+        await seed(grid, make_client(scenario, seeded=False), tmp_path / "s.json", today=TODAY)
 
 
 @pytest.mark.asyncio
