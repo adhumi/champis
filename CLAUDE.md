@@ -31,6 +31,9 @@ uv run champis-pipeline terrain  --dept 25 [--species boletus_edulis]
 uv run champis-pipeline summary  --dept 25
 uv run champis-pipeline tiles    --depts 25 [--species …]
 uv run champis-pipeline all      --dept 25
+uv run champis-pipeline batch    --depts all --jobs 3   # download+grid+terrain, parallèle, reprise
+uv run champis-pipeline check    --dept 25              # contrôle GBIF
+uv run champis-pipeline explain  --dept 25 --species boletus_edulis
 ```
 
 ## Règles
