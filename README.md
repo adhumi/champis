@@ -24,6 +24,8 @@ uv run champis-pipeline all --dept 25
 
 Puis `uv run champis-pipeline summary --dept 25` donne la surface par classe (excellent → très faible) par espèce : premier regard sur la crédibilité avant toute carte.
 
+Contrôle GBIF (critère de phase 1, AUC > 0,7) : `uv run champis-pipeline check --dept 25` télécharge les occurrences GBIF du département (cache dans `data/raw/gbif/`) et écrit `reports/<espèce>-25.html` : AUC de T aux occurrences contre fond forestier, mois d'observation, quantiles pH pour recalibrer les espèces (skill `validation-gbif`).
+
 Pour regarder le résultat : `python3 -m http.server 8000` à la racine du dépôt, ouvrir <http://localhost:8000/web/> et y glisser les PMTiles (voir `web/README.md`). Sans serveur, [pmtiles.io](https://pmtiles.io) les affiche en gris brut : 0 = noir = T 0, 254 = blanc = T 1.
 
 ## Phase 2 — l'API météo
@@ -39,7 +41,7 @@ Railway, un seul service (`Dockerfile`, `railway.toml`), volume sur `/data` pour
 ## Ce qui n'est pas encore là
 
 - `/departements`, `/tiles` (bucket + URL présignées), `/observations`.
-- Le contrôle GBIF et le recalibrage pH (`pipeline/check/`).
+- Le recalibrage pH des espèces à partir des quantiles du rapport `check`.
 
 ## Licences des données
 
