@@ -76,10 +76,10 @@ def cmd_check(args) -> None:
             t_path = T_DIR / sid / f"{args.dept}-{species_hash(sid)}.tif"
             with rasterio.open(t_path) as s:
                 bbox = transform_bounds(s.crs, "EPSG:4326", *s.bounds)
-            occ = gbif.occurrences(
+            occ, rejected = gbif.occurrences(
                 sid, load_species(sid)["names"]["la"], bbox, http, force=args.force
             )
-            result = report.evaluate(args.dept, sid, occ)
+            result = report.evaluate(args.dept, sid, occ, rejected=rejected)
             path = report.write_report(result, occ)
             print(
                 f"{sid}: AUC {result['auc']:.3f} ({result['n_in_forest']}/{result['n_occurrences']} occ. en forêt) → {path}"

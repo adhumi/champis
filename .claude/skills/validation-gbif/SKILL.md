@@ -18,7 +18,7 @@ Sortie : `reports/<espèce>-<dept>.html` (lisible) et `.json` (chiffres), jamais
 ## Ce que fait `check`
 
 1. **taxonKey** par `species/match` sur `names.la` (règne Fungi) ; nom inconnu = erreur, pas de repli.
-2. **Occurrences** `occurrence/search` : France, coordonnées présentes sans problème géospatial, `coordinateUncertaintyInMeters ≤ 100`, emprise = bornes du raster T en WGS84, 300 par page jusqu'à `endOfRecords` (plafond 100 000 de l'API search : au-delà, passer à l'API download). Les enregistrements sans date sont écartés.
+2. **Occurrences** `occurrence/search` : France, coordonnées présentes sans problème géospatial, emprise = bornes du raster T en WGS84, 300 par page jusqu'à `endOfRecords` (plafond 100 000 de l'API search : au-delà, passer à l'API download). **Précision triée côté client** : incertitude déclarée ≤ 100 m, ou incertitude non renseignée mais coordonnées à ≥ 4 décimales (≈ 10 m). Ne jamais remettre le paramètre `coordinateUncertaintyInMeters` dans la requête : il exclut aussi les enregistrements sans incertitude, c'est-à-dire la plupart des jeux naturalistes français (Doubs : 0 occurrence avec le filtre API). Écartés et comptés dans le rapport : sans date, incertitude > 100 m, coordonnées arrondies (centre de commune).
 3. **T aux occurrences** (`sample_raster`) : hors emprise ou hors forêt BD Forêt → ignoré (compté dans « occurrences » mais pas dans « en forêt »).
 4. **Fond** : `max(2 000, 10 × positives)` pixels forestiers (`T ≠ nodata`) tirés avec remise, graine fixe (`seed`).
 5. **pH SoilGrids aux occurrences** : quantiles 1/10/90/99 % (≥ 20 points), c'est l'entrée du recalibrage de `terrain.ph` (skill `species-file`, SCHEMA.md « à faire en phase 1 »).
