@@ -8,6 +8,19 @@ from pathlib import Path
 from .species import ROOT
 
 DATA_DIR = ROOT / "data"
+ENV_FILE = ROOT / ".env"
+
+
+def load_env() -> bool:
+    """Charge `.env` à la racine du dépôt (poste de travail) sans écraser l'environnement existant.
+
+    Sur Railway les variables viennent du service : le fichier n'existe pas, rien ne change.
+    """
+    from dotenv import load_dotenv
+
+    return load_dotenv(ENV_FILE, override=False)
+
+
 RAW_DIR = DATA_DIR / "raw"
 GRID_DIR = DATA_DIR / "grid"
 T_DIR = DATA_DIR / "T"

@@ -6,8 +6,10 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from champis_pipeline.config import DATA_DIR, ROOT
+from champis_pipeline.config import DATA_DIR, ROOT, load_env
 from champis_pipeline.storage import S3Config
+
+load_env()  # .env à la racine du dépôt (poste de travail) ; Railway fournit les variables
 
 
 def _hours(value: str) -> tuple[int, ...]:

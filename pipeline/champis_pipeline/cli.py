@@ -136,6 +136,9 @@ def cmd_all(args) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from .config import load_env
+
+    load_env()  # .env local (bucket, clés) ; sans effet si les variables sont déjà posées
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     ap = argparse.ArgumentParser(prog="champis-pipeline")
     # --species / --force acceptés avant ou après la sous-commande (les deux formes dans les docs)
