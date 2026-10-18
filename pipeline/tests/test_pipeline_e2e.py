@@ -10,7 +10,7 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import rasterio
-from champis_pipeline import config, rasterize, terrain, tiles, weather_grid
+from champis_pipeline import config, explain, rasterize, terrain, tiles, weather_grid
 from champis_pipeline.check import report as check_report
 from champis_pipeline.config import CRS_CALC, Grid
 from champis_pipeline.scoring import NODATA_U8, decode_u8
@@ -39,6 +39,7 @@ def sandbox(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(weather_grid, "T_DIR", tmp_path / "t")
     monkeypatch.setattr(weather_grid, "dept_dirs", rasterize.dept_dirs)
     monkeypatch.setattr(check_report, "T_DIR", tmp_path / "t")
+    monkeypatch.setattr(explain, "dept_dirs", rasterize.dept_dirs)
     monkeypatch.setattr(check_report, "dept_dirs", rasterize.dept_dirs)
 
     # Doubs approximatif en Lambert-93 : x ≈ 930 000, y ≈ 6 680 000
@@ -354,3 +355,24 @@ def test_auc_mann_whitney():
     assert auc(np.array([0.5, 0.5]), np.array([0.5, 0.5])) == 0.5
     assert auc(np.array([0.3, 0.7]), np.array([0.5, 0.5])) == 0.5  # un au-dessus, un au-dessous
     assert np.isnan(auc(np.array([]), np.array([0.5])))
+
+
+def test_explain_factors(sandbox, tmp_path):
+    """Le diagnostic retrouve la composition du département synthétique et des « et si » cohérents."""
+    shp, grid = sandbox["shp"], sandbox["grid"]
+    rasterize.host_cover(DEPT, shp, grid)
+    rasterize.ph(DEPT, sandbox["ph"], grid)
+    rasterize.dem_products(DEPT, [sandbox["dem"]], grid)
+    r = explain.explain(DEPT, "boletus_edulis", out_dir=tmp_path / "reports")
+    assert r["forest_ha"] == pytest.approx(10_000, rel=0.01)
+    hosts = {h["host"]: h for h in r["hosts"]}
+    assert hosts["hetre"]["ha"] == pytest.approx(5_000 - 25, rel=0.02)  # moins la coupe rase
+    assert hosts["hetre"]["weight"] == 1.0 and hosts["hetre"]["t_mean"] > 0.7
+    assert hosts["douglas"]["t_mean"] < hosts["sapin_epicea"]["t_mean"]
+    assert sum(h["share"] for h in r["hosts"]) == pytest.approx(1.0, abs=0.01)
+    assert sum(r["t_hist"]) == sum(r["factors"]["host"]["hist"])
+    wi = r["what_if"]
+    assert wi["excellent_share_if_factor_is_one"]["ph"] >= r["excellent_share"]
+    caps = wi["excellent_share_if_host_capped_at"]
+    assert caps["0.9"] >= caps["0.8"] >= caps["0.7"]
+    assert (tmp_path / "reports" / f"explain-boletus_edulis-{DEPT}.json").exists()

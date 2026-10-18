@@ -43,6 +43,52 @@ def _lookup(table: dict[str, float], keys: list[str], default: float) -> NDArray
     return np.array([float(table.get(k, default)) for k in keys], dtype=np.float64)
 
 
+def terrain_factors(
+    species: dict[str, Any],
+    host: NDArray[np.uint8],
+    cover: NDArray[np.uint8],
+    ph10: NDArray[np.uint8],
+    alt_m: NDArray[np.uint16],
+    slope_deg: NDArray[np.uint8],
+    aspect: NDArray[np.uint8],
+) -> dict[str, NDArray[np.float64]]:
+    """Chaque facteur de T séparément (host, cover, ph, altitude, slope, aspect), même codage que
+    `terrain_potential`. Sert au calcul de T et au diagnostic (`champis-pipeline explain`)."""
+    t = species["terrain"]
+    if "default" not in t["hosts"]:
+        raise ValueError(f"{species['id']}: hosts.default manquant")
+    host_w = _lookup(t["hosts"], host_vocabulary(), t["hosts"]["default"])
+    cover_w = _lookup(t["cover"], COVER_CLASSES, MISSING_FACTOR)
+    aspect_w = _lookup(t["aspect"], ASPECT_CLASSES, MISSING_FACTOR)
+
+    valid_host = host < len(host_w)
+    f_host = np.where(valid_host, host_w[np.minimum(host, len(host_w) - 1)], 0.0)
+    valid_cover = cover < len(cover_w)
+    f_cover = np.where(valid_cover, cover_w[np.minimum(cover, len(cover_w) - 1)], MISSING_FACTOR)
+    valid_ph = ph10 != NODATA_U8
+    f_ph = np.where(valid_ph, np.maximum(trapezoid(ph10 / 10.0, t["ph"]), PH_FLOOR), MISSING_FACTOR)
+    valid_alt = alt_m != NODATA_U16
+    f_alt = np.where(
+        valid_alt, trapezoid(alt_m.astype(np.float64), t["altitude_m"]), MISSING_FACTOR
+    )
+    valid_slope = slope_deg != NODATA_U8
+    f_slope = np.where(
+        valid_slope, trapezoid(slope_deg.astype(np.float64), t["slope_deg"]), MISSING_FACTOR
+    )
+    valid_aspect = aspect < len(aspect_w)
+    f_aspect = np.where(
+        valid_aspect, aspect_w[np.minimum(aspect, len(aspect_w) - 1)], MISSING_FACTOR
+    )
+    return {
+        "host": f_host,
+        "cover": f_cover,
+        "ph": f_ph,
+        "altitude": f_alt,
+        "slope": f_slope,
+        "aspect": f_aspect,
+    }
+
+
 def terrain_potential(
     species: dict[str, Any],
     host: NDArray[np.uint8],
@@ -62,51 +108,26 @@ def terrain_potential(
     - aspect : index dans ASPECT_CLASSES (8 = flat), 255 = inconnu → 0,5
     """
     t = species["terrain"]
-    w = t["weights"]
-
-    if "default" not in t["hosts"]:
-        raise ValueError(f"{species['id']}: hosts.default manquant")
-    host_w = _lookup(t["hosts"], host_vocabulary(), t["hosts"]["default"])
-    cover_w = _lookup(t["cover"], COVER_CLASSES, MISSING_FACTOR)
-    aspect_w = _lookup(t["aspect"], ASPECT_CLASSES, MISSING_FACTOR)
-
-    valid_host = host < len(host_w)
-    f_host = np.where(valid_host, host_w[np.minimum(host, len(host_w) - 1)], 0.0)
-
-    valid_cover = cover < len(cover_w)
-    f_cover = np.where(valid_cover, cover_w[np.minimum(cover, len(cover_w) - 1)], MISSING_FACTOR)
-
-    valid_ph = ph10 != NODATA_U8
-    f_ph = np.where(valid_ph, np.maximum(trapezoid(ph10 / 10.0, t["ph"]), PH_FLOOR), MISSING_FACTOR)
-
-    valid_alt = alt_m != NODATA_U16
-    f_alt = np.where(
-        valid_alt, trapezoid(alt_m.astype(np.float64), t["altitude_m"]), MISSING_FACTOR
-    )
-
-    valid_slope = slope_deg != NODATA_U8
-    f_slope = np.where(
-        valid_slope, trapezoid(slope_deg.astype(np.float64), t["slope_deg"]), MISSING_FACTOR
-    )
-
-    valid_aspect = aspect < len(aspect_w)
-    f_aspect = np.where(
-        valid_aspect, aspect_w[np.minimum(aspect, len(aspect_w) - 1)], MISSING_FACTOR
-    )
-
-    weighted = (
-        w["cover"] * f_cover
-        + w["ph"] * f_ph
-        + w["altitude"] * f_alt
-        + w["aspect"] * f_aspect
-        + w["slope"] * f_slope
-    )
-    result = f_host * weighted
+    f = terrain_factors(species, host, cover, ph10, alt_m, slope_deg, aspect)
+    result = f["host"] * weighted_sum(species, f)
     # règle dure : altitude connue et strictement hors [min, max] → 0
     alt_f = alt_m.astype(np.float64)
+    valid_alt = alt_m != NODATA_U16
     hard_alt = valid_alt & ((alt_f < t["altitude_m"]["min"]) | (alt_f > t["altitude_m"]["max"]))
     result = np.where(hard_alt, 0.0, result)
     return np.clip(result, 0.0, 1.0).astype(np.float32)
+
+
+def weighted_sum(species: dict[str, Any], f: dict[str, NDArray[np.float64]]) -> NDArray[np.float64]:
+    """Σ(poids × facteur) sur cover, ph, altitude, aspect, slope (l'hôte est multiplicatif)."""
+    w = species["terrain"]["weights"]
+    return (
+        w["cover"] * f["cover"]
+        + w["ph"] * f["ph"]
+        + w["altitude"] * f["altitude"]
+        + w["aspect"] * f["aspect"]
+        + w["slope"] * f["slope"]
+    )
 
 
 def encode_u8(
