@@ -9,16 +9,16 @@
     "fr": "Cèpe de Bordeaux",
     "la": "Boletus edulis"
   },
-  "notes": "Espèce la plus généraliste du groupe edulis : hêtre, épicéa/sapin, chênes, châtaignier, bouleau. Collinéen à montagnard, sols acides à neutres. Pour les chênaies chaudes de basse altitude, voir boletus_aereus (même groupe d'affichage). pH : plages élargies pour SoilGrids (qui surestime le pH des humus forestiers) — à recalibrer en phase 1 sur les occurrences GBIF.",
+  "notes": "Espèce la plus généraliste du groupe edulis : hêtre, épicéa/sapin, chênes, châtaignier, bouleau. Collinéen à montagnard, sols acides à neutres. Pour les chênaies chaudes de basse altitude, voir boletus_aereus (même groupe d'affichage). pH : plages élargies pour SoilGrids (qui surestime le pH des humus forestiers) — recalibrage GBIF reporté à l'échelle France (occurrences précises absentes du Doubs). Mélanges : melange_feuillus 0,65 et mixte_* 0,85 depuis le 18/10/2026 (diagnostic Doubs, réf. doubs2026) — un mélange BD Forêt (aucune essence ≥ 75 %) est moins fidèle qu'une hêtraie pure ou une sapinière.",
   "terrain": {
     "hosts": {
       "hetre": 1.0,
       "sapin_epicea": 0.95,
       "chenes_decidus": 0.8,
       "chataignier": 0.7,
-      "mixte_feuillus_dom": 0.9,
-      "mixte_coniferes_dom": 0.9,
-      "melange_feuillus": 0.8,
+      "mixte_feuillus_dom": 0.85,
+      "mixte_coniferes_dom": 0.85,
+      "melange_feuillus": 0.65,
       "melange_coniferes": 0.6,
       "feuillus_indet": 0.6,
       "coniferes_indet": 0.5,
@@ -89,6 +89,7 @@
     "refs": {
       "hosts": [
         "beugelsdijk2008",
+        "doubs2026",
         "bielefeld2025",
         "amycoforest2013",
         "hall1998"
@@ -280,6 +281,7 @@
     "agreda2015": "Ágreda et al. 2015, GCB — le bilan hydrique (P-ETP) prédit mieux que la pluie brute ; base du facteur water_balance",
     "kauserud2012": "Kauserud et al. 2012, PNAS 109:14488 — recul des premières gelées = allongement de saison",
     "vcu2024": "Thèse VCU 2024, Pinar Grande 1995-2023 — saison de Boletus 32 ± 13 jours",
+    "doubs2026": "Diagnostic champis-pipeline explain, Doubs, 18/10/2026 — 90 % de la forêt en excellent, facteurs d'environnement saturés (pH, altitude, couvert ≥ 0,9 sur 94 % des pixels), T = poids de l'hôte ; mélanges indéterminés abaissés pour retrouver une gradation (cible spec : ≤ 60 % excellent, 3 classes > 10 %) ; confiance moyenne",
     "terrain_fr": "Sources de terrain françaises (Wikipédia FR, Mycocharentes) — > 50 mm/décade, premiers sporophores 6-15 j, pousse ~12 j ; confiance faible"
   }
 }
