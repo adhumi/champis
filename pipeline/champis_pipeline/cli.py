@@ -1,6 +1,6 @@
 """CLI : `champis-pipeline <étape> --dept 25 [--species boletus_edulis] [--force]`.
 
-Étapes : download · grid · terrain · tiles · weather-grid · all · summary · check
+Étapes : download · grid · terrain · tiles · weather-grid · all · summary · check · explain
 """
 
 from __future__ import annotations
@@ -61,6 +61,18 @@ def cmd_summary(args) -> None:
         print(sid, json.dumps(terrain.summary(p), indent=1))
 
 
+def cmd_explain(args) -> None:
+    """Diagnostic : part de chaque facteur dans T sur le département (reports/explain-*.json)."""
+    from . import explain
+
+    for sid in _species(args):
+        r = explain.explain(args.dept, sid)
+        print(
+            f"{sid}: {r['excellent_share']:.0%} excellent sur {r['forest_ha']:,.0f} ha ; "
+            f"facteurs moyens " + ", ".join(f"{k} {v['mean']:.2f}" for k, v in r["factors"].items())
+        )
+
+
 def cmd_check(args) -> None:
     """Contrôle GBIF : rapport HTML + JSON par espèce dans reports/ (réseau : api.gbif.org)."""
     import httpx
@@ -107,6 +119,7 @@ def main(argv: list[str] | None = None) -> int:
         ("terrain", cmd_terrain),
         ("summary", cmd_summary),
         ("check", cmd_check),
+        ("explain", cmd_explain),
         ("all", cmd_all),
     ):
         p = sub.add_parser(name)
