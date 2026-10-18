@@ -13,6 +13,7 @@ import io
 import json
 import logging
 from collections import Counter
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +26,7 @@ from ..config import REPORTS_DIR, T_DIR, dept_dirs
 from ..scoring import NODATA_U8
 from ..species import load_palette, load_species, species_hash
 from ..terrain import summary
-from .gbif import Occurrence
+from .gbif import Occurrence, Rejected
 
 log = logging.getLogger(__name__)
 
@@ -89,7 +90,13 @@ def background_t(t_path: Path, n: int, rng: np.random.Generator) -> np.ndarray:
     return v[rows[idx], cols[idx]] / 254.0
 
 
-def evaluate(dept: str, species_id: str, occ: list[Occurrence], seed: int = 0) -> dict[str, Any]:
+def evaluate(
+    dept: str,
+    species_id: str,
+    occ: list[Occurrence],
+    seed: int = 0,
+    rejected: Rejected | None = None,
+) -> dict[str, Any]:
     """Toutes les mesures du rapport, sérialisables (le `.json` à côté du `.html`)."""
     t_path = T_DIR / species_id / f"{dept}-{species_hash(species_id)}.tif"
     if not t_path.exists():
@@ -110,6 +117,8 @@ def evaluate(dept: str, species_id: str, occ: list[Occurrence], seed: int = 0) -
         "dept": dept,
         "t_hash": species_hash(species_id),
         "n_occurrences": len(occ),
+        "precision": dict(Counter(o.precision for o in occ)),
+        "rejected": asdict(rejected) if rejected else None,
         "n_in_forest": int(inside.sum()),
         "n_background": int(t_bg.size),
         "auc": auc(t_pos, t_bg),
@@ -226,7 +235,7 @@ td,th{{padding:3px 10px;border-bottom:1px solid #ddd;text-align:left}} .v{{font-
 .row{{display:flex;gap:32px;flex-wrap:wrap}} .cap{{color:#666;font-size:12px}}</style></head><body>
 <h1>Contrôle GBIF — {name}, département {r["dept"]}</h1>
 <p class="v">AUC = {r["auc"]:.3f} — {verdict}</p>
-<p>{r["n_occurrences"]} occurrences GBIF (précision ≤ 100 m, datées), dont {r["n_in_forest"]} en forêt BD Forêt ;
+<p>{r["n_occurrences"]} occurrences GBIF retenues ({_precision(r)}), dont {r["n_in_forest"]} en forêt BD Forêt ;
 fond : {r["n_background"]} pixels forestiers tirés au hasard. T moyen : {_fmt(r["t_mean_occurrences"])} aux occurrences
 contre {_fmt(r["t_mean_background"])} sur le fond. T = {r["t_hash"]}.</p>
 <div class="row"><div><h2>T aux occurrences</h2>{_bars(r["hist_occurrences"], "#1B6B3A")}<div class="cap">0 → 1 par dixième</div></div>
@@ -237,6 +246,21 @@ contre {_fmt(r["t_mean_background"])} sur le fond. T = {r["t_hash"]}.</p>
 <h2>Carte</h2><img src="data:image/png;base64,{map_b64}" alt="T colorisé et occurrences" style="max-width:100%;border:1px solid #ddd">
 <p class="cap">Occurrences GBIF — licences par jeu : {lic or "—"}. Fond IGN BD Forêt V2, Copernicus DEM, SoilGrids.</p>
 </body></html>"""
+
+
+def _precision(r: dict[str, Any]) -> str:
+    p = r.get("precision") or {}
+    parts = [
+        f"{p.get('declared', 0)} avec incertitude déclarée ≤ 100 m",
+        f"{p.get('fine_coords', 0)} sans incertitude mais coordonnées ≥ 4 décimales",
+    ]
+    rj = r.get("rejected")
+    if rj:
+        parts.append(
+            f"écartées : {rj['undated']} sans date, {rj['imprecise']} imprécises, "
+            f"{rj['rounded']} arrondies"
+        )
+    return " ; ".join(parts)
 
 
 def _fmt(v: float | None) -> str:

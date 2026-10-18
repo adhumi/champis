@@ -256,7 +256,7 @@ class _FakeGbif:
         if url.endswith("/species/match"):
             body = {"usageKey": 2526567, "matchType": "EXACT"}
         else:
-            assert params["coordinateUncertaintyInMeters"] == "0,100"
+            assert "coordinateUncertaintyInMeters" not in params  # tri côté client
             body = {"results": self.records, "endOfRecords": True}
 
         class R:
@@ -308,28 +308,33 @@ def test_gbif_check_report(sandbox, tmp_path):
         (900_000.0, 6_680_000.0)
     ]  # hors emprise : ignorée dans le calcul, comptée en occurrences
     records = _records(hetraie, 9) + _records(douglas, 10) + _records(hors, 9)
-    records.append({"decimalLatitude": 47.1, "decimalLongitude": 6.3})  # sans date : écartée
+    records.append({"decimalLatitude": 47.1, "decimalLongitude": 6.3, "eventDate": "2024-09-01"})
+    records.append({**records[0], "coordinateUncertaintyInMeters": 5000})  # imprécise
+    records.append({"decimalLatitude": 47.1234, "decimalLongitude": 6.3})  # sans date
+    fine = {**records[1]}
+    del fine["coordinateUncertaintyInMeters"]  # incertitude inconnue, coordonnées fines : retenue
+    records.append(fine)
     http = _FakeGbif(records)
 
     bbox = rasterize.grid_bbox_4326(grid)
-    occ = gbif.occurrences(
+    occ, rejected = gbif.occurrences(
         "boletus_edulis", "Boletus edulis", bbox, http, cache_dir=tmp_path / "gbif"
     )
-    assert len(occ) == 36 and len(http.calls) == 2
-    assert (
-        gbif.occurrences(
-            "boletus_edulis", "Boletus edulis", bbox, http, cache_dir=tmp_path / "gbif"
-        )
-        == occ
-    )
+    assert len(occ) == 37 and len(http.calls) == 2
+    assert (rejected.undated, rejected.imprecise, rejected.rounded) == (1, 1, 1)
+    assert sum(o.precision == "fine_coords" for o in occ) == 1
+    assert gbif.occurrences(
+        "boletus_edulis", "Boletus edulis", bbox, http, cache_dir=tmp_path / "gbif"
+    ) == (occ, rejected)
     assert len(http.calls) == 2  # cache : pas de nouvel appel
 
-    res = report.evaluate(DEPT, "boletus_edulis", occ, seed=0)
-    assert res["n_occurrences"] == 36 and res["n_in_forest"] == 35
+    res = report.evaluate(DEPT, "boletus_edulis", occ, seed=0, rejected=rejected)
+    assert res["n_occurrences"] == 37 and res["n_in_forest"] == 36
+    assert res["precision"] == {"declared": 36, "fine_coords": 1}
     # Monde jouet : la hêtraie (T quasi constant) couvre la moitié du département, donc la moitié
     # du fond est à égalité avec les positives (ex æquo = 0,5) ; 0,7 est le critère sur données réelles.
     assert 0.6 < res["auc"] < 0.75 and res["t_mean_occurrences"] > res["t_mean_background"]
-    assert res["months"]["9"] == 31 and res["months"]["10"] == 5
+    assert res["months"]["9"] == 32 and res["months"]["10"] == 5
     assert res["ph_quantiles"]["10"] == pytest.approx(5.0, abs=0.01)  # hêtraie : pH 5,0
     assert res["ph_quantiles"]["99"] == pytest.approx(7.5, abs=0.01)  # douglas : pH 7,5
     assert res["surface_ha"]["forest_ha"] == pytest.approx(10_000, rel=0.01)
