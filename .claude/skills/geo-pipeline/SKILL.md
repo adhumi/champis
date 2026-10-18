@@ -54,9 +54,9 @@ Chaque étape vérifie si sa sortie existe et est plus récente que ses entrées
 
 Mosaïque Lambert-93 (`rasterio.merge`), puis pour chaque tuile XYZ des niveaux **6 à 15** : lecture de la fenêtre source + `reproject` nearest en 256×256, PNG **LA** (luminance = `T × 254`, alpha 0 pour nodata), écrit en MBTiles (schéma TMS, ligne inversée) puis `pmtiles.convert.mbtiles_to_pmtiles` (qui remet en XYZ : pas de double flip, vérifié par test). Commits par lots de 2 000 tuiles. Nom `T-<species>-<hash espèce>-p<version>-d<hash des départements>.pmtiles`, immuable. Une seconde couche `A-<largeur>m-d<hash des départements>.pmtiles` (classes d'altitude, `build_alt`) suit la même chaîne depuis `alt.tif` : gris = indice k de la classe `[300k, 300k+300[` m (centre `300k+150`, celui de `weather_grid.alt_classes` et de l'API), alpha 0 = altitude inconnue, emprise entière ; la largeur vient de `shared/palette.json` (`alt_encoding.class_m`), jamais en dur. Ordres de grandeur : Doubs ≈ 35 k tuiles, 10–15 min/espèce ; France ≈ 2,3 M tuiles, ~15 h/espèce en mono-thread → à paralléliser (bandes de x) et à construire par réduction 2×2 depuis z15 avant la phase 2.
 
-## Contrôle (`pipeline/check/`)
+## Contrôle (`champis_pipeline/check/`)
 
-- (à écrire) `report.py` produit `reports/<species>-<dept>.html` : histogramme de `T`, surface par classe, carte miniature, et **AUC** GBIF positives vs points aléatoires en forêt (voir skill `validation-gbif`). Critère de phase 1 : AUC > 0,7.
+- `champis_pipeline/check/` (`champis-pipeline check --dept 25`) produit `reports/<species>-<dept>.html` + `.json` : **AUC** GBIF positives vs pixels forestiers aléatoires, histogrammes de `T`, mois d'observation, quantiles pH aux occurrences, surface par classe, carte miniature (skill `validation-gbif`). Critère de phase 1 : AUC > 0,7.
 - (à écrire) Un jeu de **pixels de contrôle** `pipeline/tests/control_pixels.json` (hêtraie du Ventoux, cédraie, vigne de Carpentras, chênaie du Luberon…) avec le `T` attendu par espèce à ± 0,1 ; `pytest` les rejoue sur le Vaucluse.
 
 ## Performance

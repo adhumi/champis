@@ -1,6 +1,6 @@
 """CLI : `champis-pipeline <étape> --dept 25 [--species boletus_edulis] [--force]`.
 
-Étapes : download · grid · terrain · tiles · weather-grid · all · summary
+Étapes : download · grid · terrain · tiles · weather-grid · all · summary · check
 """
 
 from __future__ import annotations
@@ -61,6 +61,31 @@ def cmd_summary(args) -> None:
         print(sid, json.dumps(terrain.summary(p), indent=1))
 
 
+def cmd_check(args) -> None:
+    """Contrôle GBIF : rapport HTML + JSON par espèce dans reports/ (réseau : api.gbif.org)."""
+    import httpx
+    import rasterio
+    from rasterio.warp import transform_bounds
+
+    from .check import gbif, report
+    from .config import T_DIR
+    from .species import load_species, species_hash
+
+    with httpx.Client(timeout=60.0, headers={"User-Agent": "champis-pipeline check"}) as http:
+        for sid in _species(args):
+            t_path = T_DIR / sid / f"{args.dept}-{species_hash(sid)}.tif"
+            with rasterio.open(t_path) as s:
+                bbox = transform_bounds(s.crs, "EPSG:4326", *s.bounds)
+            occ = gbif.occurrences(
+                sid, load_species(sid)["names"]["la"], bbox, http, force=args.force
+            )
+            result = report.evaluate(args.dept, sid, occ)
+            path = report.write_report(result, occ)
+            print(
+                f"{sid}: AUC {result['auc']:.3f} ({result['n_in_forest']}/{result['n_occurrences']} occ. en forêt) → {path}"
+            )
+
+
 def cmd_all(args) -> None:
     cmd_download(args)
     cmd_grid(args)
@@ -81,6 +106,7 @@ def main(argv: list[str] | None = None) -> int:
         ("grid", cmd_grid),
         ("terrain", cmd_terrain),
         ("summary", cmd_summary),
+        ("check", cmd_check),
         ("all", cmd_all),
     ):
         p = sub.add_parser(name)

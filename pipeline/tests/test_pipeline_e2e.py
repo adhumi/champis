@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 import rasterio
 from champis_pipeline import config, rasterize, terrain, tiles, weather_grid
+from champis_pipeline.check import report as check_report
 from champis_pipeline.config import CRS_CALC, Grid
 from champis_pipeline.scoring import NODATA_U8, decode_u8
 from champis_pipeline.species import host_index
@@ -37,6 +38,8 @@ def sandbox(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(tiles, "dept_dirs", rasterize.dept_dirs)
     monkeypatch.setattr(weather_grid, "T_DIR", tmp_path / "t")
     monkeypatch.setattr(weather_grid, "dept_dirs", rasterize.dept_dirs)
+    monkeypatch.setattr(check_report, "T_DIR", tmp_path / "t")
+    monkeypatch.setattr(check_report, "dept_dirs", rasterize.dept_dirs)
 
     # Doubs approximatif en Lambert-93 : x ≈ 930 000, y ≈ 6 680 000
     x0, y0 = 930_000.0, 6_680_000.0
@@ -239,3 +242,109 @@ def test_weather_grid(sandbox):
         assert 600 <= c["elevation_m"] <= 1200
     # MNT 600 → 1 200 m : les classes 750, 1050 (et 450/1350 aux bords) doivent apparaître
     assert {750, 1050} <= {a for c in cells for a in c["alt_classes"]}
+
+
+class _FakeGbif:
+    """Client HTTP factice : species/match puis une page occurrence/search (pas de réseau)."""
+
+    def __init__(self, records: list[dict]):
+        self.records = records
+        self.calls: list[str] = []
+
+    def get(self, url: str, params: dict | None = None):
+        self.calls.append(url)
+        if url.endswith("/species/match"):
+            body = {"usageKey": 2526567, "matchType": "EXACT"}
+        else:
+            assert params["coordinateUncertaintyInMeters"] == "0,100"
+            body = {"results": self.records, "endOfRecords": True}
+
+        class R:
+            def raise_for_status(self):
+                pass
+
+            def json(self, b=body):
+                return b
+
+        return R()
+
+
+def _records(points_l93: list[tuple[float, float]], month: int) -> list[dict]:
+    from rasterio.warp import transform as rio_transform
+
+    xs, ys = zip(*points_l93, strict=True)
+    lons, lats = rio_transform(CRS_CALC, "EPSG:4326", list(xs), list(ys))
+    return [
+        {
+            "decimalLatitude": la,
+            "decimalLongitude": lo,
+            "eventDate": f"2024-{month:02d}-15T10:00",
+            "coordinateUncertaintyInMeters": 30,
+            "datasetKey": "ds",
+            "license": "CC_BY_4_0",
+        }
+        for lo, la in zip(lons, lats, strict=True)
+    ]
+
+
+def test_gbif_check_report(sandbox, tmp_path):
+    """Occurrences dans la hêtraie → AUC > 0,7, pH ≈ 5 aux occurrences, rapport écrit, cache relu."""
+    from champis_pipeline.check import gbif, report
+
+    shp, grid = sandbox["shp"], sandbox["grid"]
+    rasterize.host_cover(DEPT, shp, grid)
+    rasterize.ph(DEPT, sandbox["ph"], grid)
+    rasterize.dem_products(DEPT, [sandbox["dem"]], grid)
+    terrain.compute(DEPT, "boletus_edulis")
+
+    rng = np.random.default_rng(1)
+    hetraie = [
+        (930_000 + rng.uniform(300, 4_700), 6_680_000 + rng.uniform(300, 9_700)) for _ in range(30)
+    ]
+    douglas = [
+        (935_000 + rng.uniform(300, 4_700), 6_680_000 + rng.uniform(300, 4_700)) for _ in range(5)
+    ]
+    hors = [
+        (900_000.0, 6_680_000.0)
+    ]  # hors emprise : ignorée dans le calcul, comptée en occurrences
+    records = _records(hetraie, 9) + _records(douglas, 10) + _records(hors, 9)
+    records.append({"decimalLatitude": 47.1, "decimalLongitude": 6.3})  # sans date : écartée
+    http = _FakeGbif(records)
+
+    bbox = rasterize.grid_bbox_4326(grid)
+    occ = gbif.occurrences(
+        "boletus_edulis", "Boletus edulis", bbox, http, cache_dir=tmp_path / "gbif"
+    )
+    assert len(occ) == 36 and len(http.calls) == 2
+    assert (
+        gbif.occurrences(
+            "boletus_edulis", "Boletus edulis", bbox, http, cache_dir=tmp_path / "gbif"
+        )
+        == occ
+    )
+    assert len(http.calls) == 2  # cache : pas de nouvel appel
+
+    res = report.evaluate(DEPT, "boletus_edulis", occ, seed=0)
+    assert res["n_occurrences"] == 36 and res["n_in_forest"] == 35
+    # Monde jouet : la hêtraie (T quasi constant) couvre la moitié du département, donc la moitié
+    # du fond est à égalité avec les positives (ex æquo = 0,5) ; 0,7 est le critère sur données réelles.
+    assert 0.6 < res["auc"] < 0.75 and res["t_mean_occurrences"] > res["t_mean_background"]
+    assert res["months"]["9"] == 31 and res["months"]["10"] == 5
+    assert res["ph_quantiles"]["10"] == pytest.approx(5.0, abs=0.01)  # hêtraie : pH 5,0
+    assert res["ph_quantiles"]["99"] == pytest.approx(7.5, abs=0.01)  # douglas : pH 7,5
+    assert res["surface_ha"]["forest_ha"] == pytest.approx(10_000, rel=0.01)
+
+    path = report.write_report(res, occ, out_dir=tmp_path / "reports")
+    page = path.read_text(encoding="utf-8")
+    assert "AUC = " in page and "data:image/png;base64," in page
+    assert json.loads(path.with_suffix(".json").read_text(encoding="utf-8"))["auc"] == res["auc"]
+
+
+def test_auc_mann_whitney():
+    from champis_pipeline.check.report import auc
+
+    assert auc(np.array([0.9, 0.8]), np.array([0.1, 0.2])) == 1.0
+    assert auc(np.array([0.1, 0.2]), np.array([0.9, 0.8])) == 0.0
+    assert auc(np.array([0.5, 0.5]), np.array([0.5, 0.5])) == 0.5
+    assert auc(np.array([0.3, 0.7]), np.array([0.5, 0.5])) == 0.5  # un au-dessus, un au-dessous
+    assert np.isnan(auc(np.array([]), np.array([0.5])))
