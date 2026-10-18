@@ -38,7 +38,7 @@ Les PMTiles ne sont pas encore servis par le service (`/tiles` et le bucket vien
 
 ## Endpoints
 
-- `GET /health` — `{"status": "ok", "cells": n}`.
+- `GET /health` — `{"status": "ok", "cells": n, "seeded": n}` : `seeded` = cellules amorcées (climatologie du sol présente) ; doit valoir `cells` après l'import de `weather_seed.json`.
 - `GET /species` — `scoring_version`, `species_hash`, `palette` (`shared/palette.json`) et chaque `species/<id>.json` tel quel : les clients n'embarquent aucune valeur.
 - `GET /weather?cell=<id>` ou `?lat=&lon=` (cellule la plus proche), `&species=<id>` répétable (défaut : toutes). Pour chaque jour de **J−3 à J+7** et chaque **classe d'altitude** de la cellule (centres 150, 450, 750… m) : `M`, `M_eff`, `phi` et `factors` (`temp`, `rain`, `trigger`, `soil_moisture`, `frost`, `water_balance`, `heat`, `memory`). Plus `stale` (cache périmé servi faute d'Open-Meteo), `cell_elevation_m`, `scoring_version`, `species_hash`.
 - `GET /weather/bbox?min_lon&min_lat&max_lon&max_lat[&species][&day]` — même chose pour toutes les cellules de l'emprise (chaque `cell` avec `id`, `lat`, `lon`, `alt_classes`, `elevation_m`), sans `factors`, pour peindre la carte d'un coup. Les cellules sans météo (Open-Meteo injoignable, rien en cache) sont listées dans `unavailable` avec `retry_after` au lieu de faire échouer la réponse.
