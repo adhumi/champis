@@ -3,6 +3,11 @@
 Chaîne 100 % Python : rasterio (mosaïque + reprojection par tuile) → PNG 256 px, niveaux 6–15,
 plus proche voisin → MBTiles (sqlite) → pmtiles.convert. Les tuiles sont des PNG de données,
 non colorisées : la palette est appliquée par les clients. 255 = nodata (alpha 0).
+
+Deuxième couche, commune à toutes les espèces : `A` = classe d'altitude du pixel (gris = indice
+k de la classe [300k, 300k+300[ m, centre 300k+150 = la classe que l'API renvoie), produite
+depuis `alt.tif` sur toute l'emprise. Les clients y lisent la classe du pixel pour choisir
+M_eff et Φ (spec : Points ouverts › classe d'altitude du pixel).
 """
 
 from __future__ import annotations
@@ -26,8 +31,10 @@ from rasterio.windows import Window, from_bounds
 from tqdm import tqdm
 
 from . import SCORING_VERSION
-from .config import CRS_TILES, T_DIR, TILES_DIR
+from .config import CRS_TILES, T_DIR, TILES_DIR, dept_dirs
+from .scoring import NODATA_U16
 from .species import species_hash
+from .weather_grid import ALT_CLASS_M
 
 log = logging.getLogger(__name__)
 
@@ -37,26 +44,55 @@ TILE = 256
 NODATA = 255
 
 
+def _depts_hash(depts: list[str]) -> str:
+    return hashlib.sha256(",".join(sorted(depts)).encode()).hexdigest()[:6]
+
+
 def build(species_id: str, depts: list[str], force: bool = False) -> Path:
-    TILES_DIR.mkdir(parents=True, exist_ok=True)
+    """`T-<espèce>-<hash espèce>-p<version>-d<hash départements>.pmtiles` : T × 254 en gris."""
     h = species_hash(species_id)
-    dh = hashlib.sha256(",".join(sorted(depts)).encode()).hexdigest()[:6]
-    tag = f"{species_id}-{h}-p{SCORING_VERSION}-d{dh}"
-    out = TILES_DIR / f"T-{tag}.pmtiles"
+    tag = f"{species_id}-{h}-p{SCORING_VERSION}-d{_depts_hash(depts)}"
+    srcs = [T_DIR / species_id / f"{d}-{h}.tif" for d in depts]
+    return _build(
+        "T",
+        tag,
+        srcs,
+        f"T {species_id}",
+        "Champis — potentiel terrain, gris 8 bits = T × 254, alpha 0 = hors forêt",
+        force,
+    )
+
+
+def build_alt(depts: list[str], force: bool = False) -> Path:
+    """`A-<largeur>m-d<hash départements>.pmtiles` : indice de classe d'altitude, toutes espèces."""
+    tag = f"{ALT_CLASS_M}m-d{_depts_hash(depts)}"
+    srcs = [dept_dirs(d)["grid"] / "alt.tif" for d in depts]
+    return _build(
+        "A",
+        tag,
+        srcs,
+        "A classes d'altitude",
+        f"Champis — classe d'altitude, gris 8 bits = indice k de [{ALT_CLASS_M}k, "
+        f"{ALT_CLASS_M}(k+1)[ m, alpha 0 = altitude inconnue",
+        force,
+    )
+
+
+def _build(kind: str, tag: str, srcs: list[Path], name: str, description: str, force: bool) -> Path:
+    TILES_DIR.mkdir(parents=True, exist_ok=True)
+    out = TILES_DIR / f"{kind}-{tag}.pmtiles"
     if out.exists() and not force:
         return out
-
-    srcs = [T_DIR / species_id / f"{d}-{h}.tif" for d in depts]
     missing = [p for p in srcs if not p.exists()]
     if missing:
-        raise FileNotFoundError(f"T manquants : {missing}")
+        raise FileNotFoundError(f"{kind} manquants : {missing}")
 
-    work = TILES_DIR / "_work" / tag
+    work = TILES_DIR / "_work" / f"{kind}-{tag}"
     work.mkdir(parents=True, exist_ok=True)
-    mosaic = work / "T_2154.tif"
-    mbt = work / "T.mbtiles"
-    _mosaic(srcs, mosaic)
-    _mbtiles(mosaic, mbt, species_id)
+    mosaic = work / f"{kind}_2154.tif"
+    mbt = work / f"{kind}.mbtiles"
+    (_mosaic if kind == "T" else _mosaic_alt)(srcs, mosaic)
+    _mbtiles(mosaic, mbt, name, description)
     from pmtiles.convert import mbtiles_to_pmtiles
 
     out.unlink(missing_ok=True)
@@ -71,16 +107,38 @@ def _mosaic(srcs: list[Path], out: Path) -> None:
     profile = handles[0].profile.copy()
     for h in handles:
         h.close()
+    _write_mosaic(out, data[0], tr, profile)
+
+
+def _mosaic_alt(srcs: list[Path], out: Path) -> None:
+    """alt.tif (uint16 m) → indice de classe uint8 ; altitude inconnue → NODATA."""
+    handles = [rasterio.open(p) for p in srcs]
+    data, tr = merge(handles, nodata=NODATA_U16, dtype="uint16")
+    profile = handles[0].profile.copy()
+    for h in handles:
+        h.close()
+    alt = data[0]
+    cls = np.where(alt == NODATA_U16, NODATA, np.minimum(alt // ALT_CLASS_M, NODATA - 1))
+    profile["dtype"] = "uint8"
+    _write_mosaic(out, cls.astype(np.uint8), tr, profile)
+
+
+def alt_class_center(index: int) -> int:
+    """Centre (m) de la classe d'indice k, tel que `weather_grid` et l'API le nomment."""
+    return index * ALT_CLASS_M + ALT_CLASS_M // 2
+
+
+def _write_mosaic(out: Path, data: np.ndarray, tr, profile: dict) -> None:
     profile.update(
-        width=data.shape[2],
-        height=data.shape[1],
+        width=data.shape[1],
+        height=data.shape[0],
         transform=tr,
         nodata=NODATA,
         compress="DEFLATE",
         tiled=True,
     )
     with rasterio.open(out, "w", **profile) as d:
-        d.write(data[0], 1)
+        d.write(data, 1)
 
 
 def _png(arr: np.ndarray) -> bytes:
@@ -122,7 +180,7 @@ def _render_tile(src: rasterio.DatasetReader, t: mercantile.Tile) -> np.ndarray 
     return None if np.all(dst == NODATA) else dst
 
 
-def _mbtiles(src_path: Path, out: Path, name: str) -> None:
+def _mbtiles(src_path: Path, out: Path, name: str, description: str) -> None:
     out.unlink(missing_ok=True)
     db = sqlite3.connect(out)
     db.executescript(
@@ -137,17 +195,14 @@ def _mbtiles(src_path: Path, out: Path, name: str) -> None:
         db.executemany(
             "INSERT INTO metadata VALUES (?, ?)",
             [
-                ("name", f"T {name}"),
+                ("name", name),
                 ("format", "png"),
                 ("type", "overlay"),
                 ("version", "1"),
                 ("minzoom", str(MIN_ZOOM)),
                 ("maxzoom", str(MAX_ZOOM)),
                 ("bounds", f"{w},{south},{e},{n}"),
-                (
-                    "description",
-                    "Champis — potentiel terrain, gris 8 bits = T × 254, alpha 0 = hors forêt",
-                ),
+                ("description", description),
             ],
         )
         for z in range(MIN_ZOOM, MAX_ZOOM + 1):

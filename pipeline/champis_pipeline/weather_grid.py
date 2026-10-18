@@ -25,12 +25,12 @@ from rasterio.windows import Window
 
 from .config import CRS_CALC, DATA_DIR, RES_M, T_DIR, dept_dirs
 from .scoring import NODATA_U8
-from .species import list_species, species_hash
+from .species import list_species, load_palette, species_hash
 
 log = logging.getLogger(__name__)
 
 CELL_M = 5000
-ALT_CLASS_M = 300
+ALT_CLASS_M = int(load_palette()["alt_encoding"]["class_m"])  # partagé avec les clients
 OUT = DATA_DIR / "weather_grid.json"
 
 

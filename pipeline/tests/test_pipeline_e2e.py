@@ -34,6 +34,7 @@ def sandbox(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(terrain, "T_DIR", tmp_path / "t")
     monkeypatch.setattr(tiles, "T_DIR", tmp_path / "t")
     monkeypatch.setattr(tiles, "TILES_DIR", tmp_path / "tiles")
+    monkeypatch.setattr(tiles, "dept_dirs", rasterize.dept_dirs)
     monkeypatch.setattr(weather_grid, "T_DIR", tmp_path / "t")
     monkeypatch.setattr(weather_grid, "dept_dirs", rasterize.dept_dirs)
 
@@ -176,6 +177,47 @@ def test_tile_position_and_value(sandbox):
         (lon2,), (lat2,) = rio_transform(CRS_CALC, "EPSG:4326", [x - 20_000], [y])
         t2 = mercantile.tile(lon2, lat2, 15)
         assert reader.get(15, t2.x, t2.y) is None
+
+
+def test_alt_layer_matches_weather_grid_classes(sandbox):
+    """La couche A porte l'indice de classe du pixel ; son centre est une classe de la cellule météo."""
+    import io
+
+    import mercantile
+    from PIL import Image
+    from pmtiles.reader import MmapSource, Reader
+    from rasterio.warp import transform as rio_transform
+
+    shp, grid = sandbox["shp"], sandbox["grid"]
+    rasterize.host_cover(DEPT, shp, grid)
+    rasterize.ph(DEPT, sandbox["ph"], grid)
+    rasterize.dem_products(DEPT, [sandbox["dem"]], grid)
+    terrain.compute(DEPT, "boletus_edulis")
+    pm = tiles.build_alt([DEPT])
+    assert pm.name.startswith("A-300m-d") and pm.exists()
+    assert tiles.build_alt([DEPT]) == pm  # idempotent
+
+    x, y = 930_000 + 2_500, 6_680_000 + 7_500  # centre de la hêtraie
+    (lon,), (lat,) = rio_transform(CRS_CALC, "EPSG:4326", [x], [y])
+    t = mercantile.tile(lon, lat, 15)
+    with open(pm, "rb") as f:
+        reader = Reader(MmapSource(f))
+        img = Image.open(io.BytesIO(reader.get(15, t.x, t.y))).convert("LA")
+        b = mercantile.bounds(t)
+        px = int((lon - b.west) / (b.east - b.west) * 256)
+        py = int((b.north - lat) / (b.north - b.south) * 256)
+        k, alpha = img.getpixel((px, py))
+        assert alpha == 255
+        with rasterio.open(sandbox["tmp"] / "grid" / DEPT / "alt.tif") as s:
+            alt_m = next(s.sample([(x, y)]))[0]
+        assert k == alt_m // 300
+        (lon2,), (lat2,) = rio_transform(CRS_CALC, "EPSG:4326", [x - 20_000], [y])
+        t2 = mercantile.tile(lon2, lat2, 15)
+        assert reader.get(15, t2.x, t2.y) is None  # hors emprise : pas de tuile
+
+    out = weather_grid.build([DEPT], ["boletus_edulis"], out=sandbox["tmp"] / "weather_grid.json")
+    cells = json.loads(out.read_text(encoding="utf-8"))["cells"]
+    assert any(tiles.alt_class_center(k) in c["alt_classes"] for c in cells)
 
 
 def test_weather_grid(sandbox):

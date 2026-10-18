@@ -25,7 +25,8 @@ data/grid/<dept>/slope.tif           uint8, degrés
 data/grid/<dept>/aspect.tif          uint8, 0–7 = N,NE,E,SE,S,SW,W,NW ; 8 = flat (pente < 3°)
 data/T/<species>/<dept>.tif          uint8, T × 254
 data/T/<species>/france.vrt          mosaïque
-data/tiles/<species>-<hash>.pmtiles  livrable
+data/tiles/T-<species>-<hash>-….pmtiles  livrable par espèce
+data/tiles/A-300m-d<hash>.pmtiles    classes d'altitude, commune
 ```
 
 Chaque étape vérifie si sa sortie existe et est plus récente que ses entrées ; `--force` pour recalculer. Une étape ne lit jamais la sortie d'une étape postérieure.
@@ -51,7 +52,7 @@ Chaque étape vérifie si sa sortie existe et est plus récente que ses entrées
 
 ## Tuilage
 
-Mosaïque Lambert-93 (`rasterio.merge`), puis pour chaque tuile XYZ des niveaux **6 à 15** : lecture de la fenêtre source + `reproject` nearest en 256×256, PNG **LA** (luminance = `T × 254`, alpha 0 pour nodata), écrit en MBTiles (schéma TMS, ligne inversée) puis `pmtiles.convert.mbtiles_to_pmtiles` (qui remet en XYZ : pas de double flip, vérifié par test). Commits par lots de 2 000 tuiles. Nom `T-<species>-<hash espèce>-p<version>-d<hash des départements>.pmtiles`, immuable. Ordres de grandeur : Doubs ≈ 35 k tuiles, 10–15 min/espèce ; France ≈ 2,3 M tuiles, ~15 h/espèce en mono-thread → à paralléliser (bandes de x) et à construire par réduction 2×2 depuis z15 avant la phase 2.
+Mosaïque Lambert-93 (`rasterio.merge`), puis pour chaque tuile XYZ des niveaux **6 à 15** : lecture de la fenêtre source + `reproject` nearest en 256×256, PNG **LA** (luminance = `T × 254`, alpha 0 pour nodata), écrit en MBTiles (schéma TMS, ligne inversée) puis `pmtiles.convert.mbtiles_to_pmtiles` (qui remet en XYZ : pas de double flip, vérifié par test). Commits par lots de 2 000 tuiles. Nom `T-<species>-<hash espèce>-p<version>-d<hash des départements>.pmtiles`, immuable. Une seconde couche `A-<largeur>m-d<hash des départements>.pmtiles` (classes d'altitude, `build_alt`) suit la même chaîne depuis `alt.tif` : gris = indice k de la classe `[300k, 300k+300[` m (centre `300k+150`, celui de `weather_grid.alt_classes` et de l'API), alpha 0 = altitude inconnue, emprise entière ; la largeur vient de `shared/palette.json` (`alt_encoding.class_m`), jamais en dur. Ordres de grandeur : Doubs ≈ 35 k tuiles, 10–15 min/espèce ; France ≈ 2,3 M tuiles, ~15 h/espèce en mono-thread → à paralléliser (bandes de x) et à construire par réduction 2×2 depuis z15 avant la phase 2.
 
 ## Contrôle (`pipeline/check/`)
 

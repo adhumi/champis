@@ -45,6 +45,7 @@ def cmd_terrain(args) -> None:
 def cmd_tiles(args) -> None:
     for sid in _species(args):
         print(tiles.build(sid, args.depts, args.force))
+    print(tiles.build_alt(args.depts, args.force))  # couche A, commune à toutes les espèces
 
 
 def cmd_weather_grid(args) -> None:
