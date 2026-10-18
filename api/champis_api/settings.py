@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from champis_pipeline.config import DATA_DIR, ROOT
+from champis_pipeline.storage import S3Config
 
 
 def _hours(value: str) -> tuple[int, ...]:
@@ -35,3 +36,8 @@ class Settings:
     repo_root: Path = ROOT
     # Clé API Open-Meteo (plan payant) : hôtes customer-*, quota dédié. Vide = gratuit.
     open_meteo_api_key: str = os.environ.get("CHAMPIS_OPEN_METEO_API_KEY", "")
+    # Bucket des PMTiles (CHAMPIS_S3_ENDPOINT, CHAMPIS_S3_BUCKET, AWS_*) ; None = pas de /tiles
+    s3: S3Config | None = field(default_factory=S3Config.from_env)
+    # « presign » : URL présignées lues directement par le navigateur ; « proxy » : relais /tiles/{name}
+    tiles_mode: str = os.environ.get("CHAMPIS_TILES_MODE", "presign")
+    tiles_url_hours: int = int(os.environ.get("CHAMPIS_TILES_URL_HOURS", "24"))

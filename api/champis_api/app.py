@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import httpx
+from champis_pipeline.storage import Bucket, BucketLike
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -23,7 +24,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .cache import WeatherCache
 from .grid import WeatherGrid
-from .routers import species, weather
+from .routers import species, tiles, weather
 from .seed import import_seed
 from .settings import Settings
 from .warm import WARM_INTERVAL_S, warm
@@ -38,6 +39,9 @@ class State:
     grid: WeatherGrid
     client: OpenMeteoClient
     cache: WeatherCache
+    bucket: BucketLike | None = None  # PMTiles (spec › hébergement) ; None = glisser-déposer seul
+    tiles_mode: str = "presign"
+    tiles_url_hours: int = 24
 
 
 def _configure_logging() -> None:
@@ -70,8 +74,16 @@ def create_app(settings: Settings | None = None, state: State | None = None) -> 
         async with httpx.AsyncClient(headers={"User-Agent": "champis-api"}) as http:
             grid = WeatherGrid.load(settings.weather_grid)
             key = settings.open_meteo_api_key
+            bucket = Bucket(settings.s3) if settings.s3 else None
+            if bucket is None:
+                log.warning("pas de bucket (CHAMPIS_S3_*) : /tiles vide, glisser-déposer seul")
             app.state.champis = State(
-                grid=grid, client=OpenMeteoClient(http, cache, api_key=key), cache=cache
+                grid=grid,
+                client=OpenMeteoClient(http, cache, api_key=key),
+                cache=cache,
+                bucket=bucket,
+                tiles_mode=settings.tiles_mode,
+                tiles_url_hours=settings.tiles_url_hours,
             )
             warmer = OpenMeteoClient(http, cache, min_interval_s=WARM_INTERVAL_S, api_key=key)
             task = asyncio.create_task(
@@ -91,6 +103,7 @@ def create_app(settings: Settings | None = None, state: State | None = None) -> 
     )
     app.include_router(species.router)
     app.include_router(weather.router)
+    app.include_router(tiles.router)
 
     @app.get("/health")
     async def health() -> dict[str, str | int]:

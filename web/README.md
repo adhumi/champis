@@ -13,6 +13,8 @@ open http://localhost:8000/web/
 
 Puis glisser un ou plusieurs `data/tiles/T-*.pmtiles`, et le `data/tiles/A-300m-*.pmtiles` (classes d'altitude), dans la zone prévue (ou cliquer dessus). L'espèce est déduite du nom du fichier (`T-<espèce>-…`) ; `A-…` est reconnu comme la couche d'altitude.
 
+Quand l'API est joignable et qu'un bucket est configuré (`GET /tiles`, voir `api/README.md`), la page charge toute seule les PMTiles publiés ; le glisser-déposer sert alors de complément ou de repli.
+
 Avec un serveur qui gère les requêtes `Range` (`npx serve .`, nginx, un bucket…), on peut aussi passer les tuiles en URL :
 
 ```

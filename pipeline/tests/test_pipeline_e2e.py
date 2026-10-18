@@ -462,3 +462,55 @@ def test_tile_reductions():
     assert (
         reduce_nearest(children)[0, 0] == 200
     )  # premier valide dans l'ordre (0,0),(0,1),(1,0),(1,1)
+
+
+class _FakeBucket:
+    """Même contrat que champis_pipeline.storage.Bucket, en mémoire."""
+
+    def __init__(self):
+        self.objects: dict[str, bytes] = {}
+        self.uploads: list[str] = []
+
+    def list(self, prefix):
+        return {k: len(v) for k, v in self.objects.items() if k.startswith(prefix)}
+
+    def upload(self, path, key):
+        self.objects[key] = Path(path).read_bytes()
+        self.uploads.append(key)
+
+    def put_json(self, key, obj):
+        self.objects[key] = json.dumps(obj).encode()
+
+    def get_json(self, key):
+        return json.loads(self.objects[key]) if key in self.objects else None
+
+    def presign(self, key, expires_s):
+        return f"https://bucket.test/{key}?X-Amz-Expires={expires_s}"
+
+
+def test_publish_uploads_once_and_builds_manifest(tmp_path):
+    from champis_pipeline import publish
+    from champis_pipeline.storage import MANIFEST_KEY, parse_tile_name
+
+    names = publish.expected_names(["25"], ["boletus_edulis"])
+    assert names[0].startswith("T-boletus_edulis-") and names[1].startswith("A-300m-d")
+    for n in names:
+        (tmp_path / n).write_bytes(b"x" * 100)
+    bucket = _FakeBucket()
+    m = publish.publish(bucket, ["25"], ["boletus_edulis"], tiles_dir=tmp_path)
+    assert sorted(bucket.uploads) == sorted("tiles/" + n for n in names)
+    assert [t["kind"] for t in m["tiles"]] == ["A", "T"]  # tri par nom
+    t = next(t for t in m["tiles"] if t["kind"] == "T")
+    assert (
+        t["species"] == "boletus_edulis" and t["bytes"] == 100 and t["key"] == "tiles/" + names[0]
+    )
+    assert m["depts_by_hash"][t["depts_hash"]] == ["25"]
+    assert bucket.get_json(MANIFEST_KEY)["tiles"] == m["tiles"]
+    # relance : rien n'est renvoyé (même taille), le manifeste est réécrit
+    bucket.uploads.clear()
+    publish.publish(bucket, ["25"], ["boletus_edulis"], tiles_dir=tmp_path)
+    assert bucket.uploads == []
+    assert parse_tile_name("T-x-00000000-p1.0.0-dabcdef.pmtiles")["scoring_version"] == "1.0.0"
+    assert parse_tile_name("random.pmtiles") is None
+    with pytest.raises(FileNotFoundError):
+        publish.publish(bucket, ["01"], ["boletus_edulis"], tiles_dir=tmp_path)

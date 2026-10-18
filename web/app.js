@@ -302,7 +302,9 @@ function setLayer(key) {
 
 map.on("load", () => {
   setBasemap($("basemap").value);
-  loadPalette().then(loadFromQuery).catch((e) => ($("status").textContent = e.message));
+  loadPalette()
+    .then(() => loadFromQuery() || loadFromApi())
+    .catch((e) => ($("status").textContent = e.message));
 });
 
 $("basemap").addEventListener("change", (e) => setBasemap(e.target.value));
@@ -470,8 +472,29 @@ function refreshLayerList() {
 
 function loadFromQuery() {
   const q = new URLSearchParams(location.search).get("tiles");
-  if (!q) return;
+  if (!q) return null;
   return addMany(q.split(",").map((u) => ({ src: u, label: u })));
+}
+
+/** PMTiles publiés dans le bucket : `GET /tiles` renvoie une URL par fichier (présignée, ou
+ *  relais /tiles/<nom> en mode proxy). Sans bucket configuré, on garde le glisser-déposer. */
+async function loadFromApi() {
+  const base = $("api").value.replace(/\/$/, "");
+  let body;
+  try {
+    const r = await fetch(`${base}/tiles`);
+    if (!r.ok) return;
+    body = await r.json();
+  } catch {
+    return; // API absente : page statique seule
+  }
+  if (!body.configured || body.tiles.length === 0) return;
+  const items = body.tiles.map((t) => ({
+    src: /^https?:/.test(t.url) ? t.url : `${base}${t.url}`,
+    label: t.name,
+  }));
+  await addMany(items);
+  $("status").textContent += `\n${items.length} fichier(s) chargés depuis le bucket (${body.mode})`;
 }
 
 const drop = $("drop");
