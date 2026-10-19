@@ -407,7 +407,9 @@ async function fetchWeather() {
 
 async function addSource(src, label) {
   if (/(?:^|\/)A-\d+m-/.test(label)) {
-    altLayer = { pm: new pmtiles.PMTiles(src), label };
+    const pm = new pmtiles.PMTiles(src);
+    await pm.getHeader(); // échoue tout de suite (CORS, 403…) plutôt qu'au premier rendu
+    altLayer = { pm, label };
     ++tileVersion;
     return "A";
   }
@@ -429,11 +431,13 @@ async function addSource(src, label) {
 async function addMany(items) {
   const first = species.size === 0;
   const errors = [];
+  let loaded = 0;
   for (const { src, label } of items) {
     try {
       await addSource(src, label);
+      ++loaded;
     } catch (e) {
-      errors.push(e.message);
+      errors.push(`${label} : ${e.message}`);
     }
   }
   refreshLayerList();
@@ -450,6 +454,7 @@ async function addMany(items) {
   ].join("\n");
   if (currentKey) setLayer(currentKey); // une couche A ajoutée après coup change le rendu S
   fetchWeather();
+  return loaded;
 }
 
 function refreshLayerList() {
@@ -493,8 +498,12 @@ async function loadFromApi() {
     src: /^https?:/.test(t.url) ? t.url : `${base}${t.url}`,
     label: t.name,
   }));
-  await addMany(items);
-  $("status").textContent += `\n${items.length} fichier(s) chargés depuis le bucket (${body.mode})`;
+  const loaded = await addMany(items);
+  const hint =
+    loaded < items.length && body.mode === "presign"
+      ? " — si le navigateur bloque les URL présignées (CORS), passer l'API en CHAMPIS_TILES_MODE=proxy"
+      : "";
+  $("status").textContent += `\n${loaded}/${items.length} fichier(s) chargés depuis le bucket (${body.mode})${hint}`;
 }
 
 const drop = $("drop");
