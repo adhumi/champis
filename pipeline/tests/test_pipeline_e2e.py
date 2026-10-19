@@ -391,6 +391,26 @@ def test_cli_species_before_or_after_subcommand(monkeypatch):
     assert seen == [(["a"], True), (["a"], True), (["a", "b"], False), (None, False)]
 
 
+def test_cli_tiles_and_weather_grid_accept_all(monkeypatch):
+    """`tiles --depts all` et `weather-grid --depts all` développent la liste des 96 départements."""
+    from champis_pipeline import cli, tiles, weather_grid
+    from champis_pipeline.batch import DEPTS_ALL
+
+    seen = []
+    monkeypatch.setattr(
+        tiles, "build", lambda sid, depts, force, jobs: seen.append(("T", sid, depts, jobs))
+    )
+    monkeypatch.setattr(
+        tiles, "build_alt", lambda depts, force, jobs: seen.append(("A", depts, jobs))
+    )
+    monkeypatch.setattr(
+        weather_grid, "build", lambda depts, species: seen.append(("W", depts, species))
+    )
+    cli.main(["tiles", "--depts", "all", "--species", "x", "--jobs", "3"])
+    cli.main(["weather-grid", "--depts", "1", "2a"])
+    assert seen == [("T", "x", DEPTS_ALL, 3), ("A", DEPTS_ALL, 3), ("W", ["01", "2A"], None)]
+
+
 def test_batch_resumes_and_isolates_failures(tmp_path):
     """Un département en échec n'arrête pas les autres ; les « ok » ne sont pas refaits sans force."""
     from concurrent.futures import ThreadPoolExecutor
