@@ -4,8 +4,8 @@ Chaîne 100 % Python : rasterio (mosaïque écrite sur disque, reprojection par 
 → MBTiles (sqlite) → pmtiles.convert. Les tuiles sont des PNG de données, non colorisées : la
 palette est appliquée par les clients. 255 = nodata (alpha 0).
 
-Échelle France (phase 2) : le niveau 15 est rendu depuis la mosaïque par bandes de colonnes en
-parallèle (`--jobs`), puis les niveaux 14 → 6 sont construits par réduction 2×2 des tuiles du
+Échelle France (phase 2) : le niveau 15 est rendu depuis la mosaïque par carrés de 64 × 64 tuiles en
+parallèle (`--jobs`, les carrés sans donnée sont écartés d'une seule lecture), puis les niveaux 14 → 6 sont construits par réduction 2×2 des tuiles du
 niveau supérieur (T : moyenne des pixels valides ; A : plus proche voisin) sans relire la mosaïque.
 
 Deuxième couche, commune à toutes les espèces : `A` = classe d'altitude du pixel (gris = indice
@@ -49,7 +49,7 @@ MIN_ZOOM = 6
 MAX_ZOOM = 15
 TILE = 256
 NODATA = 255
-BAND_TILES = 64  # colonnes de tuiles z15 par tâche parallèle
+CHUNK_TILES = 64  # carré de tuiles z15 (64 × 64) par tâche parallèle
 MERGE_MEM_MB = 1024
 
 
@@ -213,31 +213,44 @@ def reduce_nearest(children: np.ndarray) -> np.ndarray:
     return np.where(valid.any(axis=2), out, NODATA).astype(np.uint8)
 
 
-def _render_band(
+def _render_chunk(
     mosaic: str, z: int, x0: int, x1: int, y0: int, y1: int
 ) -> list[tuple[int, int, bytes]]:
-    """Tuiles (x, y, png) de la bande de colonnes [x0, x1[ aux lignes [y0, y1] ; un processus."""
-    out = []
+    """Tuiles (x, y, png) du carré de colonnes [x0, x1[ × lignes [y0, y1[ ; un processus.
+
+    Un carré entièrement hors de la mosaïque ou sans donnée (mer, hors emprise) est écarté par
+    une seule lecture de sa fenêtre source, sans passer tuile par tuile.
+    """
     with rasterio.open(mosaic) as src:
+        bl, tr = mercantile.xy_bounds(x0, y1 - 1, z), mercantile.xy_bounds(x1 - 1, y0, z)
+        win = _source_window(src, bl.left, bl.bottom, tr.right, tr.top)
+        if win is None or np.all(src.read(1, window=win) == NODATA):
+            return []
+        out = []
         for x in range(x0, x1):
-            for y in range(y0, y1 + 1):
+            for y in range(y0, y1):
                 arr = _render_tile(src, mercantile.Tile(x, y, z))
                 if arr is not None:
                     out.append((x, y, _png(arr)))
     return out
 
 
+def _source_window(src: rasterio.DatasetReader, left, bottom, right, top) -> Window | None:
+    """Fenêtre source couvrant l'emprise Web Mercator donnée, ou None si hors mosaïque."""
+    sw, ss, se, sn = transform_bounds(CRS_TILES, src.crs, left, bottom, right, top)
+    win = from_bounds(sw, ss, se, sn, src.transform).round_offsets().round_lengths()
+    try:
+        win = win.intersection(Window(0, 0, src.width, src.height))
+    except (ValueError, rasterio.errors.WindowError):  # pas de recouvrement
+        return None
+    return None if win.width < 1 or win.height < 1 else win
+
+
 def _render_tile(src: rasterio.DatasetReader, t: mercantile.Tile) -> np.ndarray | None:
     """Lit la fenêtre source couvrant la tuile, la reprojette en 256×256 Web Mercator."""
     b = mercantile.xy_bounds(t)
-    sw, ss, se, sn = transform_bounds(CRS_TILES, src.crs, b.left, b.bottom, b.right, b.top)
-    win = from_bounds(sw, ss, se, sn, src.transform).round_offsets().round_lengths()
-    full = Window(0, 0, src.width, src.height)
-    try:
-        win = win.intersection(full)
-    except (ValueError, rasterio.errors.WindowError):  # pas de recouvrement
-        return None
-    if win.width < 1 or win.height < 1:
+    win = _source_window(src, b.left, b.bottom, b.right, b.top)
+    if win is None:
         return None
     data = src.read(1, window=win)
     if np.all(data == NODATA):
@@ -299,27 +312,35 @@ def _insert(db: sqlite3.Connection, z: int, rows: list[tuple[int, int, bytes]]) 
 
 
 def _render_max_zoom(db: sqlite3.Connection, src_path: Path, bounds, jobs: int) -> int:
-    """Niveau 15 depuis la mosaïque, par bandes de colonnes, `jobs` processus."""
+    """Niveau 15 depuis la mosaïque, par carrés de CHUNK_TILES² tuiles, `jobs` processus."""
     w, south, e, n = bounds
     ul, lr = mercantile.tile(w, n, MAX_ZOOM), mercantile.tile(e, south, MAX_ZOOM)
-    bands = [
-        (str(src_path), MAX_ZOOM, x0, min(x0 + BAND_TILES, lr.x + 1), ul.y, lr.y)
-        for x0 in range(ul.x, lr.x + 1, BAND_TILES)
+    chunks = [
+        (
+            str(src_path),
+            MAX_ZOOM,
+            x0,
+            min(x0 + CHUNK_TILES, lr.x + 1),
+            y0,
+            min(y0 + CHUNK_TILES, lr.y + 1),
+        )
+        for x0 in range(ul.x, lr.x + 1, CHUNK_TILES)
+        for y0 in range(ul.y, lr.y + 1, CHUNK_TILES)
     ]
     count = 0
     if jobs <= 1:
-        for band in tqdm(bands, desc=f"z{MAX_ZOOM}", unit="bande", leave=False):
-            rows = _render_band(*band)
+        for chunk in tqdm(chunks, desc=f"z{MAX_ZOOM}", unit="carré", leave=False):
+            rows = _render_chunk(*chunk)
             _insert(db, MAX_ZOOM, rows)
             count += len(rows)
         return count
     ctx = multiprocessing.get_context("spawn")  # pas de fork sous GDAL multi-threadé
     with ProcessPoolExecutor(max_workers=jobs, mp_context=ctx) as ex:
         for rows in tqdm(
-            ex.map(_render_band, *zip(*bands, strict=True)),
-            total=len(bands),
+            ex.map(_render_chunk, *zip(*chunks, strict=True)),
+            total=len(chunks),
             desc=f"z{MAX_ZOOM}",
-            unit="bande",
+            unit="carré",
             leave=False,
         ):
             _insert(db, MAX_ZOOM, rows)
