@@ -197,14 +197,14 @@ def main() -> int:
                 if r not in refs_known:
                     err(f"{n}: weather.refs.{block} → '{r}' absent")
 
-        print(f"✓ {n}: {len(t['hosts'])} hôtes, {len(refs_known)} références")
+        print(f"ok  {n}: {len(t['hosts'])} hôtes, {len(refs_known)} références")
 
     if errors:
-        print("\nERREURS :")
+        print("\nECHEC :")
         for e in errors:
             print(" -", e)
         return 1
-    print(f"\nOK — {len(files)} fichiers espèces, {len(mapping['bdforet_v2'])} codes TFV")
+    print(f"\nok  {len(files)} fichiers espèces, {len(mapping['bdforet_v2'])} codes TFV")
     return 0
 
 
