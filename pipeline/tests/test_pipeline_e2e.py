@@ -231,7 +231,6 @@ def test_extract_dept_subset_of_france_set(sandbox):
     assert tiles.build_dept("boletus_edulis", DEPT, ["00", DEPT]) == full
 
 
-
 def test_dept_extract_rebuilds_stale_work_mbtiles(sandbox):
     """Un MBTiles de travail incomplet (rendu interrompu) ou absent ne donne plus un jeu vide et une
     IndexError de pmtiles : il est reconstruit depuis le PMTiles du jeu complet, qui fait foi."""
