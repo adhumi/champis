@@ -275,7 +275,11 @@
     "refs": [
       "courtecuisse2013",
       "eyssartier2017"
-    ]
+    ],
+    "references": {
+      "eyssartier2017": "Eyssartier G. & Roux P., 2017, Le guide des champignons France et Europe, 4e éd., Belin — caractères distinctifs du bolet amer, des bolets à pores rouges, de la fausse girolle et du clitocybe de l'olivier",
+      "courtecuisse2013": "Courtecuisse R. & Duhem B., 2013, Guide des champignons de France et d'Europe, Delachaux et Niestlé — descriptions, confusions et comestibilité des espèces européennes"
+    }
   },
   "references": {
     "olariaga2017": "Olariaga et al. 2017, Fungal Diversity — C. pallens : chênes caducifoliés et sempervirents, hêtre, noisetier, épicéa ; du Maroc à la Suède",
@@ -296,8 +300,6 @@
     "tahvanainen2019": "Tahvanainen et al. 2019, Forests — pluie juin+juillet",
     "pilz2003": "Pilz et al. 2003, GTR-576 — persistance moyenne 44 j (genre)",
     "populaire_scandinave": "Sources populaires scandinaves — confiance faible",
-    "agreda2015": "Ágreda et al. 2015, GCB — bilan hydrique (P-ETP) ; base du facteur water_balance",
-    "courtecuisse2013": "Courtecuisse R. & Duhem B., 2013, Guide des champignons de France et d'Europe, Delachaux et Niestlé — descriptions, confusions et comestibilité des espèces européennes",
-    "eyssartier2017": "Eyssartier G. & Roux P., 2017, Le guide des champignons France et Europe, 4e éd., Belin — caractères distinctifs du bolet amer, des bolets à pores rouges, de la fausse girolle et du clitocybe de l'olivier"
+    "agreda2015": "Ágreda et al. 2015, GCB — bilan hydrique (P-ETP) ; base du facteur water_balance"
   }
 }

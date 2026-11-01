@@ -286,7 +286,11 @@
     "refs": [
       "courtecuisse2013",
       "eyssartier2017"
-    ]
+    ],
+    "references": {
+      "eyssartier2017": "Eyssartier G. & Roux P., 2017, Le guide des champignons France et Europe, 4e éd., Belin — caractères distinctifs du bolet amer, des bolets à pores rouges, de la fausse girolle et du clitocybe de l'olivier",
+      "courtecuisse2013": "Courtecuisse R. & Duhem B., 2013, Guide des champignons de France et d'Europe, Delachaux et Niestlé — descriptions, confusions et comestibilité des espèces européennes"
+    }
   },
   "references": {
     "bielefeld2025": "Brejon Lamartinière & Hoffman 2025, Predicting porcini, bioRxiv 10.64898/2025.12.12.693895 — modèle journalier B. edulis, hêtraies, 2015-2024 : T moy 20 j optimum ≈13 °C, pluie moyenne 26 j linéaire",
@@ -308,8 +312,6 @@
     "terrain_fr": "Sources de terrain françaises (Wikipédia FR, Mycocharentes) — > 50 mm/décade, premiers sporophores 6-15 j, pousse ~12 j ; confiance faible",
     "coolia2005": "Coolia 2005 (48:2) — B. pinophilus sur sables acides à lichens",
     "piemonte": "Regione Piemonte, fiche Boletus — B. pinophilus 400-1 400 m (jusqu'à 1 800), bimodal (fin de printemps, sept.-nov.), tolère les premières gelées",
-    "gbif2026": "GBIF, API, France, lu le 16/10/2026 — B. pinophilus FR 365 occ. : avril 67, sept. 76, oct. 69 ; 600-1 800 m en Italie",
-    "courtecuisse2013": "Courtecuisse R. & Duhem B., 2013, Guide des champignons de France et d'Europe, Delachaux et Niestlé — descriptions, confusions et comestibilité des espèces européennes",
-    "eyssartier2017": "Eyssartier G. & Roux P., 2017, Le guide des champignons France et Europe, 4e éd., Belin — caractères distinctifs du bolet amer, des bolets à pores rouges, de la fausse girolle et du clitocybe de l'olivier"
+    "gbif2026": "GBIF, API, France, lu le 16/10/2026 — B. pinophilus FR 365 occ. : avril 67, sept. 76, oct. 69 ; 600-1 800 m en Italie"
   }
 }

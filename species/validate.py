@@ -102,9 +102,11 @@ def check_unit(name: str, d: dict, allowed: set | None = None) -> None:
 
 def check_about(n: str, about: dict, refs_known: set) -> None:
     """Fiche en mots (lot 4) : résumé, habitat, saison, confusions sourcées, photo créditée ou null."""
-    for k in ("summary", "habitat", "season", "confusions", "photo", "refs"):
+    for k in ("summary", "habitat", "season", "confusions", "photo", "refs", "references"):
         if k not in about:
             err(f"{n}: about.{k} manquant")
+    # la fiche est autoporteuse : ses sources vivent dans about.references, hors de l'empreinte
+    refs_known = refs_known | set(about.get("references") or {})
     for k in ("summary", "habitat", "season"):
         if not isinstance(about.get(k), str) or len(about[k]) < 20:
             err(f"{n}: about.{k} trop court ou absent")

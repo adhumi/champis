@@ -287,7 +287,11 @@
     "refs": [
       "courtecuisse2013",
       "eyssartier2017"
-    ]
+    ],
+    "references": {
+      "eyssartier2017": "Eyssartier G. & Roux P., 2017, Le guide des champignons France et Europe, 4e éd., Belin — caractères distinctifs du bolet amer, des bolets à pores rouges, de la fausse girolle et du clitocybe de l'olivier",
+      "courtecuisse2013": "Courtecuisse R. & Duhem B., 2013, Guide des champignons de France et d'Europe, Delachaux et Niestlé — descriptions, confusions et comestibilité des espèces européennes"
+    }
   },
   "references": {
     "olariaga2017": "Olariaga et al. 2017, Fungal Diversity — révision multigène de Cantharellus en Europe, hôtes et sols par espèce",
@@ -314,8 +318,6 @@
     "vonbonsdorff2015": "von Bonsdorff, Finlande 2015 (RCI) — juin frais et pluvieux idéal, juillet caniculaire interrompt",
     "tahvanainen2019": "Tahvanainen, Miina & Kurttila 2019, Forests — offre nationale = f(pluie juin+juillet), r juillet = 0,53",
     "populaire_scandinave": "Kantarellkartet (Oslo), Hurbra.se — 1-3 semaines après pluie significative, versants nord ; confiance faible",
-    "agreda2015": "Ágreda et al. 2015, GCB — bilan hydrique (P-ETP) ; base du facteur water_balance",
-    "courtecuisse2013": "Courtecuisse R. & Duhem B., 2013, Guide des champignons de France et d'Europe, Delachaux et Niestlé — descriptions, confusions et comestibilité des espèces européennes",
-    "eyssartier2017": "Eyssartier G. & Roux P., 2017, Le guide des champignons France et Europe, 4e éd., Belin — caractères distinctifs du bolet amer, des bolets à pores rouges, de la fausse girolle et du clitocybe de l'olivier"
+    "agreda2015": "Ágreda et al. 2015, GCB — bilan hydrique (P-ETP) ; base du facteur water_balance"
   }
 }

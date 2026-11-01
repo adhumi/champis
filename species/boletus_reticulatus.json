@@ -273,7 +273,11 @@
     "refs": [
       "courtecuisse2013",
       "eyssartier2017"
-    ]
+    ],
+    "references": {
+      "eyssartier2017": "Eyssartier G. & Roux P., 2017, Le guide des champignons France et Europe, 4e éd., Belin — caractères distinctifs du bolet amer, des bolets à pores rouges, de la fausse girolle et du clitocybe de l'olivier",
+      "courtecuisse2013": "Courtecuisse R. & Duhem B., 2013, Guide des champignons de France et d'Europe, Delachaux et Niestlé — descriptions, confusions et comestibilité des espèces européennes"
+    }
   },
   "references": {
     "bielefeld2025": "Brejon Lamartinière & Hoffman 2025, Predicting porcini, bioRxiv 10.64898/2025.12.12.693895 — modèle journalier B. edulis, hêtraies, 2015-2024 : T moy 20 j optimum ≈13 °C, pluie moyenne 26 j linéaire",
@@ -291,8 +295,6 @@
     "kauserud2012": "Kauserud et al. 2012, PNAS 109:14488 — recul des premières gelées = allongement de saison",
     "terrain_fr": "Sources de terrain françaises (Wikipédia FR, Mycocharentes) — > 50 mm/décade, premiers sporophores 6-15 j, pousse ~12 j ; confiance faible",
     "coolia2005": "Coolia 2005 (48:2) — B. reticulatus strictement sous chênes, amplitude de sol très large (sable sec à argile riche), stations assez sèches",
-    "wikipedia_fr_reticulatus": "Wikipédia FR, Boletus reticulatus (citant Eyssartier & Roux) — mai/juin → novembre, pic juillet et second pic octobre ; thermophile",
-    "courtecuisse2013": "Courtecuisse R. & Duhem B., 2013, Guide des champignons de France et d'Europe, Delachaux et Niestlé — descriptions, confusions et comestibilité des espèces européennes",
-    "eyssartier2017": "Eyssartier G. & Roux P., 2017, Le guide des champignons France et Europe, 4e éd., Belin — caractères distinctifs du bolet amer, des bolets à pores rouges, de la fausse girolle et du clitocybe de l'olivier"
+    "wikipedia_fr_reticulatus": "Wikipédia FR, Boletus reticulatus (citant Eyssartier & Roux) — mai/juin → novembre, pic juillet et second pic octobre ; thermophile"
   }
 }

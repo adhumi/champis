@@ -76,6 +76,9 @@ Ce que l'onglet Comprendre et le site disent de l'espèce. Aucune aide à l'iden
 | `confusions` | Liste ; chaque entrée : `name`, `latin`, `risk` (ce qu'on risque), `tell` (comment la distinguer), `refs` (≥ 1 clé de `references`) |
 | `photo` | `null` tant qu'elle n'est pas choisie, sinon `url` (image), `page` (page Wikimedia Commons), `author`, `license` parmi les licences libres acceptées (CC0, domaine public, CC BY, CC BY-SA) ; le crédit s'affiche sous la photo |
 | `refs` | Sources de la fiche |
+| `references` | Dictionnaire des sources propres à la fiche (clé → citation courte), comme `references` en tête de fichier |
+
+Le bloc est **autoporteur et exclu de l'empreinte d'espèce** (`species_hash`, calculée sur le fichier sans `about`) : relire une fiche ne renomme aucune tuile et ne régénère rien.
 
 Première version rédigée par Claude, relue par Adrien (décision du 1er nov. 2026).
 

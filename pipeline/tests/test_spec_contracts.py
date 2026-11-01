@@ -19,6 +19,7 @@ from champis_pipeline.species import (
     COVER_CLASSES,
     ROOT,
     all_species_hash,
+    fingerprint_bytes,
     host_vocabulary,
     list_species,
     load_mapping,
@@ -281,8 +282,24 @@ def test_shared_texts_index_and_species_about():
         sp = json.loads(path.read_text(encoding="utf-8"))
         about = sp["about"]
         assert about["confusions"], path.stem
+        known = set(sp["references"]) | set(about["references"])
         for confusion in about["confusions"]:
-            assert confusion["refs"] and all(r in sp["references"] for r in confusion["refs"]), (
-                path.stem
-            )
+            assert confusion["refs"] and all(r in known for r in confusion["refs"]), path.stem
         assert about["photo"] is None or {"url", "page", "author", "license"} <= set(about["photo"])
+
+
+def test_species_fingerprint_ignores_about():
+    """Spec › Modèle d'espèce : `about` est exclu de l'empreinte, relire une fiche ne renomme rien."""
+    raw = (ROOT / "species" / "boletus_edulis.json").read_bytes()
+    data = json.loads(raw)
+    about = data.pop("about")
+    bare = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    assert fingerprint_bytes(raw) == bare == fingerprint_bytes(bare)
+    data["about"] = {**about, "summary": "relecture d'Adrien"}
+    reread = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    assert fingerprint_bytes(reread) == bare
+    # l'empreinte publiée (vecteurs, tuiles) est bien celle du modèle seul
+    vectors = json.loads(
+        (ROOT / "shared" / "vectors" / "trapezoid.json").read_text(encoding="utf-8")
+    )
+    assert all_species_hash() == vectors["generated_by"]["species_hash"]
