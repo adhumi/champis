@@ -64,6 +64,24 @@ Pour J+1 à J+7, mêmes formules sur les séries prévues. La série doit couvri
 
 Pistes non implémentées (à évaluer en phase 5 sur les retours terrain) : choc thermique (chute de T moyenne ≥ 4 °C dans la semaine suivant la pluie, bonus ×1,2), température du sol au lieu de l'air, trigger en multiplicateur pour les bolets.
 
+## `about` → fiche en mots (app et site, refonte UX lot 4)
+
+Ce que l'onglet Comprendre et le site disent de l'espèce. Aucune aide à l'identification : la consigne « faites contrôler votre récolte par un pharmacien ou une association mycologique » précède toutes les fiches (`shared/texts/especes.md`).
+
+| Clé | Rôle |
+| --- | --- |
+| `summary` | Deux ou trois phrases : allure générale, ce qui la distingue |
+| `habitat` | Où elle pousse, en mots (hôtes, sols, altitude, région) |
+| `season` | Quand, en mots (mois, pic, décalage en montagne) |
+| `confusions` | Liste ; chaque entrée : `name`, `latin`, `risk` (ce qu'on risque), `tell` (comment la distinguer), `refs` (≥ 1 clé de `references`) |
+| `photo` | `null` tant qu'elle n'est pas choisie, sinon `url` (image), `page` (page Wikimedia Commons), `author`, `license` parmi les licences libres acceptées (CC0, domaine public, CC BY, CC BY-SA) ; le crédit s'affiche sous la photo |
+| `refs` | Sources de la fiche |
+| `references` | Dictionnaire des sources propres à la fiche (clé → citation courte), comme `references` en tête de fichier |
+
+Le bloc est **autoporteur et exclu de l'empreinte d'espèce** (`species_hash`, calculée sur le fichier sans `about`) : relire une fiche ne renomme aucune tuile et ne régénère rien.
+
+Première version rédigée par Claude, relue par Adrien (décision du 1er nov. 2026).
+
 ## Score final
 
 `S(pixel, espèce, J) = T(pixel) × M_eff(cellule, J, altitude du pixel) × Φ(J, altitude du pixel)`
@@ -72,4 +90,4 @@ Seuils d'affichage (voir la spec) : ≥ 0,75 excellent · 0,55 bon · 0,35 moyen
 
 ## Validation
 
-`python3 species/validate.py` vérifie la structure, les sommes de poids, l'ordre des trapèzes, le vocabulaire des hôtes, la couverture des 32 codes TFV et la présence des références citées.
+`python3 species/validate.py` vérifie la structure, les sommes de poids, l'ordre des trapèzes, le vocabulaire des hôtes, la couverture des 32 codes TFV, la présence des références citées et le bloc `about` (une référence par confusion, photo libre créditée ou `null`).

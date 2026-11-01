@@ -3,7 +3,8 @@
 
 Usage : python3 validate.py
 Vérifie : JSON valide, clés obligatoires, plages trapézoïdales ordonnées,
-poids sommant à 1, hôtes ⊂ vocabulaire, refs ⊂ references, 32 codes TFV couverts.
+poids sommant à 1, hôtes ⊂ vocabulaire, refs ⊂ references, 32 codes TFV couverts,
+bloc `about` (fiche en mots : confusions sourcées, photo libre créditée ou null).
 """
 
 import json
@@ -49,6 +50,18 @@ TFV_CODES = [
     "LA6",
 ]
 ASPECTS = {"N", "NE", "E", "SE", "S", "SW", "W", "NW", "flat"}
+# Licences acceptées pour la photo d'une fiche (Wikimedia Commons) : libres, attribution affichée.
+PHOTO_LICENSES = {
+    "CC0",
+    "Public domain",
+    "CC BY 2.0",
+    "CC BY 3.0",
+    "CC BY 4.0",
+    "CC BY-SA 2.0",
+    "CC BY-SA 2.5",
+    "CC BY-SA 3.0",
+    "CC BY-SA 4.0",
+}
 
 errors: list[str] = []
 
@@ -85,6 +98,41 @@ def check_unit(name: str, d: dict, allowed: set | None = None) -> None:
             err(f"{name}.{k}: valeur {v!r} hors [0,1]")
         if allowed is not None and k not in allowed:
             err(f"{name}.{k}: clé inconnue")
+
+
+def check_about(n: str, about: dict, refs_known: set) -> None:
+    """Fiche en mots (lot 4) : résumé, habitat, saison, confusions sourcées, photo créditée ou null."""
+    for k in ("summary", "habitat", "season", "confusions", "photo", "refs", "references"):
+        if k not in about:
+            err(f"{n}: about.{k} manquant")
+    # la fiche est autoporteuse : ses sources vivent dans about.references, hors de l'empreinte
+    refs_known = refs_known | set(about.get("references") or {})
+    for k in ("summary", "habitat", "season"):
+        if not isinstance(about.get(k), str) or len(about[k]) < 20:
+            err(f"{n}: about.{k} trop court ou absent")
+    confusions = about.get("confusions") or []
+    if not confusions:
+        err(f"{n}: about.confusions vide : au moins une confusion dangereuse")
+    for i, c in enumerate(confusions):
+        for k in ("name", "latin", "risk", "tell", "refs"):
+            if not c.get(k):
+                err(f"{n}: about.confusions[{i}].{k} manquant")
+        for r in c.get("refs") or []:
+            if r not in refs_known:
+                err(f"{n}: about.confusions[{i}].refs → '{r}' absent de references")
+    for r in about.get("refs") or []:
+        if r not in refs_known:
+            err(f"{n}: about.refs → '{r}' absent de references")
+    photo = about.get("photo")
+    if photo is not None:
+        for k in ("url", "page", "author", "license"):
+            if not photo.get(k):
+                err(f"{n}: about.photo.{k} manquant")
+        if photo.get("license") not in PHOTO_LICENSES:
+            err(f"{n}: about.photo.license '{photo.get('license')}' hors licences libres acceptées")
+        for k in ("url", "page"):
+            if not str(photo.get(k, "")).startswith("https://"):
+                err(f"{n}: about.photo.{k} doit être une URL https")
 
 
 def main() -> int:
@@ -196,6 +244,11 @@ def main() -> int:
             for r in rl:
                 if r not in refs_known:
                     err(f"{n}: weather.refs.{block} → '{r}' absent")
+
+        if "about" in sp:
+            check_about(n, sp["about"], refs_known)
+        else:
+            err(f"{n}: bloc 'about' manquant (fiche de l'onglet Comprendre, lot 4)")
 
         print(f"ok  {n}: {len(t['hosts'])} hôtes, {len(refs_known)} références")
 
