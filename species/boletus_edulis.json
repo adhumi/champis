@@ -282,7 +282,12 @@
         ]
       }
     ],
-    "photo": null,
+    "photo": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/%28Gemeine_Steinpilz%29_Boletus_edulis.jpg/1280px-%28Gemeine_Steinpilz%29_Boletus_edulis.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:(Gemeine_Steinpilz)_Boletus_edulis.jpg",
+      "author": "Holger Krisp",
+      "license": "CC BY 3.0"
+    },
     "refs": [
       "courtecuisse2013",
       "eyssartier2017"

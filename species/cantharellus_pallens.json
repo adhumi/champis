@@ -271,7 +271,12 @@
         ]
       }
     ],
-    "photo": null,
+    "photo": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Cantharellus_pallens_FTLuJjc.jpg/1280px-Cantharellus_pallens_FTLuJjc.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Cantharellus_pallens_FTLuJjc.jpg",
+      "author": "Allar Antson",
+      "license": "CC BY-SA 4.0"
+    },
     "refs": [
       "courtecuisse2013",
       "eyssartier2017"

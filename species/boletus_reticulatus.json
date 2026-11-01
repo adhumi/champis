@@ -269,7 +269,12 @@
         ]
       }
     ],
-    "photo": null,
+    "photo": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Boletus_reticulatus_%282%29.JPG/1280px-Boletus_reticulatus_%282%29.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Boletus_reticulatus_(2).JPG",
+      "author": "Toffel",
+      "license": "CC BY-SA 3.0"
+    },
     "refs": [
       "courtecuisse2013",
       "eyssartier2017"

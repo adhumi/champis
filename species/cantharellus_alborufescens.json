@@ -265,7 +265,12 @@
         ]
       }
     ],
-    "photo": null,
+    "photo": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/ba/Cantharellus_alborufescens_confirmed_collection.jpg/1280px-Cantharellus_alborufescens_confirmed_collection.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Cantharellus_alborufescens_confirmed_collection.jpg",
+      "author": "Guillaume Eyssartier",
+      "license": "CC BY 4.0"
+    },
     "refs": [
       "courtecuisse2013",
       "eyssartier2017"
