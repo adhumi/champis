@@ -283,7 +283,12 @@
         ]
       }
     ],
-    "photo": null,
+    "photo": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/85/Cantharellus_cibarius_20090717-01.jpg/1280px-Cantharellus_cibarius_20090717-01.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Cantharellus_cibarius_20090717-01.jpg",
+      "author": "Heisenberg-pl",
+      "license": "CC BY-SA 3.0"
+    },
     "refs": [
       "courtecuisse2013",
       "eyssartier2017"

@@ -272,7 +272,12 @@
         ]
       }
     ],
-    "photo": null,
+    "photo": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a9/Boletus_aereus_IT.JPG/1280px-Boletus_aereus_IT.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Boletus_aereus_IT.JPG",
+      "author": "Roberto Petruzzo",
+      "license": "Public domain"
+    },
     "refs": [
       "courtecuisse2013",
       "eyssartier2017"
