@@ -1,0 +1,15 @@
+# Railway : service cron « champis-notify » : la notification récapitulative « mes coins », une fois
+# par jour après la pré-chauffe du matin (spec › Mes coins). Même dépôt et même Dockerfile ; « Config
+# as code › Config file path » = railway.notify.toml. 6 h UTC = 7 h Paris en hiver, 8 h en été.
+#
+# --pull : reprend le cache publié par la passe de 2 h UTC (météo des coins déjà calculée, aucun
+# appel Open-Meteo sauf cellule froide). Variables : bucket (AWS_*), DATABASE_URL du service Postgres
+# (« Connect »), CHAMPIS_APNS_KEY / _KEY_ID / _TEAM_ID / _TOPIC, CHAMPIS_OPEN_METEO_API_KEY.
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+cronSchedule = "0 6 * * *"
+startCommand = "uv run champis-api -q notify --pull"
+restartPolicyType = "never"
