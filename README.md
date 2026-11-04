@@ -82,7 +82,7 @@ Railway, trois services construits par le même `Dockerfile` (décision du 4 nov
 
 | Service | Fichier de config (« Config as code › Config file path ») | Rôle |
 | --- | --- | --- |
-| `champis-api` | `railway.toml` | FastAPI, plusieurs workers uvicorn (`CHAMPIS_WORKERS`, 2), volume sur `/data` (cache météo SQLite), site statique, relais de tuiles |
+| `champis-api` | `railway.toml` | FastAPI, plusieurs workers uvicorn (`CHAMPIS_WORKERS`, 2), volume sur `/data` (cache météo SQLite), site statique, relais de tuiles avec cache disque des plages sur le volume (`CHAMPIS_TILE_CACHE_MB`) |
 | `champis-warm` (cron) | `railway.warm.toml` | `champis-api warm --pull --publish` à 2 h et 14 h UTC (3 h et 15 h Paris en hiver, une heure plus tard en été) : pré-chauffe Open-Meteo, indice par département, météo précalculée, puis instantané du cache déposé dans le bucket |
 | `champis-notify` (cron) | `railway.notify.toml` | `champis-api notify --pull` à 6 h UTC (7 h Paris en hiver) : notification « mes coins » |
 
