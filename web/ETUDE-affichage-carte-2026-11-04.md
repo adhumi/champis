@@ -86,7 +86,9 @@ Même mécanisme à la parcelle : une cellule `unavailable` n'est pas transparen
 
 ### 6. Coutures fines au zoom 14 et plus
 
-Capture `03-z14.png` : traits blancs d'un pixel le long de certaines limites de tuiles. Vérifié sur douze tuiles z15 de production autour de 47,1 N 6,35 E : la fraction de pixels valides de la dernière ligne ou colonne est souvent inférieure à celle de l'avant-dernière (0,87 contre 0,93 ; 0,86 contre 0,92 ; 0,92 contre 1,0 ; 0,45 contre 0,5). `WINDOW_MARGIN` dans `_source_window` ne suffit donc pas partout ; la réduction 2 × 2 des niveaux inférieurs (moyenne des valides) efface le défaut sous le zoom 14, ce qui explique qu'on ne le voie qu'à la parcelle.
+Capture `03-z14.png` : traits blancs d'un pixel le long de certaines limites de tuiles. Vérifié sur douze tuiles z15 de production autour de 47,1 N 6,35 E : la fraction de pixels valides de la dernière ligne ou colonne est souvent inférieure à celle de l'avant-dernière (0,87 contre 0,93 ; 0,86 contre 0,92 ; 0,92 contre 1,0 ; 0,45 contre 0,5). La réduction 2 × 2 des niveaux inférieurs (moyenne des valides) efface le défaut sous le zoom 14, ce qui explique qu'on ne le voie qu'à la parcelle.
+
+Cause probable : les tuiles publiées sont antérieures au correctif. Le code courant (`_source_window` avec `WINDOW_MARGIN`, commit 12980d7 du 30 oct.) rend des bords pleins sur une mosaïque synthétique (90 tuiles z15 vérifiées, test `pipeline/tests/test_tiles_edges.py`), mais `_done` saute un PMTiles existant : le jeu France, rendu avant le 30 oct., n'a jamais été refait. Action : `make tiles` avec `--force` sur le jeu France puis `make release`, sans changement de code.
 
 ### 6 bis. Téléphone : la carte n'occupe pas l'écran
 
@@ -126,6 +128,10 @@ Par ordre de rapport effet / effort. Les trois premières règlent l'essentiel.
 
 12. Regarder la distribution de T par espèce sur quelques départements (`champis-pipeline check` donne déjà l'AUC et les quantiles) : si 90 % de la forêt est « Excellent », les seuils ou les poids ne discriminent pas et la carte du jour est une carte météo. À trancher par Adrien avec le skill `species-file`.
 13. Retirer la vue France et le bandeau par département, ou redéfinir l'indice à la même échelle que S (par exemple la moyenne de S sur la forêt, ou la part de forêt « bonne ou mieux »).
+
+## Mise en œuvre (même PR, 4 nov. 2026, après accord d'Adrien)
+
+Bloc A appliqué : relais de tuiles et statiques hors limiteur (`RATE_LIMIT_EXEMPT`, test), cache mémoire des tuiles décodées et `setTiles` au lieu de recréer la source, lectures en parallèle avec trois réessais puis tuile transparente, rayon de 7,5 km sur `nearestCell`, couche masquée en vue France, bascule T/S réparée avec un test sur les identifiants, pied de page masqué et `100dvh` sur téléphone, météo non redemandée pour une emprise déjà couverte. Coutures : pas de correctif de code, les tuiles publiées sont antérieures au correctif du 30 oct. ; test de non-régression ajouté, et le jeu France est à régénérer avec `--force` puis republier. Blocs B et C : décisions de spec, non tranchées ici.
 
 ## Ce que je n'ai pas pu vérifier
 
