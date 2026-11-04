@@ -133,6 +133,11 @@ Par ordre de rapport effet / effort. Les trois premières règlent l'essentiel.
 
 Bloc A appliqué : relais de tuiles et statiques hors limiteur (`RATE_LIMIT_EXEMPT`, test), cache mémoire des tuiles décodées et `setTiles` au lieu de recréer la source, lectures en parallèle avec trois réessais puis tuile transparente, rayon de 7,5 km sur `nearestCell`, couche masquée en vue France, bascule T/S réparée avec un test sur les identifiants, pied de page masqué et `100dvh` sur téléphone, météo non redemandée pour une emprise déjà couverte. Coutures : pas de correctif de code, les tuiles publiées sont antérieures au correctif du 30 oct. ; test de non-régression ajouté, et le jeu France est à régénérer avec `--force` puis republier. Blocs B et C : décisions de spec, non tranchées ici.
 
+## Décisions d'Adrien (4 nov. 2026, reportées dans la spec)
+
+- Tout reste sur Railway. Dans l'ordre : vérifier la région du service et du bucket et passer en Europe si besoin ; sortir la pré-chauffe dans un service cron Railway ; puis plusieurs workers uvicorn ; un cache disque des plages lues par le relais ; un PMTiles par groupe (une espèce par canal) seulement si la latence reste gênante ensuite.
+- La vue France est retirée de la carte, site et app ; sur le web, l'accueil perd aussi sa carte des départements. `GET /departements` reste pour le bandeau des jours, la phrase de saison et les coins.
+
 ## Ce que je n'ai pas pu vérifier
 
 - Le 429 dans un vrai navigateur : la sortie de ce conteneur répartit les connexions sur plusieurs adresses, Chromium n'a donc jamais été limité ici ; la limite est prouvée sur une connexion unique. À confirmer dans l'inspecteur réseau de Safari ou dans les journaux Railway (compter les 429).
