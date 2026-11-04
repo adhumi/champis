@@ -9,3 +9,8 @@ reports
 **/.ruff_cache
 .claude
 .env
+# Infrastructure as Code Railway : appliquée par le CLI, inutile dans l'image
+.railway
+node_modules
+package.json
+package-lock.json

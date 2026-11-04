@@ -1,6 +1,6 @@
 # champis-api sur Railway : FastAPI + cache SQLite sur volume (/data) + carte web statique.
-# La même image sert aux services cron (railway.warm.toml, railway.notify.toml) : seul le
-# `startCommand` change ; la pré-chauffe n'est plus dans l'API (décision du 4 nov. 2026).
+# La même image sert aux services cron champis-warm et champis-notify (.railway/railway.ts) : seul
+# le `startCommand` change ; la pré-chauffe n'est plus dans l'API (décision du 4 nov. 2026).
 FROM python:3.12-slim-bookworm
 
 COPY --from=ghcr.io/astral-sh/uv:0.11.32 /uv /uvx /bin/

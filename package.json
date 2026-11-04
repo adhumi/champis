@@ -1,0 +1,8 @@
+{
+  "name": "champis-railway",
+  "private": true,
+  "description": "SDK Railway pour évaluer .railway/railway.ts (Infrastructure as Code) ; le site et l'API n'ont pas de dépendance Node. Pas de \"type\": \"module\" ici : web/tests/site_driver.js est en CommonJS",
+  "devDependencies": {
+    "railway": "^3.16.0"
+  }
+}

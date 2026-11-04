@@ -78,15 +78,15 @@ uv run uvicorn champis_api.app:app --reload     # /species, /weather, /weather/b
 
 ## Déploiement
 
-Railway, trois services construits par le même `Dockerfile` (décision du 4 nov. 2026, spec › Points ouverts › Tuiles hors du processus Python) :
+Railway, trois services construits par le même `Dockerfile` (décision du 4 nov. 2026, spec › Points ouverts › Tuiles hors du processus Python), tous définis dans `.railway/railway.ts` (Infrastructure as Code : un fichier pour le projet entier, avec le volume, le bucket et la base ; `make railway-plan` montre ce qu'il changerait, `make railway-apply` l'applique) :
 
-| Service | Fichier de config (« Config as code › Config file path ») | Rôle |
+| Service | Démarrage | Rôle |
 | --- | --- | --- |
-| `champis-api` | `railway.toml` | FastAPI, plusieurs workers uvicorn (`CHAMPIS_WORKERS`, 2), volume sur `/data` (cache météo SQLite), site statique, relais de tuiles avec cache disque des plages sur le volume (`CHAMPIS_TILE_CACHE_MB`) |
-| `champis-warm` (cron) | `railway.warm.toml` | `champis-api warm --pull --publish` à 2 h et 14 h UTC (3 h et 15 h Paris en hiver, une heure plus tard en été) : pré-chauffe Open-Meteo, indice par département, météo précalculée, puis instantané du cache déposé dans le bucket |
-| `champis-notify` (cron) | `railway.notify.toml` | `champis-api notify --pull` à 6 h UTC (7 h Paris en hiver) : notification « mes coins » |
+| `champis-api` | `CMD` du Dockerfile, health check `/health`, redémarrage sur échec (5 essais) | FastAPI, plusieurs workers uvicorn (`CHAMPIS_WORKERS`, 2), volume sur `/data` (cache météo SQLite), site statique, relais de tuiles avec cache disque des plages sur le volume (`CHAMPIS_TILE_CACHE_MB`) |
+| `champis-warm` (cron `0 2,14 * * *`) | `champis-api -q warm --pull --publish`, jamais redémarré | À 2 h et 14 h UTC (3 h et 15 h Paris en hiver, une heure plus tard en été) : pré-chauffe Open-Meteo, indice par département, météo précalculée, puis instantané du cache déposé dans le bucket |
+| `champis-notify` (cron `0 6 * * *`) | `champis-api -q notify --pull`, jamais redémarré | À 6 h UTC (7 h Paris en hiver) : notification « mes coins » |
 
-Le bucket Railway porte les PMTiles (`champis-pipeline publish`, `GET /tiles`), l'amorçage météo (`champis-api seed` puis `publish-seed`, une fois par grille) et l'instantané du cache publié par le cron (`weather/weather_cache.db`), que l'API importe au démarrage puis toutes les `CHAMPIS_CACHE_POLL_MINUTES` (10). L'API n'a plus de tâche de fond : `CHAMPIS_WARM_HOURS` et `CHAMPIS_NOTIFY_HOURS` restent vides (repli sans cron : `3,15` et `7`, la passe bloque alors un worker ≈ 36 min). Postgres Railway pour les observations et les coins, clé Open-Meteo (plan Standard), clé APNs. Création des services cron, variables, migration et limites (un volume ne se monte que sur un service) : `api/README.md` › Déploiement Railway. `make doctor` dit si la pré-chauffe est intégrée ou déléguée, et la date du dernier cache publié.
+Le bucket Railway porte les PMTiles (`champis-pipeline publish`, `GET /tiles`), l'amorçage météo (`champis-api seed` puis `publish-seed`, une fois par grille) et l'instantané du cache publié par le cron (`weather/weather_cache.db`), que l'API importe au démarrage puis toutes les `CHAMPIS_CACHE_POLL_MINUTES` (10). L'API n'a plus de tâche de fond : `CHAMPIS_WARM_HOURS` et `CHAMPIS_NOTIFY_HOURS` restent vides (repli sans cron : `3,15` et `7`, la passe bloque alors un worker ≈ 36 min). Postgres Railway pour les observations et les coins, clé Open-Meteo (plan Standard), clé APNs. Application de la définition, variables (par référence : bucket, variables partagées), migration depuis les anciens `railway*.toml` et limites (un volume ne se monte que sur un service) : `api/README.md` › Déploiement Railway. `make doctor` dit si la pré-chauffe est intégrée ou déléguée, et la date du dernier cache publié.
 
 ## Ce qui n'est pas encore là
 

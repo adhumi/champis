@@ -158,6 +158,16 @@ release: ## Séquence complète : tiles (jeu DEPTS + par département), publish-
 	$(MAKE) --no-print-directory publish-dry
 	$(MAKE) --no-print-directory publish
 
+# ------------------------------------------------------------------ Railway (Infrastructure as Code : .railway/railway.ts ; CLI `railway` ≥ 5.42 : brew install railway, et `npm install` pour le SDK)
+
+.PHONY: railway-plan
+railway-plan: ## Montre ce que .railway/railway.ts changerait dans Railway (services, crons, variables) sans rien écrire
+	railway config plan
+
+.PHONY: railway-apply
+railway-apply: ## Applique .railway/railway.ts après confirmation ; relire le plan : une ressource absente du fichier est supprimée
+	railway config apply
+
 # ------------------------------------------------------------------ Météo (API ; grille versionnée, amorçage dans le bucket)
 
 .PHONY: soil-clim
