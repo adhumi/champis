@@ -53,11 +53,11 @@ Séries : les 92 derniers jours et J+1 à J+7 viennent de l'**API prévision** (
 | `rain` | `rain_sum`, cumul sur `window_days` | Trapèze sur `mm` (`max` volontairement élevé : pas de seuil supérieur observé) |
 | `trigger` | Événements = `≥ event_mm` de pluie cumulés sur `event_days` jours consécutifs, hors jours à `snowfall_sum > 0` | Pour **chaque** événement des `lag_days.max` derniers jours, trapèze sur le nombre de jours écoulés ; facteur = **max** sur les événements (une petite pluie récente n'efface pas la grosse pluie d'il y a 15 j) ; aucun événement → 0. La date d'un événement est le **dernier jour** de sa fenêtre de `event_days` jours |
 | `soil_moisture_pct` | `soil_moisture_0_to_7cm`, moyenne 7 j, exprimée en **percentile** de la climatologie de la cellule (10 ans, même mois) | Trapèze sur 0–1 ; les valeurs absolues ne sont pas comparables d'un sol ou d'un modèle à l'autre |
-| `frost` | `temperature_2m_min` corrigée | Si `≥ nights` nuits `≤ tmin_c` dans les `window_days` derniers jours → × `factor` |
+| `frost` | `temperature_2m_min` corrigée | **Rampe** (décision du 4 nov. 2026), pas une marche. Pour chaque nuit des `window_days` derniers jours, sévérité `s = 1 − trapèze(tmin, min = tmin_c, opt_low = tmin_c + ramp_c, opt_high = +∞, max = +∞)` : 1 à `tmin_c` et en dessous, 0 dès `tmin_c + ramp_c`, linéaire entre. Cumul `S = Σ s` sur la fenêtre ; **facteur = 1 − (1 − factor) × min(1, S / nights)**. `nights` nuits pleines donnent × `factor` (comme l'ancienne marche) ; une nuit à mi-rampe donne `1 − (1 − factor) × 0,5 / nights`. Continu en température et en nombre de nuits : deux cellules météo voisines ne basculent plus de « bon » à « très faible » pour un dixième de degré. `ramp_c` en °C, > 0 |
 | `water_balance` | `Σ (rain_sum − et0)` sur `window_days` | `< moderate_mm` → × `moderate_factor` ; `< severe_mm` → × `severe_factor`. Remplace un simple compteur de jours secs, qui pénalisait à tort la période de poussée (10–20 j de beau temps après la pluie déclenchante) |
 | `heat` | `temperature_2m_max` corrigée | Si `≥ days` jours `≥ tmax_c` dans `window_days` → × `factor` |
 | `memory` | Cumul de `rain_sum` sur les `window_days` glissants **avant la fenêtre `rain`** (soit J−117 à J−28 inclus pour 90/28) | × `(floor + (1 − floor) × trapèze)` : module entre `floor` et 1, jamais annule |
-| `persistence` | — | `M_eff(J) = max(M(J), max_k M(J−k) × (1 − k/days))` pour `1 ≤ k ≤ days` ; gel et bilan hydrique s'appliquent **après** (les sporophores existants gèlent ou se dessèchent) |
+| `persistence` | — | `M_eff(J) = max(M(J), max_k M(J−k) × (1 − k/days))` pour `1 ≤ k ≤ days` ; gel (facteur du jour, en rampe) et bilan hydrique s'appliquent **après** (les sporophores existants gèlent ou se dessèchent) |
 | `weights` | — | Poids de `temp`, `rain`, `trigger`, `soil_moisture` ; somme = 1 |
 
 Pour J+1 à J+7, mêmes formules sur les séries prévues. La série doit couvrir au moins `memory.window_days + rain.window_days + persistence.days` jours avant J (≈ 150 j) : une fenêtre tronquée est une erreur, jamais une approximation silencieuse. Les arrondis de jours utilisent « 0,5 → vers le haut » (comme JS et Swift), pas l'arrondi au pair de Python.
@@ -90,4 +90,4 @@ Seuils d'affichage (voir la spec) : ≥ 0,75 excellent · 0,55 bon · 0,35 moyen
 
 ## Validation
 
-`python3 species/validate.py` vérifie la structure, les sommes de poids, l'ordre des trapèzes, le vocabulaire des hôtes, la couverture des 32 codes TFV, la présence des références citées et le bloc `about` (une référence par confusion, photo libre créditée ou `null`).
+`python3 species/validate.py` vérifie la structure, les sommes de poids, l'ordre des trapèzes, le vocabulaire des hôtes, la couverture des 32 codes TFV, la présence des références citées, les paramètres de gel (`ramp_c` > 0, `nights` ≥ 1) et le bloc `about` (une référence par confusion, photo libre créditée ou `null`).
