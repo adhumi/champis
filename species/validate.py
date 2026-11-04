@@ -4,6 +4,7 @@
 Usage : python3 validate.py
 Vérifie : JSON valide, clés obligatoires, plages trapézoïdales ordonnées,
 poids sommant à 1, hôtes ⊂ vocabulaire, refs ⊂ references, 32 codes TFV couverts,
+gel en rampe (`ramp_c` > 0),
 bloc `about` (fiche en mots : confusions sourcées, photo libre créditée ou null).
 """
 
@@ -233,6 +234,17 @@ def main() -> int:
         for k in ("frost", "heat"):
             if not 0 <= w[k]["factor"] <= 1:
                 err(f"{n}: weather.{k}.factor hors [0,1]")
+        # gel en rampe (spec › Scoring › gel en rampe, 4 nov. 2026) : sévérité linéaire sur
+        # [tmin_c, tmin_c + ramp_c], cumulée sur la fenêtre et rapportée à `nights`
+        fr = w["frost"]
+        for k in ("tmin_c", "nights", "window_days", "factor", "ramp_c"):
+            if k not in fr:
+                err(f"{n}: weather.frost.{k} manquant")
+        ramp = fr.get("ramp_c")
+        if not isinstance(ramp, (int, float)) or isinstance(ramp, bool) or not ramp > 0:
+            err(f"{n}: weather.frost.ramp_c doit être un nombre > 0, pas {ramp!r}")
+        if not (isinstance(fr.get("nights"), int) and fr["nights"] >= 1):
+            err(f"{n}: weather.frost.nights doit être un entier ≥ 1")
         if not 0 <= w["memory"]["floor"] <= 1:
             err(f"{n}: memory.floor hors [0,1]")
         if w["persistence"]["days"] < 0:
