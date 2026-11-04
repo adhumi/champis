@@ -1,0 +1,19 @@
+# Railway : service cron « champis-warm » (spec › Points ouverts › Tuiles hors du processus Python,
+# 4 nov. 2026). Même dépôt et même Dockerfile que l'API ; dans les réglages du service, « Config as
+# code › Config file path » = railway.warm.toml. Le cron Railway est en UTC : 2 h et 14 h UTC font
+# 3 h et 15 h à Paris en hiver, 4 h et 16 h en été (CEST) ; on garde l'UTC fixe, un décalage d'une
+# heure l'été n'a pas d'effet sur le seau de 12 h. Chaque exécution doit se terminer (la nôtre
+# dure ≈ 40 min pour la France) ; si la précédente tourne encore, Railway saute l'exécution.
+#
+# --pull : repart de l'instantané du cache publié dans le bucket (puis d'un amorçage plus récent),
+# ce qui dispense le cron d'un volume ; --publish : dépose l'instantané que l'API importe
+# (CHAMPIS_CACHE_POLL_MINUTES). Variables à poser sur ce service : les mêmes que l'API pour le bucket
+# (AWS_*, « Connect Service to Bucket ») et CHAMPIS_OPEN_METEO_API_KEY (variable partagée du projet).
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+cronSchedule = "0 2,14 * * *"
+startCommand = "uv run champis-api -q warm --pull --publish"
+restartPolicyType = "never"
