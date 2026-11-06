@@ -88,6 +88,8 @@ Première version rédigée par Claude, relue par Adrien (décision du 1er nov. 
 
 Seuils d'affichage (voir la spec) : ≥ 0,75 excellent · 0,55 bon · 0,35 moyen · 0,15 faible · < 0,15 très faible.
 
+Couleur d'un pixel (échelle linéaire, décision du 6 nov. 2026, `shared/palette.json` › `scale`) : un seul violet `scale.hex`, dont l'alpha porte le score : `alpha = floor(255 × (alpha_min + (alpha_max − alpha_min) × S) + 0,5)`, `S` borné à [0, 1], même arrondi dans tous les langages. Les seuils ne servent qu'aux mots (fiche, coins, notifications, graduations de la légende) ; le `hex` de chaque seuil est le violet au milieu de la classe composé sur blanc, pour les pastilles.
+
 ## Validation
 
 `python3 species/validate.py` vérifie la structure, les sommes de poids, l'ordre des trapèzes, le vocabulaire des hôtes, la couverture des 32 codes TFV, la présence des références citées, les paramètres de gel (`ramp_c` > 0, `nights` ≥ 1) et le bloc `about` (une référence par confusion, photo libre créditée ou `null`).

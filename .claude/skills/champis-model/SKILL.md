@@ -28,7 +28,7 @@ S(p, e, J) = T(p, e) × M_eff(c(p), e, J, alt(p)) × Φ(e, J, alt(p))
 7. **Humidité du sol en percentile** de la climatologie de la cellule, jamais en valeur absolue.
 8. **`Φ`** : 0 hors saison, 0,25 dès `season.start`, 1 au pic, rampes linéaires de `ramp_days` ; `secondary_peak` fusionné par max ; `altitude_shift` décale début et fin séparément (positif = plus tard).
 9. **Groupe d'affichage** : l'UI montre `group` (cèpes, girolles) ; score du groupe = **max** des espèces du groupe, et la fiche indique quelle espèce porte le score.
-10. **Seuils d'affichage** (ne pas en inventer d'autres) : ≥ 0,75 excellent · ≥ 0,55 bon · ≥ 0,35 moyen · ≥ 0,15 faible · sinon très faible. Palette dans `shared/palette.json`.
+10. **Seuils d'affichage** (ne pas en inventer d'autres) : ≥ 0,75 excellent · ≥ 0,55 bon · ≥ 0,35 moyen · ≥ 0,15 faible · sinon très faible. Ils ne donnent que les **mots** (fiche, coins, notifications, graduations de la légende). La **couleur d'un pixel** est une échelle linéaire (6 nov. 2026) : un seul violet `scale.hex` dont l'alpha est le score, `alpha = floor(255 × (alpha_min + (alpha_max − alpha_min) × S) + 0,5)`, `S` borné à [0, 1] ; l'overlay est dessiné à l'opacité 1. Le `hex` d'un seuil est la couleur de pastille de sa classe (violet au milieu de la classe sur blanc), jamais celle d'un pixel. Tout vient de `shared/palette.json`.
 
 ## Où vit quoi
 
