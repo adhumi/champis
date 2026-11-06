@@ -22,6 +22,8 @@ Les coins servent à calculer le score du jour et à vous prévenir quand il dev
 
 Coins et observations restent tant que vous ne les effacez pas. Le serveur et son hébergeur gardent des journaux techniques (adresse IP, page demandée, heure) quelques jours, durée fixée par l'hébergeur, seulement pour faire fonctionner et sécuriser le service.
 
+Pour savoir si Champis sert, le serveur tient aussi des totaux par jour : ouvertures de la carte du site, observations reçues, appareils ayant des coins, notifications envoyées. Ce sont des nombres, sans adresse IP ni identifiant, gardés 13 mois.
+
 ## Qui d'autre intervient
 
 - **Railway**, l'hébergeur, pour le serveur et la base de données.
