@@ -18,14 +18,14 @@ shared/vectors/trapezoid.json       [{ "x": 4.2, "t": {min,opt_low,opt_high,max}
 shared/vectors/phi.json             [{ "species": "…", "date": "2026-10-16", "alt_m": 1200, "expected": 0.8333 }, …]
 shared/vectors/m.json               [{ "species": "…", "series": { daily arrays J−118 → J+7 }, "cell_elevation": 700, "alt_class": 1350, "expected": { "M": …, "M_eff": …, "factors": {…} } }, …]
 shared/vectors/group.json           [{ "group": "cepes", "scores": {…}, "expected": { "score": …, "leading": "boletus_aereus" } }, …]
-shared/vectors/palette.json         [{ "score": 0.55, "expected": { "label": "bon", "hex": "…" } }, …]
+shared/vectors/palette.json         [{ "score": 0.55, "expected": { "label": "bon", "hex": "…", "rgba": [99, 49, 121, 140] } }, …]
 ```
 
-Chaque fichier contient un champ `"generated_by": { "scoring_version": …, "species_hash": … }`. Les vecteurs couvrent au minimum : les bornes exactes du trapèze (x = min, opt_low, opt_high, max, et ±ε), les seuils de palette exacts (0,15 / 0,35 / 0,55 / 0,75), chaque facteur multiplicatif à 0 et à 1, la persistance avec un M passé dominant, le décalage altitudinal aux bornes `max_days`, `secondary_peak`, un 29 février.
+Chaque fichier contient un champ `"generated_by": { "scoring_version": …, "species_hash": … }`. Les vecteurs couvrent au minimum : les bornes exactes du trapèze (x = min, opt_low, opt_high, max, et ±ε), les seuils de palette exacts (0,15 / 0,35 / 0,55 / 0,75) et l'alpha du pixel aux bornes et aux demi-niveaux d'arrondi (`rgba`, échelle linéaire du 6 nov. 2026), chaque facteur multiplicatif à 0 et à 1, la persistance avec un M passé dominant, le décalage altitudinal aux bornes `max_days`, `secondary_peak`, un 29 février.
 
 ## Tolérance
 
-`|actual − expected| ≤ 1e-6` sur les scores ; égalité stricte sur `label`, `hex`, `leading`. Flottants en double précision partout (`Double` en Swift, pas `Float`). Les tuiles uint8 arrondissent à l'affichage seulement.
+`|actual − expected| ≤ 1e-6` sur les scores ; égalité stricte sur `label`, `hex`, `rgba`, `leading`. L'alpha du pixel s'arrondit par `floor(x + 0.5)` (pas `round`, dont la règle au demi diffère entre Python, JavaScript et Swift). Flottants en double précision partout (`Double` en Swift, pas `Float`). Les tuiles uint8 arrondissent à l'affichage seulement.
 
 ## Dans chaque langage
 
@@ -36,6 +36,7 @@ Les deux suites tournent en CI ; une PR qui change le scoring Python sans régé
 
 ## Règles d'écriture des portages
 
+- **Couleur d'un pixel** : `rgb` de `palette.scale.hex`, alpha = `floor(255 × (alpha_min + (alpha_max − alpha_min) × min(max(S, 0), 1)) + 0.5)` en double précision ; les seuils ne servent qu'aux mots.
 - Même ordre d'opérations que Python (somme pondérée, puis facteurs multiplicatifs dans l'ordre frost, water_balance, heat, memory, puis persistance, puis frost et water_balance à nouveau). Réordonner change les arrondis.
 - Dates : jour de l'année calculé sur la date civile locale (`Europe/Paris`), `MM-DD` comparés comme chaînes ou comme (mois, jour), jamais via des timestamps.
 - Les paramètres d'espèce sont chargés depuis `/species` (JSON identique aux fichiers du dépôt) : aucun client n'embarque de valeur en dur.
