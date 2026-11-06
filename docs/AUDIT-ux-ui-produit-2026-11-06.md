@@ -4,7 +4,7 @@
 
 Copie figée, au 6 nov. 2026, du doc Claude [« Champis — Audit UX, UI, produit et marketing »](https://claude.ai/artifact/V8dWjVKE6ZkmLrqEvdyXBS), suivie en annexe de la section « Produit » de la spec avec les décisions prises le même jour. Pour toute décision, c'est la spec qui fait foi : [Spec — Champis](https://claude.ai/artifact/54H9wdXiTTFcnoP6DAW81C), section Produit de l'onglet principal.
 
-> **Mise à jour du 6 nov., après les réponses d'Adrien.** Échelle visée : des dizaines à quelques centaines d'utilisateurs, gratuit, 2 à 10 heures par semaine, mesure minimale, espèces ajoutées une à une, rien encore partagé avec les proches. Le lancement public, la presse et le référencement décrits plus bas ne s'appliquent donc plus tels quels. Adrien a ensuite tranché les quatorze points ouverts sur la PR monorepo #87 (App Store public, Android natif à prévoir, noindex jusqu'à la publication des apps, bandeau des jours retiré de la carte, code open source, soutien facultatif via RevenueCat…). Décisions, points encore ouverts et plan révisé : section Produit de la spec (copie en [annexe](#annexe--section-produit-de-la-spec-copie-du-6-nov-2026)). Les défauts relevés ici restent valables.
+> **Mise à jour du 6 nov., après les réponses d'Adrien.** Échelle visée : des dizaines à quelques centaines d'utilisateurs, gratuit, 2 à 10 heures par semaine, mesure minimale, espèces ajoutées une à une, rien encore partagé avec les proches. Le lancement public, la presse et le référencement décrits plus bas ne s'appliquent donc plus tels quels. Adrien a ensuite tranché les quatorze points ouverts sur la PR monorepo #87, puis le jour affiché par la carte et le découpage des dépôts (App Store public, Android natif à prévoir, noindex jusqu'à la publication des apps, bandeau des jours retiré de la carte, code open source, soutien facultatif via RevenueCat…). Décisions, points encore ouverts et plan révisé : section Produit de la spec (copie en [annexe](#annexe--section-produit-de-la-spec-copie-du-6-nov-2026)). Les défauts relevés ici restent valables.
 
 ## En bref
 
@@ -392,7 +392,7 @@ Total à relever sur les factures ; il manque pour la page Soutenir et pour le c
 
 ### Décisions sur les suites de l'audit
 
-Décidé par Adrien le 6 nov. 2026, sur cette PR :
+Décidé par Adrien le 6 nov. 2026, sur cette PR puis dans la conversation pour les deux dernières lignes :
 
 | Sujet | Décision |
 | --- | --- |
@@ -405,16 +405,18 @@ Décidé par Adrien le 6 nov. 2026, sur cette PR :
 | Notification | En mots, sans chiffres ni point décimal ; rappel « ce week-end » le jeudi soir à tester avec les proches |
 | Retour terrain | Trouvé et rien trouvé maintenus tels quels, sans carnet personnel ; la fonction sera retirée si elle ne reçoit pas de retours |
 | Textes | Corrections retenues (« Vos coins restent à vous », « identifiant pseudonyme », « Cèpe bronzé ») ; la phrase « publics dans le dépôt du projet » deviendra vraie, les dépôts passant en public avant la publication des apps |
-| Code ouvert | Tout open source ; découpage possible en dépôts `champis` (référentiel : `species/`, `SCHEMA.md`), `champis-api`, `champis-web`, `champis-ios`, `champis-android` |
+| Code ouvert | Tout open source avant la publication des apps ; découpage en dépôts (répartition à la ligne Découpage des dépôts) |
 | Pages légales | Mentions légales, contact et confidentialité complète ; éditeur : Adrien en personne tant qu'il n'y a pas d'association, avec une adresse dédiée |
 | Soutien | 100 % facultatif, ponctuel ou récurrent, par achat intégré sur iOS, éventuellement récompensé par une collection d'icônes d'app (espèces de champignons) ; RevenueCat sur iOS et sur le web (décision du 30 oct. confirmée) |
 | Forêts publiques | Statut public ou privé de la forêt affiché dans la fiche d'un point ; pas sur la carte, en tout cas pas par défaut |
 | Structure de la spec | Un onglet unique : la section Produit vit dans l'onglet principal |
+| Jour affiché par la carte | Toujours aujourd'hui. Les onze jours, la tendance et le meilleur jour vivent dans la fiche d'un point et ne recolorent pas la carte ; le potentiel toute saison reste au menu de calque (décidé dans la conversation) |
+| Découpage des dépôts | `champis` : référentiel des contrats partagés (`species/`, `SCHEMA.md`, `mapping/`, `shared/` avec palette, vecteurs de parité et textes) ; `champis-api` : API et pipeline, que l'API importe déjà comme paquet ; `champis-web` ; `champis-ios` ; `champis-android` (décidé dans la conversation) |
 
 ### Points encore ouverts
 
-- [ ] **Jour affiché par la carte sans bandeau.** (a) Toujours aujourd'hui ; la fiche d'un point montre les onze jours, la tendance et le meilleur jour sans changer la carte. (b) Choisir un jour dans la fiche recolore la carte, avec un rappel visible du jour affiché et un retour à aujourd'hui. Recommandation : (a), plus simple et fidèle à la décision ; le potentiel toute saison reste pour repérer des secteurs.
-- [ ] **Découpage des dépôts.** Où vont `pipeline/`, `mapping/` et `shared/` (palette, vecteurs de parité, textes) ? Recommandation : le référentiel `champis` garde tous les contrats partagés (`species/`, `SCHEMA.md`, `mapping/`, `shared/`) ; le pipeline rejoint `champis-api`, qui en dépend déjà comme paquet.
+- [x] **Jour affiché par la carte sans bandeau.** (a) Toujours aujourd'hui ; la fiche d'un point montre les onze jours, la tendance et le meilleur jour sans changer la carte. (b) Choisir un jour dans la fiche recolore la carte, avec un rappel visible du jour affiché et un retour à aujourd'hui. Recommandation : (a), plus simple et fidèle à la décision ; le potentiel toute saison reste pour repérer des secteurs. Tranché par Adrien le 6 nov. 2026 : (a).
+- [x] **Découpage des dépôts.** Où vont `pipeline/`, `mapping/` et `shared/` (palette, vecteurs de parité, textes) ? Recommandation : le référentiel `champis` garde tous les contrats partagés (`species/`, `SCHEMA.md`, `mapping/`, `shared/`) ; le pipeline rejoint `champis-api`, qui en dépend déjà comme paquet. Tranché par Adrien le 6 nov. 2026 : recommandation retenue.
 - [ ] **Licences avant ouverture.** Code (MIT ?) et données (fichiers d'espèces, textes du Guide : CC BY 4.0 ?), compatibles avec les sources (Etalab, CC BY de SoilGrids et d'Open-Meteo).
 - [ ] **Structure juridique du soutien** (point du 30 oct.) : RevenueCat verse à un compte Apple et à un compte Stripe au nom d'une personne ou d'une entité ; particulier ou association.
 - [ ] **Icônes en récompense** : quelles espèces, à partir de quel soutien, ponctuel ou récurrent.
