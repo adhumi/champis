@@ -2,9 +2,9 @@
 
 6 nov. 2026 · Adrien Humilière
 
-Copie figée, au 6 nov. 2026, du doc Claude [« Champis — Audit UX, UI, produit et marketing »](https://claude.ai/artifact/V8dWjVKE6ZkmLrqEvdyXBS), suivie en annexe de l'onglet « Produit » de la spec tel qu'il était ce jour-là. Pour toute décision, c'est la spec qui fait foi : [Spec — Champis](https://claude.ai/artifact/54H9wdXiTTFcnoP6DAW81C), onglet [Produit](https://claude.ai/artifact/54H9wdXiTTFcnoP6DAW81C#f41a4dca-8ead).
+Copie figée, au 6 nov. 2026, du doc Claude [« Champis — Audit UX, UI, produit et marketing »](https://claude.ai/artifact/V8dWjVKE6ZkmLrqEvdyXBS), suivie en annexe de la section « Produit » de la spec avec les décisions prises le même jour. Pour toute décision, c'est la spec qui fait foi : [Spec — Champis](https://claude.ai/artifact/54H9wdXiTTFcnoP6DAW81C), section Produit de l'onglet principal.
 
-> **Mise à jour du 6 nov., après les réponses d'Adrien.** Échelle visée : des dizaines à quelques centaines d'utilisateurs, gratuit, 2 à 10 heures par semaine, mesure minimale, espèces ajoutées une à une, rien encore partagé avec les proches. Le lancement public, la presse et le référencement décrits plus bas ne s'appliquent donc plus tels quels. Le plan révisé et les quatorze points à trancher sont dans la spec, onglet Produit (copie en [annexe](#annexe--onglet-produit-de-la-spec-copie-du-6-nov-2026)). Les défauts relevés ici restent valables.
+> **Mise à jour du 6 nov., après les réponses d'Adrien.** Échelle visée : des dizaines à quelques centaines d'utilisateurs, gratuit, 2 à 10 heures par semaine, mesure minimale, espèces ajoutées une à une, rien encore partagé avec les proches. Le lancement public, la presse et le référencement décrits plus bas ne s'appliquent donc plus tels quels. Adrien a ensuite tranché les quatorze points ouverts sur la PR monorepo #87 (App Store public, Android natif à prévoir, noindex jusqu'à la publication des apps, bandeau des jours retiré de la carte, code open source, soutien facultatif via RevenueCat…). Décisions, points encore ouverts et plan révisé : section Produit de la spec (copie en [annexe](#annexe--section-produit-de-la-spec-copie-du-6-nov-2026)). Les défauts relevés ici restent valables.
 
 ## En bref
 
@@ -257,7 +257,7 @@ Chaque étape commence par sa ligne dans la spec (skill `spec-sync`), comme pour
 
 ## Questions posées à Adrien
 
-Dix-huit questions. Réponses du 6 nov. : Q1 (des dizaines à centaines d'utilisateurs, gratuit), Q2 (2 à 10 h par semaine), Q3 (rien encore partagé avec les proches), Q9 (toute espèce, ajout progressif), Q12 (mesure vraiment minimale), Q15 (carte-champignon.fr « trop cher pour un outil qui a l'air vibe codé »). Les autres sont reprises dans les points ouverts de l'annexe.
+Dix-huit questions. Réponses du 6 nov. : Q1 (des dizaines à centaines d'utilisateurs, gratuit), Q2 (2 à 10 h par semaine), Q3 (rien encore partagé avec les proches), Q9 (toute espèce, ajout progressif), Q12 (mesure vraiment minimale), Q15 (carte-champignon.fr « trop cher pour un outil qui a l'air vibe codé »). Les autres ont été tranchées sur la PR monorepo #87 ou restent ouvertes : voir l'annexe, Décisions sur les suites de l'audit et Points encore ouverts.
 
 | N° | Question | Pourquoi | Bloque |
 | --- | --- | --- | --- |
@@ -296,11 +296,11 @@ Méthode, de mémoire et non revérifiée : simulation du daltonisme par les mat
 
 ---
 
-## Annexe — onglet Produit de la spec (copie du 6 nov. 2026)
+## Annexe — section Produit de la spec (copie du 6 nov. 2026)
 
-Copie de l'onglet [Produit](https://claude.ai/artifact/54H9wdXiTTFcnoP6DAW81C#f41a4dca-8ead) de la spec, créé le 6 nov. 2026 à partir de l'audit et des réponses d'Adrien. La spec fait foi : les décisions et points ouverts y évoluent, pas ici.
+Copie de la section « Produit » de l'onglet principal de la [spec](https://claude.ai/artifact/54H9wdXiTTFcnoP6DAW81C), avec les décisions prises par Adrien le 6 nov. 2026 dans la conversation puis sur cette PR. La spec fait foi : les décisions et points ouverts y évoluent, pas ici.
 
-Cet onglet porte ce que la spec technique ne dit pas : pour qui, à quelle échelle, avec quels principes et dans quel ordre. Ce qui est **décidé** est marqué comme tel ; le reste est **proposé** et attend Adrien (section Points ouverts produit).
+Ce qui est **décidé** est marqué comme tel ; le reste est **proposé**.
 
 ### Ambition et contraintes
 
@@ -309,27 +309,29 @@ Décidé par Adrien le 6 nov. 2026 :
 | Sujet | Décision |
 | --- | --- |
 | Échelle visée | Des dizaines à quelques centaines d'utilisateurs : objectif atteint à ce niveau. Au-delà, l'infrastructure et donc le modèle économique seraient à revoir |
-| Modèle | Gratuit |
+| Modèle | Gratuit ; soutien facultatif (voir Décisions sur les suites de l'audit) |
 | Temps disponible | 2 à 10 heures par semaine selon les besoins |
+| Plateformes | App iOS sur l'App Store public ; app Android native à prévoir ; le site garde son noindex jusqu'à la publication des apps |
+| Code | Tout devient open source avant la publication des apps |
 | Mesure d'audience | Vraiment minimale, pour éviter fenêtres de consentement et obligations RGPD supplémentaires |
 | Espèces | Toute espèce est envisageable, ajoutée progressivement |
 | Partage | Le site et l'app n'ont pas encore été partagés avec les proches : les critères « une sortie réelle » des phases 3 et 4 restent à remplir |
 
-Ce que ça change par rapport à l'audit (proposé) :
+Conséquences (proposé) :
 
-- **Pas de lancement public au sens marketing** : ni campagne de presse, ni référencement poussé, ni fiche App Store à optimiser. La diffusion se fait par lien et bouche-à-oreille, en cercles successifs (proches, puis proches de proches).
-- **Les coûts restent fixes** : la météo est précalculée pour toute la France quel que soit le nombre d'utilisateurs ; seule la sortie réseau des tuiles croît avec l'usage. À quelques centaines d'utilisateurs, les dons n'ont qu'à couvrir le socle.
-- **La confiance tient au soin plutôt qu'à la communication** : Adrien juge carte-champignon.fr « trop cher pour un outil qui a l'air vibe codé » ; Champis doit être gratuit et ne pas avoir l'air bricolé (principes ci-dessous).
-- **Les obligations légales de base demeurent** dès qu'un inconnu peut ouvrir le site : mentions légales, contact, confidentialité complète. Elles sont courtes à cette échelle, pas facultatives.
+- **Pas de lancement marketing** : ni presse ni référencement poussé ; l'App Store public et la levée du noindex arrivent avec la publication des apps, sans campagne. La diffusion se fait par bouche-à-oreille.
+- **Les coûts restent fixes** : la météo est précalculée pour toute la France quel que soit le nombre d'utilisateurs ; seule la sortie réseau des tuiles croît avec l'usage.
+- **La confiance tient au soin** : Adrien juge carte-champignon.fr « trop cher pour un outil qui a l'air vibe codé » ; Champis doit être gratuit et ne pas avoir l'air bricolé.
+- **Les obligations légales de base demeurent** dès qu'un inconnu peut ouvrir le site ou l'app : mentions légales, contact, confidentialité complète.
 
 ### Promesse et positionnement
 
-Proposé, à valider. Aucune phrase ne dit aujourd'hui ce qu'est Champis ; il en faut une, reprise en tête du site, dans l'accueil de l'app et dans chaque partage.
+Proposé, à valider. Une phrase reprise en tête du site, dans l'accueil de l'app, sur l'App Store et dans chaque partage.
 
 - **Promesse** : « Où et quand poussent cèpes et girolles, forêt par forêt, jour par jour. Gratuit, sans compte. »
-- **Catégorie** : « la météo des champignons » plutôt que « la carte des coins ». Champis dit quand les conditions sont réunies, pas où sont les champignons ; le mot désamorce le reproche de livrer les coins des autres.
-- **Pour qui** : d'abord les cueilleurs qui ont leurs coins (Hélène, Marc), puis les curieux venus par un lien (Julien). Personas : doc « Champis — Analyse UX/UI et proposition de refonte », 1er nov. 2026.
-- **Face à carte-champignon.fr** : gratuit, à la parcelle, chaque règle sourcée, et soigné.
+- **Catégorie** : « la météo des champignons » plutôt que « la carte des coins » : Champis dit quand les conditions sont réunies, pas où sont les champignons.
+- **Pour qui** : d'abord les cueilleurs qui ont leurs coins (Hélène, Marc), puis les curieux (Julien). Personas : doc « Champis — Analyse UX/UI et proposition de refonte », 1er nov. 2026.
+- **Face à carte-champignon.fr** : gratuit, à la parcelle, chaque règle sourcée, code ouvert, et soigné.
 - **Accroches à choisir** : « La météo des champignons, forêt par forêt. » · « Savoir quand y aller. » · « Vos coins, au bon moment. »
 
 ### Principes d'interface
@@ -347,9 +349,9 @@ Huit règles décidées avec la refonte du 1er nov. 2026 ; quand deux solutions 
 
 Trois ajouts proposés après l'audit du 6 nov., à valider :
 
-9. **Rien de faux à l'écran** : un texte qui contredit le code ou les données est un défaut bloquant (« Rien n'est collecté », « identifiant anonyme », bandeau des jours « Moyen » sur une carte orange).
-10. **Soigné, pas bricolé** : aucun message de développeur (« GET /tiles », « médiane de la cellule »), les mêmes formats de date et de nombre partout (virgule décimale, « sam. 8 nov. »), aucune promesse sans source.
-11. **Lisible par tous** : palette distinguable par les daltoniens rouge-vert, contraste WCAG AA (4,5:1) pour tout texte, VoiceOver et Dynamic Type dans l'app, carte du site utilisable au clavier.
+9. **Rien de faux à l'écran** : un texte qui contredit le code ou les données est un défaut bloquant.
+10. **Soigné, pas bricolé** : aucun message de développeur, les mêmes formats de date et de nombre partout (virgule décimale, « sam. 8 nov. »), aucune promesse sans source.
+11. **Lisible par tous** : palette distinguable par les daltoniens rouge-vert et détachée du fond de carte, contraste WCAG AA (4,5:1) pour tout texte, VoiceOver et Dynamic Type dans l'app, carte du site utilisable au clavier.
 
 ### Mesure minimale
 
@@ -359,75 +361,74 @@ Décidé : une mesure vraiment minimale (6 nov. 2026). Proposé : quelques compt
 | --- | --- | --- |
 | Ouvertures de la carte du site | Nombre de requêtes sur `carte.html`, sans adresse IP conservée | Savoir si le site sert, en saison et hors saison |
 | Appareils avec au moins un coin, nombre de coins | Table des coins, déjà en base | Savoir si l'app sert au-delà d'Adrien |
-| Observations reçues (trouvé, rien trouvé) | Table des observations, déjà en base | Savoir si la calibration aura de la matière |
+| Observations reçues (trouvé, rien trouvé) | Table des observations, déjà en base | Savoir si le retour terrain vit (sinon il sera retiré) |
 | Notifications envoyées, échecs | Journal du service de notifications, déjà écrit | Savoir si « mes coins » fonctionne |
 | Cellules sans météo après la pré-chauffe | Déjà calculé | Exploitation |
-| Dons reçus, coûts du mois | Relevé manuel, mensuel | Critère de la phase Ouverture |
+| Soutiens reçus, coûts du mois | Relevé manuel, mensuel | Critère de la phase Ouverture |
 
-Règles proposées : agrégats seulement, gardés 13 mois, visibles d'Adrien seul (par exemple dans `champis-api doctor`) ; aucune requête vers un tiers qui ne soit pas nécessaire au service, ce qui écarte à terme le CDN unpkg du site (MapLibre et PMTiles servis par Champis) ; les fonds de carte IGN et OpenStreetMap restent, et la page Confidentialité le dit. Écarté : savoir si une notification a été ouverte, qui demanderait un envoi de plus depuis l'app.
+Règles proposées : agrégats seulement, gardés 13 mois, visibles d'Adrien seul (par exemple dans `champis-api doctor`) ; aucune requête vers un tiers qui ne soit pas nécessaire au service, ce qui écarte à terme le CDN unpkg du site ; les fonds de carte IGN et OpenStreetMap restent, et la page Confidentialité le dit.
 
 ### Espèces : ajout progressif
 
-Décidé : toute espèce est envisageable, ajoutée une à une (6 nov. 2026). Aujourd'hui, les trois groupes (cèpes, girolles, lactaires) sont d'été et d'automne : Champis n'a rien à montrer de janvier à mai.
+Décidé : toute espèce est envisageable, ajoutée une à une (6 nov. 2026). Les trois groupes actuels sont d'été et d'automne : Champis n'a rien à montrer de janvier à mai.
 
-Règle proposée : **une espèce entre dans le Guide et sur la carte le même jour**, quand toutes ces conditions sont remplies :
+Règle proposée : **une espèce entre dans le Guide et sur la carte le même jour**, quand son fichier est complet et validé (skill species-file), son contrôle GBIF passé, ses tuiles T et G publiées avec un indice par département non nul, et son bloc `about` relu par Adrien.
 
-- fichier `species/<id>.json` complet, une référence par règle, `validate.py` vert (skill species-file) ;
-- contrôle GBIF passé (`champis-pipeline check`) : altitudes, mois et pH crédibles ;
-- tuiles T et G publiées pour la France, indice par département non nul ;
-- bloc `about` relu par Adrien, confusions dangereuses sourcées.
-
-Ordre proposé, une espèce par étape :
-
-1. **Lactaire délicieux** : déjà décidé (5 nov.) ; il reste à calculer et publier ses tuiles. D'ici là, il apparaît dans le Guide sans être sur la carte, ce que la règle ci-dessus interdit.
-2. **Une espèce d'arrière-saison**, pied-de-mouton ou trompette de la mort : prolonge l'usage jusqu'en décembre, habitats forestiers que BD Forêt décrit déjà.
-3. **La morille au printemps** : la plus recherchée hors automne, mais ses milieux (frênes, ormes, ripisylves, vergers, brûlis) sont mal vus par BD Forêt ; c'est un modèle à part, à étudier avant de s'engager.
-
-À noter : une espèce de pré ou de lisière (mousseron de la Saint-Georges, rosé des prés) se heurte à la règle « hors forêt → T = 0 » du modèle : à écarter tant que cette règle tient.
+Ordre proposé : (1) lactaire délicieux, déjà décidé, tuiles à publier ; (2) une espèce d'arrière-saison, pied-de-mouton ou trompette de la mort ; (3) la morille au printemps, modèle à part à étudier (frênes, ormes, ripisylves, brûlis mal vus par BD Forêt). Les espèces de pré se heurtent à la règle « hors forêt → T = 0 ».
 
 ### Coûts mensuels
 
-Le socle se compose surtout d'Open-Meteo et de Railway ; le total reste à relever sur les factures, il manque pour la page Soutenir et pour le critère « un mois couvert par les dons ».
+Total à relever sur les factures ; il manque pour la page Soutenir et pour le critère « un mois couvert par les dons ».
 
 | Poste | Montant | Source |
 | --- | --- | --- |
 | Open-Meteo, plan Standard | ≈ 29 € | Spec, 17 oct. 2026 |
 | Postgres Railway | ≈ 5 $ | Spec, 30 oct. 2026 |
 | Bucket Railway (≈ 41 Go : jeu France 20,4 Go d'après le manifeste du 6 nov., jeux par département à peu près autant ; plus les G à venir) | ≈ 0,6 $ à 0,015 $ le Go | Spec, 18 oct. ; `/tiles` |
-| Trois services Railway (API, pré-chauffe, notifications) et volume | À relever | Facture Railway |
+| Trois services Railway et volume | À relever | Facture Railway |
 | Sortie réseau du relais de tuiles | À relever (0,05 $ le Go selon la spec) | Facture Railway |
 | Domaine champis.app | À relever | Registraire |
-| Compte développeur Apple | À relever | Apple |
+| Comptes développeur Apple et Google Play | À relever | Apple, Google |
 
-Seule la sortie réseau croît avec le nombre d'utilisateurs ; la spec prévoit déjà la bascule vers Cloudflare R2 si elle dérape (30 oct. 2026).
+### Décisions sur les suites de l'audit
 
-### Points ouverts produit
+Décidé par Adrien le 6 nov. 2026, sur cette PR :
 
-Quatorze points issus de l'audit du 6 nov. 2026, recommandations recalées sur l'échelle décidée. Aucun n'est tranché : chacun attend Adrien (skill spec-sync).
+| Sujet | Décision |
+| --- | --- |
+| Distribution de l'app | App Store public |
+| Android | App native à prévoir |
+| Référencement du site | Noindex conservé jusqu'à la publication des apps |
+| Palette | Rampe à clarté monotone sans rouge, « très faible » transparent, opacité qui suit le score ; couleurs choisies pour se détacher nettement du fond de carte |
+| Bandeau des jours | Retiré de la carte. Les onze jours restent dans la fiche d'un point, avec la tendance et, quand les prévisions le permettent, le meilleur jour à venir |
+| Phrases en clair | Sens du délai (« trop tôt : pousse attendue dans 5 à 10 jours », « la pousse s'essouffle »), « début » ou « fin de saison », « grosse pluie » au lieu de « pluie déclenchante » ; seuils génériques ; contrat `summary` à mettre à jour dans Backend |
+| Notification | En mots, sans chiffres ni point décimal ; rappel « ce week-end » le jeudi soir à tester avec les proches |
+| Retour terrain | Trouvé et rien trouvé maintenus tels quels, sans carnet personnel ; la fonction sera retirée si elle ne reçoit pas de retours |
+| Textes | Corrections retenues (« Vos coins restent à vous », « identifiant pseudonyme », « Cèpe bronzé ») ; la phrase « publics dans le dépôt du projet » deviendra vraie, les dépôts passant en public avant la publication des apps |
+| Code ouvert | Tout open source ; découpage possible en dépôts `champis` (référentiel : `species/`, `SCHEMA.md`), `champis-api`, `champis-web`, `champis-ios`, `champis-android` |
+| Pages légales | Mentions légales, contact et confidentialité complète ; éditeur : Adrien en personne tant qu'il n'y a pas d'association, avec une adresse dédiée |
+| Soutien | 100 % facultatif, ponctuel ou récurrent, par achat intégré sur iOS, éventuellement récompensé par une collection d'icônes d'app (espèces de champignons) ; RevenueCat sur iOS et sur le web (décision du 30 oct. confirmée) |
+| Forêts publiques | Statut public ou privé de la forêt affiché dans la fiche d'un point ; pas sur la carte, en tout cas pas par défaut |
+| Structure de la spec | Un onglet unique : la section Produit vit dans l'onglet principal |
 
-- [ ] **Distribution de l'app.** (a) Lien public TestFlight : jusqu'à 10 000 testeurs, chaque version expire au bout de 90 jours. (b) App Store non répertorié : lien direct, absent de la recherche, sur demande à Apple, avec revue et étiquettes de confidentialité. (c) App Store public. Recommandation : (a) pour la saison 2027, (b) si l'app doit vivre des mois sans nouvelle version. Conditions d'Apple à revérifier.
-- [ ] **Android.** (a) Le site seul, assumé : consultation complète, sans coins ni notifications. (b) Application web installable, coins dans le navigateur, notifications Web Push. (c) App native. Recommandation : (a) ; à revoir si plusieurs proches sont sur Android.
-- [ ] **Référencement du site.** (a) Garder le noindex, diffusion par lien. (b) Le lever. Recommandation : (a), cohérent avec l'échelle ; remplace « levée du noindex décidée en fin de développement » (30 oct.).
-- [ ] **Palette.** Pour un daltonien protanope, Excellent et Très faible ont la même couleur (ΔE ≈ 4). (a) Garder. (b) Rampe à clarté monotone sans rouge, « très faible » transparent, opacité qui suit le score. (c) Garder les teintes et ajouter un motif aux classes basses. Recommandation : (b) ; touche `shared/palette.json`, les vecteurs de parité et Scoring › Restitution.
-- [ ] **Bandeau des jours.** L'indice par département n'est pas à l'échelle du pixel : le 6 nov., onze pastilles « Moyen » sur une carte orange. (a) Part de forêt visible au moins « bon », calculée par le client. (b) Score du point ou du coin sélectionné, neutre sinon. (c) Pas de couleur, dates seules. Recommandation : (c) tout de suite, puis (a).
-- [ ] **Phrases en clair** (`summary` de `GET /weather`). Dire le sens du délai (« trop tôt : pousse attendue dans 5 à 10 jours », « la pousse s'essouffle »), « début de saison » ou « fin de saison » au lieu de « en marge de la saison », « grosse pluie » au lieu de « pluie déclenchante ». Recommandation : oui, toujours avec des seuils génériques ; contrat à mettre à jour dans Backend.
-- [ ] **Notification.** Texte sans chiffres ni point décimal : « Bois de la Chaux : bon aujourd'hui pour les cèpes. Meilleur jour : samedi. » Option : un rappel « ce week-end » le jeudi soir. Recommandation : le texte oui, le rappel à tester avec les proches.
-- [ ] **Carnet personnel.** (a) Aucune liste d'observations (1er nov.). (b) Carnet privé : liste, carte, suppression une à une. Recommandation : (b) ; sans retour pour qui contribue, les « rien trouvé » ne viendront pas.
-- [ ] **Textes à corriger.** « Rien n'est collecté » devient « Vos coins restent à vous » ; « identifiant anonyme » devient « identifiant pseudonyme » ; « publics dans le dépôt du projet » est faux (dépôts privés) ; « Cèpe bronzé (tête-de-nègre) » devient « Cèpe bronzé » (skill species-file). Recommandation : tout.
-- [ ] **Ouvrir `species/`.** (a) Garder privé et corriger la phrase du Guide. (b) Publier `species/` et `SCHEMA.md` sous licence ouverte. (c) Ouvrir tout le monorepo. Recommandation : (b), la traçabilité devient vérifiable.
-- [ ] **Pages légales.** Mentions légales (éditeur, hébergeur), adresse de contact, confidentialité complète : responsable, finalités, base légale, durées de conservation, sous-traitants (Railway, Apple), droits et recours. À trancher : éditeur (Adrien en personne ou une association) et adresse de contact. Recommandation : Adrien en personne tant qu'il n'y a pas d'association, avec une adresse dédiée.
-- [ ] **Dons à cette échelle.** (a) RevenueCat et association (30 oct.). (b) Un simple lien de paiement sur le site (Stripe, Liberapay ou équivalent), rien de payant dans l'app. (c) Pas de dons tant qu'Adrien couvre le socle. Recommandation : (b) ; les règles de l'App Store sur un lien de don sont à vérifier avant d'en mettre un dans l'app.
-- [ ] **Forêts publiques.** Nouvelle source (forêts publiques de l'ONF et de l'IGN, licence à vérifier) : montrer où la cueillette familiale est tolérée, alors que la forêt est surtout privée. Recommandation : oui, après l'étape Clarifier.
-- [ ] **Structure de la spec.** (a) Un onglet unique, comme aujourd'hui. (b) Onglets Produit, Modèle et données, Architecture, Décisions datées, Points ouverts. Recommandation : (b), progressivement ; l'onglet Produit en est la première pierre.
+### Points encore ouverts
+
+- [ ] **Jour affiché par la carte sans bandeau.** (a) Toujours aujourd'hui ; la fiche d'un point montre les onze jours, la tendance et le meilleur jour sans changer la carte. (b) Choisir un jour dans la fiche recolore la carte, avec un rappel visible du jour affiché et un retour à aujourd'hui. Recommandation : (a), plus simple et fidèle à la décision ; le potentiel toute saison reste pour repérer des secteurs.
+- [ ] **Découpage des dépôts.** Où vont `pipeline/`, `mapping/` et `shared/` (palette, vecteurs de parité, textes) ? Recommandation : le référentiel `champis` garde tous les contrats partagés (`species/`, `SCHEMA.md`, `mapping/`, `shared/`) ; le pipeline rejoint `champis-api`, qui en dépend déjà comme paquet.
+- [ ] **Licences avant ouverture.** Code (MIT ?) et données (fichiers d'espèces, textes du Guide : CC BY 4.0 ?), compatibles avec les sources (Etalab, CC BY de SoilGrids et d'Open-Meteo).
+- [ ] **Structure juridique du soutien** (point du 30 oct.) : RevenueCat verse à un compte Apple et à un compte Stripe au nom d'une personne ou d'une entité ; particulier ou association.
+- [ ] **Icônes en récompense** : quelles espèces, à partir de quel soutien, ponctuel ou récurrent.
+- [ ] **Adresse de contact dédiée**, à créer pour les mentions légales.
+- [ ] **Calendrier de l'app Android native.**
 
 ### Plan proposé
 
-Proposé, à valider : cinq temps calibrés sur 2 à 10 heures par semaine, sans lancement public ; il remplace pour la suite le contenu de la phase « 4 bis — Ouverture » du plan de réalisation, dont le critère final est gardé.
+Proposé, à valider : cinq temps calibrés sur 2 à 10 heures par semaine, sans lancement marketing ; il remplace pour la suite le contenu de la phase « 4 bis — Ouverture » du plan de réalisation, dont le critère final est gardé.
 
-1. **Maintenant, sans code (nov. 2026)** : trancher les points ouverts ci-dessus ; partager le **site** avec trois à cinq proches pour les dernières sorties de la saison et noter leurs réactions (critère de la phase 3) ; publier les tuiles du lactaire ; relever les coûts. L'app attend l'étape A, parce que son accueil saute l'avertissement légal.
-2. **A · Corriger (déc. 2026)** : accueil de l'app, bandeau des jours sans couleur, dates avec leur numéro, notification en mots, textes faux, fraîcheur de la météo sur le site, site mobile, réglages depuis la carte. Critère : plus rien de faux à l'écran.
-3. **B · Clarifier (janv.–févr. 2027)** : palette, phrases d'action, fiche d'un coin expliquée, position et recherche de commune sur le site, bouton « Noter » à ma position, messages d'erreur en clair, contrastes. Critère : quatre proches sur cinq décident « samedi ou pas » en moins d'une minute et savent dire ce qu'une couleur veut dire.
-4. **C · Préparer le cercle élargi (mars–mai 2027)** : pages légales et contact, mesure minimale, dons simples, carnet personnel, espèce d'arrière-saison rédigée, accueil du site avec la promesse. Critère : un inconnu comprend Champis et ses règles sans qu'Adrien l'explique.
-5. **D · Saison 2027 (juin–nov.)** : app par lien TestFlight aux proches, puis aux proches de proches ; site par lien ; suivi des compteurs chaque semaine. Bilan fin nov. 2027 : un mois d'infrastructure couvert par les dons, et les notifications « bon » confirmées par les observations.
+1. **Maintenant, sans code (nov. 2026)** : partager le **site** avec trois à cinq proches pour les dernières sorties de la saison et noter leurs réactions (critère de la phase 3) ; publier les tuiles du lactaire ; relever les coûts ; créer l'adresse de contact. L'app attend l'étape A, parce que son accueil saute l'avertissement légal.
+2. **A · Corriger (déc. 2026)** : accueil de l'app, bandeau des jours retiré de la carte, dates avec leur numéro, notification en mots, textes faux, fraîcheur de la météo sur le site, site mobile, réglages depuis la carte. Critère : plus rien de faux à l'écran.
+3. **B · Clarifier (janv.–févr. 2027)** : nouvelle palette, phrases d'action, fiche d'un point avec les onze jours, la tendance, le meilleur jour et le statut public ou privé de la forêt, fiche d'un coin expliquée, position et recherche de commune sur le site, bouton « Noter » à ma position, messages d'erreur en clair, contrastes. Critère : quatre proches sur cinq décident « samedi ou pas » en moins d'une minute et savent dire ce qu'une couleur veut dire.
+4. **C · Préparer la publication (mars–mai 2027)** : pages légales et contact, mesure minimale, soutien RevenueCat sur iOS et le web avec ses icônes, dépôts découpés et ouverts avec leurs licences, fiche App Store et étiquettes de confidentialité, accueil du site avec la promesse, espèce d'arrière-saison rédigée. Critère : un inconnu comprend Champis et ses règles sans explication.
+5. **D · Publication et saison 2027 (juin–nov.)** : app sur l'App Store public avant la fin août, noindex levé le même jour, compteurs suivis chaque semaine ; Android natif selon son calendrier. Bilan fin nov. 2027 : un mois d'infrastructure couvert par le soutien, et les notifications « bon » confirmées par les observations.
 
 Chaque étape commence par ses lignes dans la spec, comme les lots du 1er nov.
