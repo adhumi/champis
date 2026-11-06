@@ -1,5 +1,6 @@
-# CI : lint, format, tests, vecteurs de parité, fichiers espèces. Tout tourne sans réseau
-# (fixtures synthétiques), donc rien à mocker : un échec ici est un vrai échec.
+# CI du référentiel : fichiers espèces, table BD Forêt, JSON, index des textes, vecteurs.
+# Bibliothèque standard de Python seulement, sans réseau. Que les vecteurs soient à jour avec les
+# espèces se vérifie dans la CI de champis-api (`champis-vectors --check`), qui a le scoring.
 name: CI
 
 on:
@@ -17,23 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
         with:
-          enable-cache: true
-          cache-dependency-glob: uv.lock
+          python-version: "3.12"
 
-      - run: uv sync --group dev --locked
+      - name: Fichiers espèces et table BD Forêt
+        run: python3 species/validate.py
 
-      - name: Ruff (lint + format)
-        run: |
-          uv run ruff check .
-          uv run ruff format --check .
-
-      - name: Tests (couverture ≥ 90 % du pipeline et de l'API)
-        run: uv run pytest --cov=champis_pipeline --cov=champis_api --cov-report=term --cov-fail-under=90
-
-      - name: Vecteurs de parité à jour
-        run: uv run champis-vectors --check
-
-      - name: Fichiers espèces
-        run: uv run python species/validate.py
+      - name: JSON, textes du Guide, vecteurs
+        run: python3 scripts/check_shared.py

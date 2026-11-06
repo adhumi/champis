@@ -32,10 +32,12 @@ S(p, e, J) = T(p, e) × M_eff(c(p), e, J, alt(p)) × Φ(e, J, alt(p))
 
 ## Où vit quoi
 
+Depuis le découpage des dépôts (6 nov. 2026), le code de référence est dans `adhumi/champis-api` ; ce référentiel (`adhumi/champis`, sous-module `champis/` de champis-api et champis-web) garde les espèces, la table BD Forêt, la palette, les vecteurs et les textes.
+
 | Calcul | Module de référence | Portages |
 | --- | --- | --- |
-| trapèze, `T` | `pipeline/champis_pipeline/scoring.py` | — (jamais ailleurs) |
-| `M`, `Φ`, `M_eff`, groupes | `api/champis_api/scoring.py` (importe le trapèze du pipeline) | `champis-ios/Packages/ChampisScoring` — validé par les vecteurs de test (skill `scoring-parity`) ; le site prend les valeurs de l'API, sans portage |
+| trapèze, `T` | champis-api : `pipeline/champis_pipeline/scoring.py` | — (jamais ailleurs) |
+| `M`, `Φ`, `M_eff`, groupes | champis-api : `api/champis_api/scoring.py` (importe le trapèze du pipeline) | `champis-ios/Packages/ChampisScoring` — validé par les vecteurs de test (skill `scoring-parity`) ; le site prend les valeurs de l'API, sans portage |
 | seuils, palette | `shared/palette.json` | chargé tel quel par tous les clients |
 
 ## Vocabulaire
@@ -53,4 +55,4 @@ S(p, e, J) = T(p, e) × M_eff(c(p), e, J, alt(p)) × Φ(e, J, alt(p))
 
 ## Quand tu modifies le modèle
 
-Modifier une formule = modifier `SCHEMA.md` + `scoring.py` + les vecteurs de test + la spec (skill `spec-sync`), dans le même commit. Un changement de paramètre d'espèce = skill `species-file`.
+Modifier une formule = modifier `SCHEMA.md` et les vecteurs de test (ce référentiel), `scoring.py` (champis-api) et la spec (skill `spec-sync`), en PR liées, fusionnées ensemble. Un changement de paramètre d'espèce = skill `species-file`.
