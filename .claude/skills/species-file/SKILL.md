@@ -16,9 +16,10 @@ Une espèce = un fichier `species/<id>.json`, `id` = nom de fichier en `snake_ca
 5. **Tous les hôtes du vocabulaire** (`mapping/bdforet_to_hosts.json` → `hosts`) doivent avoir un poids explicite, plus `default`. `robinier`, `peupleraie`, `herbacee` restent à 0 sauf raison documentée.
 6. **Poids** : `terrain.weights` (cover, ph, altitude, aspect, slope) et `weather.weights` (temp, rain, trigger, soil_moisture) somment à 1.
 7. **Écrire la fiche `about`** (lot 4) : `summary`, `habitat`, `season` en mots, au moins une confusion dangereuse avec `name`, `latin`, `risk`, `tell` et une référence, `photo` à `null` tant qu'une image Wikimedia Commons sous licence libre n'est pas choisie (alors `url`, `page`, `author`, `license`) ; ses sources vont dans `about.references`, pas en tête de fichier : le bloc est exclu de l'empreinte, relire une fiche ne régénère rien. Jamais d'aide à l'identification, jamais de « comestible » sans la consigne du pharmacien (qui est dans `shared/texts/especes.md`, pas dans la fiche). Adrien relit.
-8. **Valider** : `python3 species/validate.py` doit afficher `OK`. Ne pas contourner une erreur en modifiant le validateur.
+8. **Valider** : `make check` (ou `python3 species/validate.py`) doit afficher `ok`. Ne pas contourner une erreur en modifiant le validateur.
 9. **Mettre à jour la spec** : onglet « Références phase 0 » du doc (ou la phase courante) — une ligne par règle structurante, valeur, confiance, source ; et la liste des espèces dans la section « Modèle d'espèce ». Voir skill `spec-sync`.
-10. **Regénérer `T`** pour l'espèce si `terrain` a changé (skill `geo-pipeline`) ; `M` et `Φ` sont lus à chaud par l'API, rien à régénérer.
+10. **Régénérer les vecteurs de parité** : l'empreinte des espèces change. Depuis champis-api, `uv run champis-vectors` écrit dans son sous-module `champis/shared/vectors/` ; ces fichiers se committent ici, dans la même PR (skill `scoring-parity`).
+11. **Regénérer `T`** pour l'espèce si `terrain` a changé (champis-api, skill `geo-pipeline`) ; `M` et `Φ` sont lus à chaud par l'API, rien à régénérer une fois le sous-module avancé (`make referential` dans champis-api).
 
 ## Ordres de grandeur attendus (pour relire un fichier)
 

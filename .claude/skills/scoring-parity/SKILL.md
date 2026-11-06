@@ -5,13 +5,13 @@ description: Garantir que le scoring (trapèze, M, Φ, M_eff, groupes, palette) 
 
 # Parité du scoring entre Python et Swift
 
-Le scoring de référence est en Python (`api/champis_api/scoring.py`, trapèze dans `pipeline/champis_pipeline/scoring.py`). L'app recalcule `M × Φ` localement (hors ligne, changement de jour sans réseau). Ce portage n'a pas le droit de diverger.
+Le scoring de référence est en Python, dans `adhumi/champis-api` (`api/champis_api/scoring.py`, trapèze dans `pipeline/champis_pipeline/scoring.py`). L'app recalcule `M × Φ` localement (hors ligne, changement de jour sans réseau). Ce portage n'a pas le droit de diverger.
 
 Le site **ne porte pas** le scoring (décision du 30 oct. 2026) : sans hors ligne web, il affiche `M_eff` et `Φ` tels que l'API les renvoie pour les 11 jours, et ne lit de `shared/` que la palette. La parité ne concerne donc que Python et Swift.
 
 ## Le contrat : `shared/vectors/`
 
-Fichiers JSON générés **uniquement par Python** (`uv run python -m champis_api.vectors --out shared/vectors/`), jamais écrits à la main ni par un autre langage :
+Fichiers JSON du référentiel `adhumi/champis`, générés **uniquement par Python** depuis champis-api (`uv run champis-vectors`, qui écrit dans son sous-module `champis/shared/vectors/` ; la mise à jour se pousse par PR sur le référentiel), jamais écrits à la main ni par un autre langage :
 
 ```
 shared/vectors/trapezoid.json       [{ "x": 4.2, "t": {min,opt_low,opt_high,max}, "expected": 0.4 }, …]
@@ -29,7 +29,7 @@ Chaque fichier contient un champ `"generated_by": { "scoring_version": …, "spe
 
 ## Dans chaque langage
 
-- **Python** : `tests/test_vectors.py` rejoue les vecteurs contre le code qui les a produits (détecte une régénération incohérente).
+- **Python** (champis-api) : `api/tests/test_vectors.py` rejoue les vecteurs contre le code qui les a produits (détecte une régénération incohérente), et `champis-vectors --check` en CI vérifie qu'ils sont à jour avec le sous-module.
 - **Swift** (`champis-ios/Packages/ChampisScoring`, paquet local sans dépendance) : `ChampisScoringTests` avec Swift Testing, les vecteurs sont copiés dans les ressources du paquet de test par `scripts/sync-vectors.sh` (le dépôt iOS est séparé ; le script note `scoring_version` et `species_hash` dans `Packages/ChampisScoring/VECTORS_VERSION`).
 
 Les deux suites tournent en CI ; une PR qui change le scoring Python sans régénérer les vecteurs échoue (le test Python détecte le hash), et une PR client qui échoue sur les vecteurs ne se merge pas.
@@ -44,5 +44,5 @@ Les deux suites tournent en CI ; une PR qui change le scoring Python sans régé
 ## Quand le modèle change
 
 1. Modifier `SCHEMA.md` et `scoring.py` (skill `champis-model`).
-2. Régénérer les vecteurs, relancer les trois suites.
+2. Régénérer les vecteurs depuis champis-api, les pousser par PR sur le référentiel, avancer le sous-module, relancer les suites.
 3. Porter la modification en Swift dans une PR liée ; tant qu'elle échoue, l'API n'est pas déployée (le contrat `/species` inclut `scoring_version` et les clients refusent une version qu'ils ne connaissent pas).
