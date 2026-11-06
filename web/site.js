@@ -244,7 +244,7 @@
     const header = document.getElementById("site-header");
     if (header) {
       header.innerHTML =
-        `<a class="brand" href="carte.html"><img src="logo.svg" alt="" width="32" height="32" /> Champis</a>` +
+        `<a class="brand" href="index.html"><img src="logo.svg" alt="" width="32" height="32" /> Champis</a>` +
         `<nav aria-label="Pages">${PAGES.filter((p) => !p.support).map((p) => `<a href="${p.href}"${p.href === active ? ' aria-current="page"' : ""}>${p.title}</a>`).join("")}</nav>` +
         `<span class="spacer"></span><a class="support" href="soutenir.html">Soutenir</a>`;
     }
@@ -260,6 +260,7 @@
         `<span>Champis indique un potentiel, pas une autorisation : <a href="comprendre.html?article=cueillir-sans-nuire">cueillir sans nuire</a>.</span>` +
         `<a href="comprendre.html?article=confidentialite">Confidentialité</a>` +
         `<a href="comprendre.html?article=donnees-et-sources">Données et licences</a>` +
+        `<a href="comprendre.html?article=mentions-legales">Mentions légales</a>` +
         `<a href="soutenir.html">Soutenir Champis</a>`;
     }
   }
