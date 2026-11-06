@@ -4,7 +4,7 @@ Champis ne demande pas de compte, n'affiche pas de publicité et ne vend rien. P
 
 ## Qui en est responsable
 
-Adrien Humilière, éditeur de Champis (voir l'article « Mentions légales »).
+Adrien Humilière, éditeur de Champis (voir l'article « Mentions légales »), joignable à [hello@champis.app](mailto:hello@champis.app).
 
 ## Ce qui est stocké
 
@@ -39,4 +39,4 @@ Votre position n'est lue que quand vous le demandez, pour centrer la carte ou no
 
 ## Vos droits
 
-Dans les réglages de l'app, « Supprimer mes observations et mes coins » efface tout sur le serveur puis sur l'appareil, sans retour. Vous pouvez aussi demander l'accès à vos données, leur rectification ou leur export à l'adresse de contact des mentions légales. Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL ([cnil.fr](https://www.cnil.fr)).
+Dans les réglages de l'app, « Supprimer mes observations et mes coins » efface tout sur le serveur puis sur l'appareil, sans retour. Vous pouvez aussi demander l'accès à vos données, leur rectification ou leur export en écrivant à [hello@champis.app](mailto:hello@champis.app). Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL ([cnil.fr](https://www.cnil.fr)).

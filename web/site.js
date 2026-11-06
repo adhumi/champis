@@ -14,6 +14,8 @@
   /* Ligne qui renvoie vers l'app, sous la carte et les fiches : null tant que l'app n'est pas publiée
    * (étape A, 6 nov. 2026 : pas de promesse sans lien), le texte à remettre à la publication. */
   const APP_LINE = null;
+  /** Adresse de contact de l'éditeur (mentions légales, confidentialité, pied de page). */
+  const CONTACT_EMAIL = "hello@champis.app";
 
   // ------------------------------------------------------------ dates (UTC midi : jamais de décalage)
   const parse = (iso) => new Date(iso + "T12:00:00Z");
@@ -181,7 +183,7 @@
       .replace(/`([^`]+)`/g, "<code>$1</code>")
       .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
       .replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>")
-      .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" rel="noopener">$1</a>');
+      .replace(/\[([^\]]+)\]\(((?:https?|mailto):[^)\s]+)\)/g, '<a href="$2" rel="noopener">$1</a>');
   }
   /** Titres, paragraphes repliés, puces → HTML. `skipTitle` omet le titre de niveau 1 (celui de la page). */
   function renderMarkdown(md, { skipTitle = true } = {}) {
@@ -252,6 +254,7 @@
         `<a href="comprendre.html?article=confidentialite">Confidentialité</a>` +
         `<a href="comprendre.html?article=donnees-et-sources">Données et licences</a>` +
         `<a href="comprendre.html?article=mentions-legales">Mentions légales</a>` +
+        `<a href="mailto:${CONTACT_EMAIL}">Contact</a>` +
         `<a href="soutenir.html">Soutenir Champis</a>`;
     }
   }
@@ -293,7 +296,7 @@
   }
 
   const Site = {
-    WEEKDAYS, SHORT_WEEKDAYS, DAY_RANGE, SUPPORT_URL, APP_LINE,
+    WEEKDAYS, SHORT_WEEKDAYS, DAY_RANGE, SUPPORT_URL, APP_LINE, CONTACT_EMAIL,
     weekdayName, shortWeekday, frenchDate, shortDate, dateFor, whenWord, parisParts, computedPhrase, todayLine,
     trend, trendPhrase, geocodeUrl, geocodeResults, forestUrl, forestPhrase,
     hexToRgb, sortedClasses, classify, accentHex, classCounts, seasonSentence,

@@ -297,6 +297,7 @@ def test_shared_texts_index_and_species_about():
     legal = (texts / "mentions-legales.md").read_text(encoding="utf-8")
     for words in (
         "Adrien Humilière",
+        "[hello@champis.app](mailto:hello@champis.app)",
         "Railway Corporation",
         "licence MIT",
         "CC BY 4.0",
