@@ -2,7 +2,7 @@
 
 ## Éditeur
 
-Champis est édité par Adrien Humilière, à titre personnel et non professionnel, qui en est aussi le directeur de la publication. Une adresse de contact dédiée sera publiée ici avant l'ouverture de Champis au public.
+Champis est édité par Adrien Humilière, à titre personnel et non professionnel, qui en est aussi le directeur de la publication. Contact : [hello@champis.app](mailto:hello@champis.app).
 
 ## Hébergement
 
