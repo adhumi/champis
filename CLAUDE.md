@@ -9,8 +9,8 @@ Découpage des dépôts (spec › Produit › Étape C, lot C7, 6 nov. 2026) : c
 ```
 species/      fichiers espèces JSON + SCHEMA.md + validate.py   (skill species-file)
 mapping/      bdforet_to_hosts.json : 32 codes TFV → hôtes
-shared/       palette.json, vectors/ (contrat de parité Python/Swift) (skill scoring-parity), texts/ (articles du Guide, app et site), illustrations/ (une planche SVG par espèce, même style)
-scripts/      check_shared.py : JSON, index des textes, vecteurs, illustrations ; draw_illustrations.py : dessine shared/illustrations/
+shared/       palette.json, vectors/ (contrat de parité Python/Swift) (skill scoring-parity), texts/ (articles du Guide, app et site), illustrations/ (prompts des planches, puis les images)
+scripts/      check_shared.py : JSON, index des textes, vecteurs
 docs/         audit produit et plan
 ```
 
@@ -18,7 +18,7 @@ docs/         audit produit et plan
 
 - `make check` = la CI : `species/validate.py` puis `scripts/check_shared.py`. Python 3.12, bibliothèque standard, sans réseau.
 - Les chemins `species/`, `mapping/`, `shared/` et `.claude/skills/{champis-model,scoring-parity,spec-sync,species-file}` sont lus tels quels par les trois autres dépôts (sous-module, liens de skills, scripts de synchronisation de l'app) : ne pas les déplacer.
-- Illustrations (`shared/illustrations/`) : dessinées uniquement par `scripts/draw_illustrations.py` (`make illustrations`), jamais retouchées à la main ; une nouvelle espèce reçoit son entrée dans `SPECIES` du script, dans le même gabarit. Le site les lit par `/shared/illustrations/`, l'app par `scripts/sync-illustrations.sh`.
+- Illustrations (`shared/illustrations/`) : aquarelles générées (Midjourney ou Gemini) à partir de `PROMPTS.md`, une par espèce (`<id>.png`), dans le style d'une image de référence ; une nouvelle espèce reçoit d'abord son bloc sujet dans `PROMPTS.md`.
 - Vecteurs (`shared/vectors/`) : générés uniquement par champis-api (`uv run champis-vectors` écrit dans son sous-module `champis/`), jamais à la main. Un changement d'espèce change leur empreinte : vecteurs régénérés dans la même PR, sinon la CI de champis-api échoue à la prochaine avancée du sous-module.
 
 ## Règles

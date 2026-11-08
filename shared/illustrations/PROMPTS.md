@@ -1,10 +1,10 @@
 # Prompts pour générer les planches (Midjourney, Gemini)
 
-Décision du 8 nov. 2026 (Adrien) : les planches définitives sont des aquarelles générées par
-Midjourney ou Gemini à partir des prompts ci-dessous, dans le style de l'image de référence
-(aquarelle de girolles : lavis doux, sans contour à l'encre, deux sujets, herbe et fougère,
-mousse pâle, fond blanc). Les SVG de `scripts/draw_illustrations.py` sont provisoires et seront
-remplacés par les images générées (`<id>.png`, carré, 1024 px au moins, fond blanc ou détouré).
+Décision du 8 nov. 2026 (Adrien) : les planches sont des aquarelles générées par Midjourney ou
+Gemini à partir des prompts ci-dessous, dans le style de l'image de référence (aquarelle de
+girolles : lavis doux, sans contour à l'encre, deux sujets, herbe et fougère, mousse pâle, fond
+blanc). Les images se déposent ici en `<id>.png` (carré, 1024 px au moins, fond blanc ou
+détouré), une par fichier espèce.
 
 ## Recette de cohérence
 

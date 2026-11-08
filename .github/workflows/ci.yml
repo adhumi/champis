@@ -1,4 +1,4 @@
-# CI du référentiel : fichiers espèces, table BD Forêt, JSON, index des textes, vecteurs, illustrations.
+# CI du référentiel : fichiers espèces, table BD Forêt, JSON, index des textes, vecteurs.
 # Bibliothèque standard de Python seulement, sans réseau. Que les vecteurs soient à jour avec les
 # espèces se vérifie dans la CI de champis-api (`champis-vectors --check`), qui a le scoring.
 name: CI
@@ -25,8 +25,5 @@ jobs:
       - name: Fichiers espèces et table BD Forêt
         run: python3 species/validate.py
 
-      - name: JSON, textes du Guide, vecteurs, illustrations
+      - name: JSON, textes du Guide, vecteurs
         run: python3 scripts/check_shared.py
-
-      - name: Illustrations à jour avec leur générateur
-        run: python3 scripts/draw_illustrations.py --check
