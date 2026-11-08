@@ -15,7 +15,7 @@ Wikimedia Commons) ne couvre les dix espèces dans un même style, les girolles 
 blanchissante n'ayant jamais été figurées dans les atlas anciens ; mélanger des sources casse la
 cohérence d'une liste.
 
-Déposées : `boletus_edulis.jpg` (8 nov. 2026).
+Déposées (8 nov. 2026) : `boletus_edulis.jpg`, `boletus_aereus.jpg`.
 
 Licence des images générées : à fixer (conditions de Midjourney ou de Gemini selon l'outil), à
 noter ici.
