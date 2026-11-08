@@ -18,7 +18,7 @@ docs/         audit produit et plan
 
 - `make check` = la CI : `species/validate.py` puis `scripts/check_shared.py`. Python 3.12, bibliothèque standard, sans réseau.
 - Les chemins `species/`, `mapping/`, `shared/` et `.claude/skills/{champis-model,scoring-parity,spec-sync,species-file}` sont lus tels quels par les trois autres dépôts (sous-module, liens de skills, scripts de synchronisation de l'app) : ne pas les déplacer.
-- Illustrations (`shared/illustrations/`) : aquarelles générées (Midjourney ou Gemini) à partir de `PROMPTS.md`, une par espèce (`<id>.png`), dans le style d'une image de référence ; une nouvelle espèce reçoit d'abord son bloc sujet dans `PROMPTS.md`.
+- Illustrations (`shared/illustrations/`) : aquarelles générées (Midjourney ou Gemini) à partir de `PROMPTS.md`, une par espèce (`<id>.jpg`), dans le style d'une image de référence ; une nouvelle espèce reçoit d'abord son bloc sujet dans `PROMPTS.md`.
 - Vecteurs (`shared/vectors/`) : générés uniquement par champis-api (`uv run champis-vectors` écrit dans son sous-module `champis/`), jamais à la main. Un changement d'espèce change leur empreinte : vecteurs régénérés dans la même PR, sinon la CI de champis-api échoue à la prochaine avancée du sous-module.
 
 ## Règles

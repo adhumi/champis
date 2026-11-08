@@ -3,7 +3,8 @@
 
 Usage : python3 scripts/check_shared.py
 Vérifie : chaque JSON se lit ; l'index des textes du Guide (shared/texts/index.json) et les
-fichiers Markdown se correspondent un pour un, sans id en double ; chaque fichier de vecteurs
+fichiers Markdown se correspondent un pour un, sans id en double ; chaque illustration
+(shared/illustrations/<id>.jpg) porte l'id d'une espèce ; chaque fichier de vecteurs
 (shared/vectors/) porte `generated_by` (scoring_version, species_hash) et des cas, et tous la même
 empreinte. Que les vecteurs soient à jour se vérifie dans la CI de champis-api
 (`champis-vectors --check`), qui a le code du scoring.
@@ -19,6 +20,8 @@ ROOT = Path(__file__).resolve().parent.parent
 TEXTS = ROOT / "shared" / "texts"
 VECTORS = ROOT / "shared" / "vectors"
 VECTOR_FILES = ("trapezoid", "phi", "m", "group", "palette")
+SPECIES = ROOT / "species"
+ILLUSTRATIONS = ROOT / "shared" / "illustrations"
 
 
 def check() -> list[str]:
@@ -66,6 +69,16 @@ def check() -> list[str]:
             errors.append(f"shared/vectors/{name}.json : aucun cas")
     if len(hashes) > 1:
         errors.append(f"shared/vectors/ : empreintes différentes d'un fichier à l'autre {sorted(hashes)}")
+
+    # illustrations (shared/illustrations/README.md) : <id>.jpg, l'id est celui d'un fichier espèce
+    species_ids = {p.stem for p in SPECIES.glob("*.json")}
+    for image in sorted(ILLUSTRATIONS.glob("*.*")):
+        if image.suffix == ".md":
+            continue
+        if image.suffix != ".jpg":
+            errors.append(f"shared/illustrations/{image.name} : format inattendu (attendu <id>.jpg)")
+        elif image.stem not in species_ids:
+            errors.append(f"shared/illustrations/{image.name} : aucune espèce de ce nom")
 
     return errors
 

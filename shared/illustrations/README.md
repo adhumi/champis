@@ -1,7 +1,7 @@
 # Illustrations des espèces
 
-Une planche par espèce, `shared/illustrations/<id>.png` (carré, 1024 px au moins, fond blanc ou
-détouré), pour les listes et le sélecteur d'espèce du site et de l'app, à la place du menu
+Une planche par espèce, `shared/illustrations/<id>.jpg` (carré, 2000 px, fond blanc, le fichier
+produit par l'outil tel quel, sans recompression : 400 Ko environ, contre 3 Mo en PNG), pour les listes et le sélecteur d'espèce du site et de l'app, à la place du menu
 déroulant. La photo de la fiche (`about.photo`) reste la photo.
 
 Les planches sont des aquarelles générées par Midjourney ou Gemini à partir de `PROMPTS.md`, dans
@@ -15,5 +15,7 @@ Wikimedia Commons) ne couvre les dix espèces dans un même style, les girolles 
 blanchissante n'ayant jamais été figurées dans les atlas anciens ; mélanger des sources casse la
 cohérence d'une liste.
 
-Licence des images générées : à fixer au dépôt des fichiers (conditions de Midjourney ou de
-Gemini selon l'outil), à noter ici.
+Déposées : `boletus_edulis.jpg` (8 nov. 2026).
+
+Licence des images générées : à fixer (conditions de Midjourney ou de Gemini selon l'outil), à
+noter ici.

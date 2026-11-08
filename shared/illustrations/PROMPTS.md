@@ -3,8 +3,8 @@
 Décision du 8 nov. 2026 (Adrien) : les planches sont des aquarelles générées par Midjourney ou
 Gemini à partir des prompts ci-dessous, dans le style de l'image de référence (aquarelle de
 girolles : lavis doux, sans contour à l'encre, deux sujets, herbe et fougère, mousse pâle, fond
-blanc). Les images se déposent ici en `<id>.png` (carré, 1024 px au moins, fond blanc ou
-détouré), une par fichier espèce.
+blanc). Les images se déposent ici en `<id>.jpg` (carré, 2000 px, fond blanc, fichier de l'outil
+tel quel), une par fichier espèce.
 
 ## Recette de cohérence
 
