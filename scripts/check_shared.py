@@ -70,8 +70,11 @@ def check() -> list[str]:
     if len(hashes) > 1:
         errors.append(f"shared/vectors/ : empreintes différentes d'un fichier à l'autre {sorted(hashes)}")
 
-    # illustrations (shared/illustrations/README.md) : <id>.jpg, l'id est celui d'un fichier espèce
+    # illustrations (shared/illustrations/README.md) : une <id>.jpg par fichier espèce, rien d'autre
     species_ids = {p.stem for p in SPECIES.glob("*.json")}
+    for sid in sorted(species_ids):
+        if not (ILLUSTRATIONS / f"{sid}.jpg").is_file():
+            errors.append(f"shared/illustrations/{sid}.jpg : absent (planche à générer d'après PROMPTS.md)")
     for image in sorted(ILLUSTRATIONS.glob("*.*")):
         if image.suffix == ".md":
             continue

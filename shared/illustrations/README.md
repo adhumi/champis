@@ -15,7 +15,7 @@ Wikimedia Commons) ne couvre les dix espèces dans un même style, les girolles 
 blanchissante n'ayant jamais été figurées dans les atlas anciens ; mélanger des sources casse la
 cohérence d'une liste.
 
-Déposées (8 nov. 2026) : `boletus_edulis.jpg`, `boletus_aereus.jpg`, `boletus_pinophilus.jpg`, `boletus_reticulatus.jpg`, `cantharellus_cibarius.jpg`, `cantharellus_pallens.jpg`, `cantharellus_alborufescens.jpg`, `craterellus_cornucopioides.jpg`, `hydnum_repandum.jpg`.
+Les dix planches sont déposées (8 nov. 2026) ; `scripts/check_shared.py` exige une image par espèce.
 
 Licence des images générées : à fixer (conditions de Midjourney ou de Gemini selon l'outil), à
 noter ici.
