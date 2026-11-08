@@ -1,5 +1,7 @@
 # Illustrations des espèces
 
+> 8 nov. 2026 : les planches définitives seront des aquarelles générées (Midjourney ou Gemini) à partir de `PROMPTS.md`, dans le style d'une image de référence choisie par Adrien ; les SVG du générateur ci-dessous sont provisoires et seront remplacés par les images (`<id>.png`) quand elles auront été produites.
+
 Une planche SVG par espèce, `shared/illustrations/<id>.svg`, listée dans `index.json`. Elles
 servent aux listes (sélecteur d'espèce du site et de l'app, à la place du menu déroulant) et
 partout où une vignette vaut mieux qu'un nom latin. La photo de la fiche (`about.photo`) reste la
