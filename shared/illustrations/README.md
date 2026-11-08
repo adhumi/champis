@@ -15,7 +15,9 @@ Wikimedia Commons) ne couvre les dix espèces dans un même style, les girolles 
 blanchissante n'ayant jamais été figurées dans les atlas anciens ; mélanger des sources casse la
 cohérence d'une liste.
 
-Les dix planches sont déposées (8 nov. 2026) ; `scripts/check_shared.py` exige une image par espèce.
+Les dix premières planches sont déposées (8 nov. 2026) ; `scripts/check_shared.py` exige une image par espèce.
+Les dix-sept espèces ajoutées le 8 nov. 2026 (`docs/ESPECES-candidates-2026-11-08.md`) ont leur bloc sujet
+dans `PROMPTS.md` et attendent leur planche : la CI du référentiel échoue tant qu'elles manquent.
 
 Licence des images générées : à fixer (conditions de Midjourney ou de Gemini selon l'outil), à
 noter ici.

@@ -1,0 +1,338 @@
+{
+  "id": "cortinarius_caperatus",
+  "schema_version": 1,
+  "group": {
+    "id": "pholiotes_ridees",
+    "fr": "Pholiotes ridées"
+  },
+  "names": {
+    "fr": "Pholiote ridée (cortinaire ridé)",
+    "la": "Cortinarius caperatus (= Rozites caperatus)"
+  },
+  "notes": "Nouveau groupe d'affichage « Pholiotes ridées », à déclarer dans la spec. Ancien Rozites caperatus, replacé dans Cortinarius par la phylogénie (Høiland & Holst-Jensen 2000, cité par Wikipedia EN) : le nom « pholiote ridée » reste celui des cueilleurs. Ectomycorhizien peu sélectif des forêts de conifères (épicéa, pin sylvestre), aussi sous hêtre et bouleau, souvent parmi les myrtilles, landes à bruyère près des sphaignes (wikipedia_en2026, wikipedia_de2026, wikipedia_fr2026) : sapin/épicéa 1 (BD Forêt ne sépare pas sapin et épicéa ; l'épicéa est l'hôte cité), pin sylvestre 0,9, mélanges de conifères 0,75-0,85, pin à crochets 0,5 (montagne, non cité nommément) ; hêtre 0,5 et `autre_feuillu` 0,35 (bouleau mêlé à frêne et érable) ; chênes 0,2, châtaignier 0,25 (une photo commentée de Strobilomyces le montre sous châtaigniers en Essonne : une observation, confiance faible) ; lande 0,3 et couvert `non_foret` 0,3 pour les landes à myrtilles et bruyères ; pins méditerranéens et chênes sempervirents à 0. Sols pauvres, acides et sableux, évite le calcaire → littérature ~3,5-5,2 élargie de +0,6 (3,0 / 3,6 / 5,8 / 7,0, comme B. pinophilus), poids pH 0,35. Attention : le Jura et le Doubs, calcaires, sont parmi les départements GBIF les plus fournis (tourbières et sols décarbonatés) : à recalibrer sur SoilGrids aux occurrences avant de serrer quoi que ce soit. Altitude : GBIF FR q1 421 m, q10 702 m, médiane 1 152 m, q90 1 648 m, q99 1 860 m, max 1 900 m ; quelques stations de plaine sur sables acides (Oise, Seine-et-Marne, Essonne) → min 0 pour ne pas les annuler, optimum 700-1 650 m, max 2 100 m. Saison : GBIF FR (537 occ.) juin 11, juillet 28, août 61, septembre 130, octobre 120, novembre 23, décembre 5 ; 6 des 8 occ. de janvier au 1er janvier et les 58 occ. d'avril toutes au 1er avril (dates par défaut) : ignorées. Montagne d'abord : au-dessus de 1 000 m juillet 20, août 31, septembre 44, octobre 10, rien en novembre ; les rares occurrences de plaine sont d'octobre et décembre → début −3 j/100 m et fin −4 j/100 m autour de 1 000 m, bornés à 30 j (pic du 7 août au 26 septembre à 1 600 m, du 15 septembre au 17 novembre à 300 m). Bloc météo recopié de B. pinophilus (conifères de montagne sur sols acides, pic septembre-octobre) sans écart : aucune étude météo sur l'espèce trouvée, confiance faible. Points à trancher par Adrien : (1) confusions graves possibles (inocybe de Patouillard, cortinaires mortels du groupe orellanus) et Wikipedia DE rapporte qu'on déconseille l'espèce aux débutants ; (2) forte accumulation du césium 137 (Wikipédia FR, Wikipedia EN), du mercure et du cadmium (jusqu'à 20 mg/kg de masse fraîche selon Wikipedia DE) ; (3) espèce en déclin, vulnérable en Allemagne et en Grande-Bretagne, menacée aux Pays-Bas (Arnolds 1995, cité par Wikipedia EN), recul près de Salzbourg attribué à la cueillette ; statut français (liste rouge, arrêtés préfectoraux, liste ANSES-DGCCRF) non vérifié, sites inaccessibles.",
+  "terrain": {
+    "hosts": {
+      "hetre": 0.5,
+      "sapin_epicea": 1.0,
+      "chenes_decidus": 0.2,
+      "chataignier": 0.25,
+      "mixte_feuillus_dom": 0.5,
+      "mixte_coniferes_dom": 0.8,
+      "melange_feuillus": 0.3,
+      "melange_coniferes": 0.75,
+      "feuillus_indet": 0.3,
+      "coniferes_indet": 0.6,
+      "mixte_indet": 0.5,
+      "pin_sylvestre": 0.9,
+      "pin_crochets_cembro": 0.5,
+      "pin_maritime": 0.3,
+      "melange_pins": 0.6,
+      "autre_feuillu": 0.35,
+      "pin_laricio_noir": 0.2,
+      "autre_pin": 0.3,
+      "meleze": 0.3,
+      "chenes_sempervirents": 0.0,
+      "douglas": 0.3,
+      "autre_conifere": 0.05,
+      "pin_alep": 0.0,
+      "lande": 0.3,
+      "sans_couvert": 0.1,
+      "robinier": 0.0,
+      "peupleraie": 0.0,
+      "herbacee": 0.0,
+      "default": 0.1,
+      "melange_coniferes_hors_pins": 0.85
+    },
+    "cover": {
+      "fermee": 1.0,
+      "ouverte": 0.8,
+      "sans_couvert": 0.1,
+      "plantation": 0.0,
+      "non_foret": 0.3
+    },
+    "ph": {
+      "min": 3.0,
+      "opt_low": 3.6,
+      "opt_high": 5.8,
+      "max": 7.0
+    },
+    "altitude_m": {
+      "min": 0,
+      "opt_low": 700,
+      "opt_high": 1650,
+      "max": 2100
+    },
+    "aspect": {
+      "N": 1.0,
+      "NE": 0.95,
+      "NW": 0.95,
+      "E": 0.9,
+      "W": 0.9,
+      "SE": 0.8,
+      "SW": 0.8,
+      "S": 0.75,
+      "flat": 0.95
+    },
+    "slope_deg": {
+      "min": 0,
+      "opt_low": 0,
+      "opt_high": 25,
+      "max": 40
+    },
+    "weights": {
+      "cover": 0.2,
+      "ph": 0.35,
+      "altitude": 0.25,
+      "aspect": 0.12,
+      "slope": 0.08
+    },
+    "refs": {
+      "hosts": [
+        "wikipedia_en2026",
+        "wikipedia_de2026",
+        "wikipedia_fr2026",
+        "commons_strobilomyces2010"
+      ],
+      "cover": [
+        "wikipedia_en2026",
+        "wikipedia_de2026",
+        "terrain_fr"
+      ],
+      "ph": [
+        "wikipedia_en2026",
+        "wikipedia_fr2026",
+        "wikipedia_de2026"
+      ],
+      "altitude": [
+        "gbif2026",
+        "wikipedia_fr2026"
+      ],
+      "aspect": [
+        "bonet2008",
+        "terrain_fr"
+      ],
+      "slope": [
+        "bonet2008"
+      ]
+    }
+  },
+  "phenology": {
+    "season": {
+      "start": "07-01",
+      "end": "11-20"
+    },
+    "peak": {
+      "start": "08-25",
+      "end": "10-20"
+    },
+    "ramp_days": 30,
+    "altitude_shift": {
+      "reference_m": 1000,
+      "start_days_per_100m": -3,
+      "end_days_per_100m": -4,
+      "max_days": 30
+    },
+    "refs": [
+      "gbif2026",
+      "wikipedia_fr2026",
+      "wikipedia_en2026",
+      "andrew2018"
+    ]
+  },
+  "weather": {
+    "temp_mean": {
+      "window_days": 20,
+      "c": {
+        "min": 4,
+        "opt_low": 9,
+        "opt_high": 15,
+        "max": 21
+      }
+    },
+    "rain": {
+      "window_days": 28,
+      "mm": {
+        "min": 30,
+        "opt_low": 60,
+        "opt_high": 150,
+        "max": 600
+      }
+    },
+    "trigger": {
+      "event_mm": 20,
+      "event_days": 3,
+      "lag_days": {
+        "min": 6,
+        "opt_low": 10,
+        "opt_high": 20,
+        "max": 32
+      }
+    },
+    "soil_moisture_pct": {
+      "min": 0.15,
+      "opt_low": 0.4,
+      "opt_high": 0.9,
+      "max": 1.0
+    },
+    "frost": {
+      "tmin_c": -3,
+      "ramp_c": 2,
+      "nights": 2,
+      "window_days": 7,
+      "factor": 0.3
+    },
+    "water_balance": {
+      "window_days": 14,
+      "moderate_mm": -25,
+      "severe_mm": -45,
+      "moderate_factor": 0.4,
+      "severe_factor": 0.15
+    },
+    "heat": {
+      "tmax_c": 27,
+      "days": 3,
+      "window_days": 7,
+      "factor": 0.5
+    },
+    "memory": {
+      "window_days": 90,
+      "mm": {
+        "min": 60,
+        "opt_low": 150,
+        "opt_high": 400,
+        "max": 800
+      },
+      "floor": 0.7
+    },
+    "persistence": {
+      "days": 12
+    },
+    "weights": {
+      "temp": 0.3,
+      "rain": 0.3,
+      "trigger": 0.2,
+      "soil_moisture": 0.2
+    },
+    "refs": {
+      "temp_mean": [
+        "bielefeld2025",
+        "straatsma2001",
+        "terrain_fr"
+      ],
+      "rain": [
+        "bielefeld2025",
+        "salerni2002",
+        "terrain_fr"
+      ],
+      "trigger": [
+        "salerni2023",
+        "straatsma2001",
+        "terrain_fr"
+      ],
+      "soil_moisture": [
+        "olano2020",
+        "karavani2018"
+      ],
+      "frost": [
+        "kauserud2012",
+        "gel_rampe2026",
+        "terrain_fr"
+      ],
+      "heat": [
+        "salerni2023",
+        "terrain_fr"
+      ],
+      "memory": [
+        "olano2020",
+        "buntgen2015",
+        "tahvanainen2016"
+      ],
+      "persistence": [
+        "terrain_fr"
+      ],
+      "water_balance": [
+        "agreda2015",
+        "bielefeld2025"
+      ]
+    }
+  },
+  "about": {
+    "summary": "Champignon élancé au chapeau jaune paille à ocre, ridé en rayons vers le bord et comme givré d'un voile blanchâtre, parfois lilas chez les jeunes. Lames crème puis brun rouille, pied clair portant un anneau blanc membraneux bien net. Longtemps rangé parmi les pholiotes, c'est en fait un cortinaire.",
+    "habitat": "Forêts de conifères de montagne, épicéas et pins sylvestres surtout, parfois hêtraies et bouleaux, souvent parmi les myrtilles et la mousse, sur sols pauvres, acides et sableux ; il évite le calcaire. Surtout dans les Alpes, le Jura et les Pyrénées, rare en plaine sur les sables acides.",
+    "season": "D'août à octobre, dès juillet en montagne, avec un pic en septembre ; en plaine, plutôt en octobre. Absent de certaines régions, il peut abonder ailleurs.",
+    "confusions": [
+      {
+        "name": "Inocybe de Patouillard",
+        "latin": "Inosperma erubescens",
+        "risk": "Très toxique, parfois mortel : syndrome muscarinien (sueurs, salivation, troubles digestifs et cardiaques).",
+        "tell": "Pas d'anneau ; chapeau conique, fibrilleux, souvent fendu au bord ; lames, chair et pied qui se tachent de rouge vermillon. Il pousse au printemps et en été sous les feuillus, surtout les hêtres sur calcaire. La confusion est surtout possible avec de vieilles pholiotes ridées en été.",
+        "refs": [
+          "courtecuisse2013",
+          "eyssartier2017",
+          "wikipedia2026",
+          "wikipedia_inosperma2026"
+        ]
+      },
+      {
+        "name": "Cortinaires mortels (cortinaire très élégant, cortinaire couleur de rocou)",
+        "latin": "Cortinarius rubellus, Cortinarius orellanus",
+        "risk": "Mortels : destruction des reins, premiers symptômes environ un jour après le repas, insuffisance rénale après une à trois semaines, souvent définitive.",
+        "tell": "Chapeau roux à fauve, lames ocre à rouille, pied à fibrilles jaunâtres ou rousses, sans anneau membraneux : seulement une fine cortine en toile d'araignée, vite disparue. Le cortinaire très élégant pousse dans les mêmes pessières à myrtilles. Un jeune exemplaire dont l'anneau n'est pas formé ne se distingue pas sûrement.",
+        "refs": [
+          "courtecuisse2013",
+          "wikipedia2026",
+          "wikipedia_cortinaires2026"
+        ]
+      },
+      {
+        "name": "Cortinaire bouc et cortinaire camphré",
+        "latin": "Cortinarius traganus, Cortinarius camphoratus",
+        "risk": "Toxiques ou au moins immangeables : troubles digestifs.",
+        "tell": "Jeunes, teintés de lilas comme une jeune pholiote ridée, mais à odeur forte et désagréable, et à cortine fibreuse au lieu d'un anneau membraneux.",
+        "refs": [
+          "courtecuisse2013",
+          "wikipedia2026"
+        ]
+      }
+    ],
+    "photo": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/be/Rozites_caperata_20100919w.JPG/1280px-Rozites_caperata_20100919w.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Rozites_caperata_20100919w.JPG",
+      "author": "Strobilomyces",
+      "license": "CC BY-SA 3.0"
+    },
+    "refs": [
+      "courtecuisse2013",
+      "eyssartier2017",
+      "wikipedia2026"
+    ],
+    "references": {
+      "eyssartier2017": "Eyssartier G. & Roux P., 2017, Le guide des champignons France et Europe, 4e éd., Belin — descriptions et confusions des espèces européennes ; cité par Wikipédia FR, non ouvert ici",
+      "courtecuisse2013": "Courtecuisse R. & Duhem B., 2013, Guide des champignons de France et d'Europe, Delachaux et Niestlé — descriptions, confusions et comestibilité des espèces européennes",
+      "wikipedia2026": "Wikipédia FR, « Pholiote ridée », Wikipedia EN, « Cortinarius caperatus » (article labellisé), et Wikipedia DE, « Reifpilz », lus le 8 nov. 2026 — anneau membraneux, strié et tenace, à double bord, critère clé ; de vieux exemplaires peuvent être pris en été, en Europe centrale, pour l'inocybe de Patouillard, très toxique, et de jeunes pour C. traganus, à odeur désagréable (Zeitlmayr 1976, non ouvert) ; jeunes semblables à C. traganus et C. camphoratus, malodorants et toxiques ; déconseillé aux débutants pour le risque de confusion avec les autres cortinaires (Wikipedia DE, citant Laux 2010, Bon 2005, non ouverts) ; confiance faible (encyclopédie)",
+      "wikipedia_inosperma2026": "Wikipedia EN, « Inosperma erubescens », et Wikipédia FR, « Inocybe erubescens », lus le 8 nov. 2026 — muscarine en dose possiblement mortelle, un décès connu (Surrey, 1937) ; chapeau conique fibrilleux, fendu, sans anneau, taches rouge vermillon ; printemps et été, surtout sous hêtres sur sols calcaires ; peut être pris pour Cortinarius caperatus ; confiance faible (encyclopédie)",
+      "wikipedia_cortinaires2026": "Wikipédia FR, « Cortinarius rubellus » et « Cortinaire couleur de rocou », et Wikipedia EN, « Cortinarius rubellus », lus le 8 nov. 2026 — orellanine, syndrome orellanien : symptômes environ 24 h après le repas, insuffisance rénale aiguë après une à trois semaines, souvent chronique ; C. rubellus sous épicéas, dans la mousse, les sphaignes et les pessières à myrtilles, sols acides ; intoxications en Suède et en Écosse par confusion avec girolles, chanterelles en tube, hygrophores ou cèpes (aucune avec la pholiote ridée dans ces sources) ; C. orellanus de juillet à décembre, 2e cause d'intoxications graves ou mortelles après l'amanite phalloïde ; sources primaires non ouvertes ; confiance faible (encyclopédie)"
+    }
+  },
+  "references": {
+    "wikipedia_fr2026": "Wikipédia FR, « Pholiote ridée » (cortinaire ridé), lu le 8 nov. 2026 — d'août à octobre, sous feuillus ou conifères, surtout en montagne mais aussi en plaine ; absente de certaines régions, abondante dans d'autres ; sol pauvre, acide et sablonneux ; forte concentration du césium 137 (bibliographie Marchand 1971, Phillips 1981, non ouverts) ; confiance faible (encyclopédie)",
+    "wikipedia_en2026": "Wikipedia EN, « Cortinarius caperatus » (article labellisé), lu le 8 nov. 2026 — forêts de conifères et hêtraies, landes à bruyère près des sphaignes, mycorhizien non sélectif (Nilson & Persson 1977) ; sols acides et sableux, évite les sols calcaires (Pegler 1983, Haas 1969) ; mycorhizes avec le pin sylvestre (Trappe 1962, Bot. Rev. 28:538) ; août-octobre en Europe ; vulnérable en Allemagne et en Grande-Bretagne, menacée aux Pays-Bas (Arnolds 1995, Can. J. Bot. 73:987) ; bioaccumule césium 137 et mercure (Falandysz et al. 2014, 2016) ; sources primaires non ouvertes ; confiance moyenne (encyclopédie)",
+    "wikipedia_de2026": "Wikipedia DE, « Reifpilz », lu le 8 nov. 2026 — surtout en forêt de conifères (pins, épicéas), rarement sous hêtre, sur sol acide et sableux et dans les tourbières hautes, volontiers avec les myrtilles ; accumule le cadmium (cite Laux 2010, Bon 2005, Lüder 2008, non ouverts) ; confiance faible (encyclopédie)",
+    "commons_strobilomyces2010": "Wikimedia Commons, « Rozites caperata 20100919w.JPG », Strobilomyces, 19 sept. 2010 — légende : sous châtaigniers près de Saulx-les-Chartreux (Essonne) ; une observation, confiance faible",
+    "gbif2026": "GBIF, API, France, lu le 8 nov. 2026 — C. caperatus FR 537 occ. géolocalisées : juin 11, juil. 28, août 61, sept. 130, oct. 120, nov. 23, déc. 5 ; janv. 8 dont 6 au 1er janvier et avril 58, tous au 1er avril (dates par défaut, ignorées) ; altitude (162 occ. renseignées) q1 421 m, q10 702 m, médiane 1 152 m, q90 1 648 m, q99 1 860 m, max 1 900 m ; ≥ 1 000 m : juil. 20, août 31, sept. 44, oct. 10, nov. 0 ; < 500 m : oct. 3, déc. 1 ; départements les plus représentés Haute-Savoie 57, Savoie 51, Jura 50, Isère 45, Hautes-Pyrénées 44, Territoire de Belfort 39, Doubs 31, Ariège 16",
+    "andrew2018": "Andrew et al. 2018, Ecology — l'altitude avance la fructification automnale jusqu'à 30 j",
+    "bonet2008": "Bonet et al. 2008, Ann. For. Sci. 65:206 — pinèdes des Pyrénées : expositions nord et altitude positives, pente forte négative ; transposé, confiance faible",
+    "bielefeld2025": "Brejon Lamartinière & Hoffman 2025, bioRxiv 10.64898/2025.12.12.693895 — forme du modèle (T 20 j, pluie ~4 semaines) établie pour B. edulis, transposée ; confiance faible",
+    "straatsma2001": "Straatsma, Ayer & Egli 2001, Mycol. Res. — ~3 semaines après la pluie ; pic quand la moyenne hebdo passe sous 14 °C",
+    "salerni2002": "Salerni et al. 2002 — cumul de pluie des 30 jours précédents, meilleur corrélat (chênaies toscanes)",
+    "salerni2023": "Salerni et al. 2023, Italian Mycology — pluies ≥ 20 mm/j, effet maximal au 12e jour ; hausses brusques de T max inhibent",
+    "karavani2018": "Karavani et al. 2018, Agric. For. Meteorol. 248:432 — pluie et humidité du sol à 1 mois, T max sept.-oct. négatives",
+    "olano2020": "Olano et al. 2020, Agric. For. Meteorol. — humidité du sol juillet-nov. r = 0,72 ; pluie de septembre ; NDVI n-1",
+    "buntgen2015": "Büntgen et al. 2015, Fungal Ecology — pluies juillet-sept. positives, retard d'une semaine après 2004 (Pinar Grande)",
+    "tahvanainen2016": "Tahvanainen 2016, Dissertationes Forestales — modèle finlandais : pluie d'août positive, T août négative",
+    "agreda2015": "Ágreda et al. 2015, GCB — le bilan hydrique (P-ETP) prédit mieux que la pluie brute ; base du facteur water_balance",
+    "kauserud2012": "Kauserud et al. 2012, PNAS 109:14488 — recul des premières gelées = allongement de saison",
+    "terrain_fr": "Bloc météo et persistance recopiés de B. pinophilus (fichier Champis, conifères de montagne sur sols acides) faute d'étude propre à l'espèce ; landes à myrtilles et couvert ouvert d'après les sources encyclopédiques ; expositions fraîches transposées ; confiance faible",
+    "gel_rampe2026": "Spec Champis, Scoring › gel en rampe, décision d'Adrien du 4 nov. 2026 — rampe de 2 °C au-dessus du seuil, à affiner : la marche (≥ nights nuits ≤ tmin_c → × factor) faisait basculer deux cellules météo voisines de « bon » à « très faible » pour un dixième de degré ; aucune référence plus fine sur la sensibilité au gel partiel ; confiance faible"
+  }
+}

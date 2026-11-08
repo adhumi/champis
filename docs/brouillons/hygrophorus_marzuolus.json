@@ -1,0 +1,321 @@
+{
+  "id": "hygrophorus_marzuolus",
+  "schema_version": 1,
+  "group": {
+    "id": "hygrophores_de_mars",
+    "fr": "Hygrophores de mars"
+  },
+  "names": {
+    "fr": "Hygrophore de mars",
+    "la": "Hygrophorus marzuolus"
+  },
+  "notes": "Ectomycorhizien des forêts mixtes de montagne : partenaire principal le sapin pectiné, puis épicéas et pins, plus rarement le hêtre (Wikipédia DE ; Wikipédia EN : Abies alba, parfois Picea et Pinus sylvestris). Sapinières et hêtraies-sapinières riches, pessières-sapinières faiblement acides, sur sols meubles, humifères et frais, faiblement acides à faiblement alcalins, rarement directement sur calcaire ou sur silice pauvre (Wikipédia DE) ; Wikipédia FR dit « sols calcaires », sans source : plage pH large centrée sur le neutre. En Europe, aire morcelée qui suit à peu près celle du sapin (Alpes, Carpates, Pyrénées orientales). Hôtes : `sapin_epicea` 1,0 (sapin et épicéa non distingués), mélanges de conifères hors pins et mixtes à conifères dominants 0,9, hêtre 0,5 (hêtraies-sapinières où le sapin passe sous les 25 % non décrits), pin sylvestre 0,4, autres pins 0,2-0,3, feuillus sans sapin 0,1-0,2 ; cèdre 0,2 (`autre_conifere` : signalé sous cèdre au Maroc, Wikipédia DE). Saison : de la fin de l'hiver au printemps, à la fonte des neiges, parfois sous la neige ; dès janvier les hivers très doux, pic de la seconde moitié de mars au début d'avril en Allemagne (Wikipédia DE), dès fin février en montagne et jusqu'en mai plus haut (Wikipédia IT). Décalage altitudinal fort et dans le même sens au début et à la fin (+6 j et +5 j par 100 m au-dessus de 700 m, bornés à 35 j) : GBIF montre un pic en mars sous 500 m et en mai au-dessus de 1 000 m, soit environ 60 j pour 700 m d'écart de médiane. Bloc météo, le défi : c'est la seule espèce de fin d'hiver du modèle et son déclencheur réel, la fonte de la neige, n'est pas vu (la pluie déclenchante exclut les jours de neige, aucune variable d'enneigement n'est lue). Choix, tous de confiance faible : (1) humidité du sol 0,4, trapèze exigeant (opt ≥ 0,6) : en percentile annuel, les sols de fin d'hiver sont presque toujours hauts, c'est donc surtout un garde-fou contre les hivers sans neige et les printemps secs, qui sont les mauvaises années ; on suppose, sans l'avoir vérifié sur des séries, que l'humidité du sol d'Open-Meteo monte à la fonte ; (2) température 0,4, opt 3-10 °C sur 21 j, corrigée de l'altitude : c'est l'indice indirect de la fonte (une moyenne qui passe au-dessus de 0-3 °C à l'altitude du pixel) ; (3) pluie 0,1 (trapèze bas : 30 mm suffisent) et déclencheur 0,1 (10 mm sur 3 j, délai très large 7-35 j) : la neige fondue, invisible, fournit l'eau ; (4) gel très toléré (seuil -8 °C, rampe 3 °C, 4 nuits, × 0,75) : les sporophores se forment sous la neige, qui les isole ; (5) chaleur : clé gardée pour le schéma, seuil 23 °C sur 3 j, qui ne joue qu'en fin de saison ; (6) bilan hydrique adouci (-35 / -60 mm, × 0,6 / × 0,35) : la fonte n'est pas comptée en entrée, un printemps sans pluie avec de la neige au sol ne doit pas être puni comme une sécheresse ; (7) mémoire : pluie d'automne-hiver (J-117 à J-28), qui exclut la neige et sous-estime donc l'eau reçue en montagne : trapèze bas (opt ≥ 120 mm) et plancher 0,8 ; (8) persistance 21 j : sporophores fermes, qui mûrissent lentement sous la litière (Wikipédia DE : ils sortent déjà développés). Limite : sous la neige à 1 200 m en mars, M reste vers 0,35-0,45 (humidité du sol pleine, température nulle) et seul Φ, encore bas à cette altitude, abaisse le score ; le modèle ne sait pas dire « encore sous la neige ». Une variable d'enneigement (épaisseur de neige d'Open-Meteo) serait l'extension honnête du schéma, à décider dans la spec. Statut : espèce rare et localisée, en déclin. Allemagne : liste rouge catégorie 2, espèce protégée, cueillette interdite (Wikipédia DE). France : aucune protection nationale trouvée ; citée parmi les espèces déterminantes d'au moins une ZNIEFF lorraine (n° 410030469, d'après un résultat de recherche, page INPN non ouverte) ; listes rouges régionales non vérifiées (INPN inaccessible depuis cette session). Liste rouge mondiale UICN : évaluée Vulnérable (VU) en 2024-2025 selon un résultat de recherche, page non ouverte, à vérifier. T ne connaît pas la rareté : toutes les sapinières entre 500 et 1 300 m ressortiront, alors que l'espèce manque dans la plupart. GBIF FR (232 occ. géolocalisées, lu le 8 nov. 2026) : mars 67, avr. 49, mai 47, févr. 27, janv. 7 (dates réelles, une seule au 1er janvier : pousses des hivers doux), juin 2, sept.-déc. 5 (erreurs de date probables, ignorées) ; altitude (170 occ. renseignées) médiane 777 m, q01 323 m, q10 506 m, q90 1 273 m, q99 1 715 m, max 1 800 m ; sous 500 m févr. 2, mars 11, avr. 1, mai 2 ; au-dessus de 1 000 m mars 4, avr. 13, mai 28, juin 1 ; latitude : 124 occ. entre 45 et 46° N, 39 entre 46 et 47° N, 21 entre 44 et 45° N, 20 entre 42 et 43° N (Pyrénées). Quantiles pH SoilGrids aux occurrences encore à calculer (`champis-pipeline check`).",
+  "terrain": {
+    "hosts": {
+      "hetre": 0.5,
+      "sapin_epicea": 1.0,
+      "chenes_decidus": 0.1,
+      "chataignier": 0.1,
+      "mixte_feuillus_dom": 0.7,
+      "mixte_coniferes_dom": 0.9,
+      "melange_feuillus": 0.2,
+      "melange_coniferes": 0.7,
+      "feuillus_indet": 0.15,
+      "coniferes_indet": 0.6,
+      "mixte_indet": 0.5,
+      "pin_sylvestre": 0.4,
+      "pin_crochets_cembro": 0.2,
+      "pin_maritime": 0.05,
+      "melange_pins": 0.3,
+      "autre_feuillu": 0.1,
+      "pin_laricio_noir": 0.2,
+      "autre_pin": 0.2,
+      "meleze": 0.2,
+      "chenes_sempervirents": 0.0,
+      "douglas": 0.1,
+      "autre_conifere": 0.2,
+      "pin_alep": 0.0,
+      "lande": 0.0,
+      "sans_couvert": 0.05,
+      "robinier": 0.0,
+      "peupleraie": 0.0,
+      "herbacee": 0.0,
+      "default": 0.05,
+      "melange_coniferes_hors_pins": 0.9
+    },
+    "cover": {
+      "fermee": 1.0,
+      "ouverte": 0.6,
+      "sans_couvert": 0.05,
+      "plantation": 0.0,
+      "non_foret": 0.05
+    },
+    "ph": {
+      "min": 4.4,
+      "opt_low": 5.4,
+      "opt_high": 7.6,
+      "max": 8.3
+    },
+    "altitude_m": {
+      "min": 150,
+      "opt_low": 500,
+      "opt_high": 1300,
+      "max": 1900
+    },
+    "aspect": {
+      "N": 0.9,
+      "NE": 0.9,
+      "NW": 0.9,
+      "E": 0.95,
+      "W": 0.95,
+      "SE": 1.0,
+      "SW": 0.95,
+      "S": 0.95,
+      "flat": 1.0
+    },
+    "slope_deg": {
+      "min": 0,
+      "opt_low": 0,
+      "opt_high": 25,
+      "max": 40
+    },
+    "weights": {
+      "cover": 0.25,
+      "ph": 0.25,
+      "altitude": 0.3,
+      "aspect": 0.1,
+      "slope": 0.1
+    },
+    "refs": {
+      "hosts": [
+        "wikipedia_de_marzuolus",
+        "wikipedia_en_marzuolus",
+        "wikipedia_fr_marzuolus",
+        "wikipedia_it_marzuolus"
+      ],
+      "cover": [
+        "wikipedia_de_marzuolus",
+        "terrain_fr"
+      ],
+      "ph": [
+        "wikipedia_de_marzuolus",
+        "wikipedia_fr_marzuolus",
+        "terrain_fr"
+      ],
+      "altitude": [
+        "gbif2026",
+        "wikipedia_it_marzuolus"
+      ],
+      "aspect": [
+        "terrain_fr"
+      ],
+      "slope": [
+        "terrain_fr"
+      ]
+    }
+  },
+  "phenology": {
+    "season": {
+      "start": "02-01",
+      "end": "05-31"
+    },
+    "peak": {
+      "start": "03-05",
+      "end": "04-20"
+    },
+    "ramp_days": 25,
+    "altitude_shift": {
+      "reference_m": 700,
+      "start_days_per_100m": 6,
+      "end_days_per_100m": 5,
+      "max_days": 35
+    },
+    "refs": [
+      "gbif2026",
+      "wikipedia_de_marzuolus",
+      "wikipedia_it_marzuolus",
+      "wikipedia_fr_marzuolus"
+    ]
+  },
+  "weather": {
+    "temp_mean": {
+      "window_days": 21,
+      "c": {
+        "min": -1,
+        "opt_low": 3,
+        "opt_high": 10,
+        "max": 15
+      }
+    },
+    "rain": {
+      "window_days": 28,
+      "mm": {
+        "min": 0,
+        "opt_low": 30,
+        "opt_high": 200,
+        "max": 600
+      }
+    },
+    "trigger": {
+      "event_mm": 10,
+      "event_days": 3,
+      "lag_days": {
+        "min": 3,
+        "opt_low": 7,
+        "opt_high": 35,
+        "max": 60
+      }
+    },
+    "soil_moisture_pct": {
+      "min": 0.3,
+      "opt_low": 0.6,
+      "opt_high": 1.0,
+      "max": 1.0
+    },
+    "frost": {
+      "tmin_c": -8,
+      "ramp_c": 3,
+      "nights": 4,
+      "window_days": 7,
+      "factor": 0.75
+    },
+    "water_balance": {
+      "window_days": 14,
+      "moderate_mm": -35,
+      "severe_mm": -60,
+      "moderate_factor": 0.6,
+      "severe_factor": 0.35
+    },
+    "heat": {
+      "tmax_c": 23,
+      "days": 3,
+      "window_days": 7,
+      "factor": 0.5
+    },
+    "memory": {
+      "window_days": 90,
+      "mm": {
+        "min": 30,
+        "opt_low": 120,
+        "opt_high": 500,
+        "max": 1000
+      },
+      "floor": 0.8
+    },
+    "persistence": {
+      "days": 21
+    },
+    "weights": {
+      "temp": 0.4,
+      "rain": 0.1,
+      "trigger": 0.1,
+      "soil_moisture": 0.4
+    },
+    "refs": {
+      "temp_mean": [
+        "wikipedia_en_marzuolus",
+        "wikipedia_de_marzuolus",
+        "gbif2026",
+        "terrain_fr"
+      ],
+      "rain": [
+        "terrain_fr"
+      ],
+      "trigger": [
+        "wikipedia_en_marzuolus",
+        "terrain_fr"
+      ],
+      "soil_moisture": [
+        "wikipedia_de_marzuolus",
+        "karavani2018",
+        "terrain_fr"
+      ],
+      "frost": [
+        "wikipedia_en_marzuolus",
+        "wikipedia_de_marzuolus",
+        "terrain_fr",
+        "gel_rampe2026"
+      ],
+      "heat": [
+        "terrain_fr"
+      ],
+      "memory": [
+        "agreda2015",
+        "terrain_fr"
+      ],
+      "persistence": [
+        "wikipedia_de_marzuolus",
+        "terrain_fr"
+      ],
+      "water_balance": [
+        "agreda2015",
+        "terrain_fr"
+      ]
+    }
+  },
+  "about": {
+    "summary": "Champignon trapu et charnu, au chapeau gris ardoise à presque noir, souvent bosselé et marbré de blanc, aux lames épaisses, cireuses et espacées, blanches puis grises, et au pied blanc grisâtre. Il sort à la fin de l'hiver, souvent à moitié caché sous les aiguilles et la mousse, qu'il soulève en petites bosses.",
+    "habitat": "Vieilles sapinières et hêtraies-sapinières de moyenne montagne, plus rarement pessières et pinèdes, sur sols frais, humifères, peu acides à neutres, entre 500 et 1 300 m environ : Vosges, Jura, Alpes, Massif central, Pyrénées. Espèce rare et localisée, en déclin en Europe : la carte montre où elle pourrait pousser, pas où elle est.",
+    "season": "De février à mai, à la fonte des neiges, parfois sous la neige : dès février et mars à basse altitude, en avril et mai vers 1 000 à 1 300 m, dès janvier les hivers très doux. La carte suit la température et l'humidité du sol, pas la neige elle-même.",
+    "confusions": [
+      {
+        "name": "Hygrophore à chapeau gris-brun",
+        "latin": "Hygrophorus camarophyllus",
+        "risk": "Pas de toxicité connue ; c'est le sosie le plus proche, mais il pousse en automne.",
+        "tell": "Pousse en automne dans les forêts de conifères de montagne, chapeau brun suie, lames blanchâtres nettement descendantes sur le pied. L'hygrophore de mars sort de la fin de l'hiver au printemps.",
+        "refs": [
+          "wikipedia_de_marzuolus",
+          "courtecuisse2013",
+          "eyssartier2017"
+        ]
+      },
+      {
+        "name": "Entolome printanier",
+        "latin": "Entoloma vernum",
+        "risk": "Toxique : troubles digestifs.",
+        "tell": "Petit et grêle, chapeau brun conique à mamelon, lames grises puis roses, sporée rose, au printemps lui aussi, souvent sous conifères. L'hygrophore de mars est trapu et charnu, à lames épaisses et cireuses, et sa sporée est blanche.",
+        "refs": [
+          "courtecuisse2013",
+          "eyssartier2017"
+        ]
+      },
+      {
+        "name": "Tricholome tigré",
+        "latin": "Tricholoma pardinum",
+        "risk": "Toxique : gastro-entérite sévère, parfois hospitalisation.",
+        "tell": "Pousse de la fin de l'été à l'automne, sous conifères et hêtres sur calcaire ; chapeau gris pâle couvert de petites écailles sombres, odeur de farine. L'hygrophore de mars a un chapeau lisse, sort au printemps, et ses lames sont épaisses, cireuses et espacées.",
+        "refs": [
+          "courtecuisse2013",
+          "eyssartier2017"
+        ]
+      }
+    ],
+    "photo": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b7/Hygrophorus_marzuolus_%2833613445841%29.jpg/1280px-Hygrophorus_marzuolus_%2833613445841%29.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Hygrophorus_marzuolus_(33613445841).jpg",
+      "author": "Claude Page",
+      "license": "CC BY-SA 4.0"
+    },
+    "refs": [
+      "courtecuisse2013",
+      "eyssartier2017",
+      "wikipedia_de_marzuolus"
+    ],
+    "references": {
+      "eyssartier2017": "Eyssartier G. & Roux P., 2017, Le guide des champignons France et Europe, 4e éd., Belin — hygrophores, entolomes et tricholomes : caractères distinctifs, confusions et comestibilité",
+      "courtecuisse2013": "Courtecuisse R. & Duhem B., 2013, Guide des champignons de France et d'Europe, Delachaux et Niestlé — descriptions, confusions et comestibilité des espèces européennes",
+      "wikipedia_de_marzuolus": "Wikipédia DE, März-Schneckling, lu le 8 nov. 2026 — mycorhizien, partenaire principal le sapin pectiné, puis épicéas et pins, plus rarement le hêtre ; forêts mixtes de montagne riches en espèces (sapinières, pessières-sapinières faiblement acides) ; sols meubles, humifères, frais, faiblement acides à faiblement alcalins, rarement directement sur calcaire ; sort juste après la fonte des neiges, dès janvier les hivers très doux, pic de la seconde moitié de mars au début d'avril ; sporophores déjà développés sous la neige, la mousse ou la litière ; aire liée à celle du sapin ; Allemagne : liste rouge catégorie 2, protégé, cueillette interdite ; confusion avec Hygrophorus camarophyllus, d'automne ; confiance moyenne"
+    }
+  },
+  "references": {
+    "wikipedia_de_marzuolus": "Wikipédia DE, März-Schneckling, lu le 8 nov. 2026 — mycorhizien, partenaire principal le sapin pectiné, puis épicéas et pins, plus rarement le hêtre ; forêts mixtes de montagne riches en espèces (sapinières, pessières-sapinières faiblement acides) ; sols meubles, humifères, frais, faiblement acides à faiblement alcalins, rarement directement sur calcaire ; sort juste après la fonte des neiges, dès janvier les hivers très doux, pic de la seconde moitié de mars au début d'avril ; sporophores déjà développés sous la neige, la mousse ou la litière ; aire liée à celle du sapin ; Allemagne : liste rouge catégorie 2, protégé, cueillette interdite ; confusion avec Hygrophorus camarophyllus, d'automne ; confiance moyenne",
+    "wikipedia_en_marzuolus": "Wikipédia EN, Hygrophorus marzuolus, lu le 8 nov. 2026 — mycorhizien d'Abies alba, parfois Picea et Pinus sylvestris ; champignon des névés, fructification amorcée sous la neige qui fond ; en Europe des Pyrénées françaises à la région de Prague ; confiance moyenne",
+    "wikipedia_fr_marzuolus": "Wikipédia FR, Hygrophore de mars, lu le 8 nov. 2026 — sols calcaires, sous pins, hêtres et sapins, de la fin de l'hiver au début du printemps, surtout en mars ; confiance faible (article court, habitat sans source)",
+    "wikipedia_it_marzuolus": "Wikipédia IT, Hygrophorus marzuolus, lu le 8 nov. 2026 — en groupes nombreux sous les feuilles ou les aiguilles, de préférence en forêt mixte, à la fin de l'hiver juste après le dégel ; dès fin février en montagne et jusqu'en mai plus haut ; confiance moyenne",
+    "karavani2018": "Karavani et al. 2018, Agric. For. Meteorol. 248:432 — pinèdes méditerranéennes : pluie et humidité du sol à 1 mois, T max négatives, production de champignons comestibles",
+    "agreda2015": "Ágreda et al. 2015, GCB — bilan hydrique (P-ETP) ; base du facteur water_balance",
+    "terrain_fr": "Sources de terrain françaises et raisonnement Champis (8 nov. 2026) — sort à la fonte des neiges dans les sapinières de moyenne montagne, souvent caché sous les aiguilles ; la fonte n'est pas vue par le modèle : température corrigée de l'altitude et humidité du sol en percentile annuel servent d'indices, pluie et déclencheur pèsent peu ; gel très toléré sous la neige ; sporophores persistant 2 à 3 semaines ; pente et exposition sans effet connu ; confiance faible",
+    "gbif2026": "GBIF, API, France, lu le 8 nov. 2026 — H. marzuolus FR 232 occ. géolocalisées : mars 67, avr. 49, mai 47, févr. 27, janv. 7 (dates réelles), juin 2 ; altitude (170 occ. renseignées) médiane 777 m, q10 506 m, q90 1 273 m, q99 1 715 m, max 1 800 m ; < 500 m : févr. 2, mars 11, avr. 1, mai 2 ; ≥ 1 000 m : mars 4, avr. 13, mai 28, juin 1 ; 124 occ. entre 45 et 46° N",
+    "gel_rampe2026": "Spec Champis, Scoring › gel en rampe, décision d'Adrien du 4 nov. 2026 — rampe au-dessus du seuil ; l'hygrophore de mars pousse sous la neige et tolère de fortes gelées (seuil -8 °C, rampe 3 °C, 4 nuits, × 0,75), confiance faible"
+  }
+}
