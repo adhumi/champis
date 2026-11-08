@@ -730,7 +730,8 @@ def main(argv: list[str]) -> int:
     files = render_all()
     if "--check" in argv:
         stale = [p for p, s in files.items() if not p.is_file() or p.read_text(encoding="utf-8") != s]
-        extra = [p for p in OUT.glob("*") if p not in files]
+        # le README (style, licence) est écrit à la main ; tout autre SVG ou JSON doit venir d'ici
+        extra = [p for p in list(OUT.glob("*.svg")) + list(OUT.glob("*.json")) if p not in files]
         for p in stale:
             print(f"ECHEC  {p.relative_to(ROOT)} : à régénérer (python3 scripts/draw_illustrations.py)")
         for p in extra:
