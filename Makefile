@@ -13,8 +13,13 @@ species: ## Fichiers espèces et table BD Forêt (species/validate.py)
 	python3 species/validate.py
 
 .PHONY: shared
-shared: ## JSON lisibles, index des textes du Guide, vecteurs de parité (scripts/check_shared.py)
+shared: ## JSON lisibles, index des textes du Guide, vecteurs de parité, illustrations à jour (scripts/check_shared.py, draw_illustrations.py --check)
 	python3 scripts/check_shared.py
+	python3 scripts/draw_illustrations.py --check
+
+.PHONY: illustrations
+illustrations: ## Redessine shared/illustrations/ (scripts/draw_illustrations.py)
+	python3 scripts/draw_illustrations.py
 
 .PHONY: check
 check: species shared ## Exactement la CI

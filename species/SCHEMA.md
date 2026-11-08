@@ -75,6 +75,7 @@ Ce que l'onglet Comprendre et le site disent de l'espèce. Aucune aide à l'iden
 | `season` | Quand, en mots (mois, pic, décalage en montagne) |
 | `confusions` | Liste ; chaque entrée : `name`, `latin`, `risk` (ce qu'on risque), `tell` (comment la distinguer), `refs` (≥ 1 clé de `references`) |
 | `photo` | `null` tant qu'elle n'est pas choisie, sinon `url` (image), `page` (page Wikimedia Commons), `author`, `license` parmi les licences libres acceptées (CC0, domaine public, CC BY, CC BY-SA) ; le crédit s'affiche sous la photo |
+| *(illustration)* | Pas de clé : chaque espèce a sa planche `shared/illustrations/<id>.svg` (même style, CC0, dessinée par `scripts/draw_illustrations.py`), pour les listes et le sélecteur d'espèce ; la photo reste celle de la fiche |
 | `refs` | Sources de la fiche |
 | `references` | Dictionnaire des sources propres à la fiche (clé → citation courte), comme `references` en tête de fichier |
 
