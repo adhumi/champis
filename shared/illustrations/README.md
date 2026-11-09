@@ -20,7 +20,8 @@ Les dix premières planches sont déposées (8 nov. 2026), puis les dix-sept des
 9 nov. (générées en 2 048 px et ~2 Mo, ramenées au gabarit commun). La planche n'est pas un prérequis de la CI
 (décision d'Adrien du 9 nov. 2026) : `scripts/check_shared.py` signale seulement son absence. Elle
 l'est pour qu'une espèce soit **complète** (bloc `about`, photo, planche) et s'affiche : l'API ne sert
-au site et à l'app que les espèces complètes (`GET /species`, indice par département, coins, carte).
+au site et à l'app que les espèces complètes **dont les tuiles T France sont publiées** (`GET /species`,
+indice par département, coins, carte ; `champis_api.catalog`, décision du 9 nov. 2026).
 Les vingt-sept espèces ont leur planche (9 nov. 2026) ; une nouvelle espèce reçoit d'abord son bloc
 sujet dans `PROMPTS.md`, puis sa planche ici, et n'apparaît qu'avec elle.
 
