@@ -2,7 +2,7 @@
 
 État au 8 nov. 2026. Demande d'Adrien : « étudie en profondeur et ajoute tout ce qui est ajoutable, consigne le reste ; pense aussi au griset du Ventoux ».
 
-Dix-sept espèces entrent dans le référentiel, ce qui porte Champis à vingt-sept espèces en onze groupes. Trois autres ont un fichier complet mais attendent une décision d'Adrien (`docs/brouillons/`). Vingt-cinq restent dehors, pour une raison dite ci-dessous avec ce qui les rendrait ajoutables. Les fichiers ne passent la CI qu'avec leurs dix-sept planches d'illustration, à générer d'après `shared/illustrations/PROMPTS.md`.
+Dix-sept espèces entrent dans le référentiel, ce qui porte Champis à vingt-sept espèces en onze groupes. Trois autres ont un fichier complet mais attendent une décision d'Adrien (`docs/brouillons/`). Vingt-cinq restent dehors, pour une raison dite ci-dessous avec ce qui les rendrait ajoutables. Les dix-sept espèces n'apparaissent sur le site et dans l'app qu'avec leur planche d'illustration, à générer d'après `shared/illustrations/PROMPTS.md` : une espèce est complète quand son fichier porte le bloc `about`, une photo et sa planche, et l'API ne sert que les espèces complètes (décision d'Adrien du 9 nov. 2026). La planche n'est pas un prérequis de la CI.
 
 ## Comment on a trié
 
@@ -91,7 +91,7 @@ Les fichiers complets sont dans `docs/brouillons/`, avec leur bloc d'illustratio
 - **Sources.** Le réseau de la session n'ouvrait que Wikipédia, Wikimedia Commons et GBIF. Les articles scientifiques ne sont connus que par leur résumé, et chaque référence le dit. Le bloc météo de la plupart des espèces est transposé de l'espèce existante la plus proche, en confiance faible. À relire quand les sources primaires seront accessibles : ANSES, Légifrance, INPN (liste rouge nationale 2024 des bolets, lactaires et tricholomes).
 - **pH.** Les plages sont la littérature élargie ; les quantiles SoilGrids aux occurrences restent à calculer par `champis-pipeline check`.
 - **Sapin et épicéa.** BD Forêt V2 ne les sépare pas : le lactaire saumon et le lactaire de l'épicéa donnent presque la même carte.
-- **Tuiles.** Dix-sept rendus T France, et un G en deux parties pour les lactaires, une première en production.
+- **Tuiles.** Dix-sept rendus T France, et un G en deux parties pour les lactaires, une première en production. Elles peuvent être produites et publiées avant les planches : les clients ne lisent que les espèces du catalogue.
 
 ## Décisions demandées à Adrien
 
