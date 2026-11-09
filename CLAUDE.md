@@ -11,7 +11,7 @@ species/      fichiers espèces JSON + SCHEMA.md + validate.py   (skill species-
 mapping/      bdforet_to_hosts.json : 32 codes TFV → hôtes
 shared/       palette.json, vectors/ (contrat de parité Python/Swift) (skill scoring-parity), texts/ (articles du Guide, app et site), illustrations/ (prompts des planches, puis les images)
 scripts/      check_shared.py : JSON, index des textes, vecteurs
-docs/         audit produit et plan
+docs/         audit produit et plan, espèces candidates (ajoutées, en attente, écartées) et brouillons/ en attente de décision
 ```
 
 ## Outillage

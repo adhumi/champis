@@ -24,6 +24,9 @@ SPECIES = ROOT / "species"
 ILLUSTRATIONS = ROOT / "shared" / "illustrations"
 
 
+NOTES: list[str] = []  # constats sans échec (planche absente : espèce incomplète)
+
+
 def check() -> list[str]:
     errors: list[str] = []
 
@@ -70,11 +73,13 @@ def check() -> list[str]:
     if len(hashes) > 1:
         errors.append(f"shared/vectors/ : empreintes différentes d'un fichier à l'autre {sorted(hashes)}")
 
-    # illustrations (shared/illustrations/README.md) : une <id>.jpg par fichier espèce, rien d'autre
+    # illustrations (shared/illustrations/README.md) : une <id>.jpg par fichier espèce, rien d'autre.
+    # Une planche absente n'est pas une erreur (décision d'Adrien du 9 nov. 2026) : l'espèce est
+    # incomplète et l'API ne la sert pas au site ni à l'app tant que la planche manque ; on le dit
     species_ids = {p.stem for p in SPECIES.glob("*.json")}
     for sid in sorted(species_ids):
         if not (ILLUSTRATIONS / f"{sid}.jpg").is_file():
-            errors.append(f"shared/illustrations/{sid}.jpg : absent (planche à générer d'après PROMPTS.md)")
+            NOTES.append(f"shared/illustrations/{sid}.jpg : absente, espèce incomplète, non servie par /species")
     for image in sorted(ILLUSTRATIONS.glob("*.*")):
         if image.suffix == ".md":
             continue
@@ -88,6 +93,8 @@ def check() -> list[str]:
 
 def main() -> int:
     errors = check()
+    for note in NOTES:
+        print(f"note   {note}")
     for error in errors:
         print(f"ECHEC  {error}")
     if errors:
