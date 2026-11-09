@@ -33,7 +33,7 @@ Un fichier `species/<id>.json` par espèce. Le pipeline (potentiel terrain `T`) 
 
 | Clé | Calcul |
 | --- | --- |
-| `season.start/end` (`MM-DD`) | `Φ = 0` hors saison ; **`Φ = 0,25` dès `season.start`** (plancher : les pousses précoces existent) |
+| `season.start/end` (`MM-DD`) | `Φ = 0` hors saison ; **`Φ = 0,25` dès `season.start`** (plancher : les pousses précoces existent). Une fin qui précède le début (`08-15` → `01-31`) est une **saison à cheval sur le 1er janvier** (décision du 9 nov. 2026) : les bornes, le pic et le jour se placent en ordinaux de dates, la saison en cours étant celle qui a commencé cette année ou l'année d'avant ; le pic peut lui aussi passer l'année. Une saison dans l'année civile s'arrête toujours au 31 décembre, décalage d'altitude compris (comportement inchangé) |
 | `peak.start/end` | `Φ = 1` au pic |
 | `ramp_days` | Rampe linéaire de 0,25 à 1 sur `ramp_days` avant le pic, et de 1 à 0,25 sur `ramp_days` après la fin du pic, bornée par la saison ; le plancher 0,25 tient jusqu'à `season.end` (pousses tardives) |
 | `secondary_peak` (optionnel) | Fenêtre `start/end` avec `Φ = phi` (ex. poussée printanière de *B. pinophilus* à 0,6), fusionnée par max avec la fenêtre principale |

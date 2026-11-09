@@ -83,6 +83,30 @@ def check_trapezoid(name: str, t: dict) -> None:
         pass  # rampe nulle autorisée (ex. pente dès 0)
 
 
+def _md_days(md: str) -> int:
+    """Jour de l'année (année non bissextile) d'un `MM-DD` ; lève si la date n'existe pas."""
+    m, d = (int(x) for x in md.split("-"))
+    lengths = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    if not (1 <= m <= 12 and 1 <= d <= (29 if m == 2 else lengths[m - 1])):
+        raise ValueError(md)
+    return sum(lengths[: m - 1]) + min(d, lengths[m - 1])
+
+
+def check_season(name: str, season: dict, peak: dict) -> None:
+    """`season.start < season.end` dans l'année civile ; sinon la saison passe le 1er janvier et
+    tout se mesure en jours depuis `season.start`, modulo 365 : le pic doit y tenir, dans l'ordre."""
+    try:
+        s0 = _md_days(season["start"])
+        rel = {k: (_md_days(v) - s0) % 365 for k, v in (("end", season["end"]), ("ps", peak["start"]), ("pe", peak["end"]))}
+    except (ValueError, KeyError, AttributeError) as exc:
+        err(f"{name}: date MM-DD invalide dans phenology ({exc})")
+        return
+    if rel["end"] == 0:
+        err(f"{name}: phenology.season start = end")
+    if not rel["ps"] <= rel["pe"] <= rel["end"]:
+        err(f"{name}: pic hors saison ou pic inversé (en jours depuis season.start)")
+
+
 def check_weights(name: str, w: dict, expected: set, optional: set = frozenset()) -> None:
     """Clés attendues exactes, plus des clés optionnelles (facteurs optionnels, spec › Scoring ›
     Facteurs de sol et de paysage, 9 nov. 2026 : absent = poids 0) ; la somme reste 1."""
@@ -206,14 +230,9 @@ def main() -> int:
                     err(f"{n}: terrain.refs.{block} → '{r}' absent de references")
 
         p = sp["phenology"]
-        for k in ("season", "peak"):
-            s, e = p[k]["start"], p[k]["end"]
-            if not (s < e):
-                err(f"{n}: phenology.{k} start ≥ end")
-        if not (
-            p["season"]["start"] <= p["peak"]["start"] <= p["peak"]["end"] <= p["season"]["end"]
-        ):
-            err(f"{n}: pic hors saison")
+        # Une saison dont la fin précède le début passe le 1er janvier (décision d'Adrien du
+        # 9 nov. 2026) : les bornes se comparent en jours depuis le début de saison, modulo l'année
+        check_season(n, p["season"], p["peak"])
         for r in p.get("refs", []):
             if r not in refs_known:
                 err(f"{n}: phenology.refs → '{r}' absent")
