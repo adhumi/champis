@@ -29,8 +29,8 @@ La première version de ce tri disait « aucun sosie mortel ». Elle ne tenait p
 | Chanterelle en tube, *Craterellus tubaeformis* | Chanterelles (nouveau) | Octobre à décembre, conifères acides | Sosie mortel : cortinaire très joli |
 | Chanterelle jaune, *Craterellus lutescens* | Chanterelles (nouveau) | Conifères humides, calcaires ou tourbeux | Micro-habitat mouillé invisible ; pinèdes sèches surestimées |
 | Pied de mouton roux, *Hydnum rufescens* | Pieds de mouton | Complète *H. repandum* | Complexe de plusieurs espèces (Niskanen 2018) |
-| Petit-gris, *Tricholoma terreum* | Petits-gris (nouveau) | Le griset du Ventoux et des pinèdes calcaires | Sosie mortel (phalloïde) ; comestibilité contestée |
-| Tricholome prétentieux, *Tricholoma portentosum* | Petits-gris (nouveau) | Dernier champignon de l'année, pinèdes acides | Sosies mortels : phalloïde, tricholome équestre |
+| Petit-gris, *Tricholoma terreum* | Grisets (nouveau) | Le griset du Ventoux et des pinèdes calcaires | Sosie mortel (phalloïde) ; comestibilité contestée |
+| Tricholome prétentieux, *Tricholoma portentosum* | Grisets (nouveau) | Dernier champignon de l'année, pinèdes acides | Sosies mortels : phalloïde, tricholome équestre |
 | Pied bleu, *Lepista nuda* | Pieds bleus (nouveau) | Octobre à décembre, toute litière | Jardins, haies et prés hors carte |
 | Bolet bai, *Imleria badia* | Bolets bais (nouveau) | Très commun, conifères et feuillus acides | Fort accumulateur de césium 137 |
 | Nonnette voilée, *Suillus luteus* | Nonnettes (nouveau) | Jeunes pinèdes | Troubles digestifs et allergies rapportés |
@@ -40,7 +40,7 @@ La première version de ce tri disait « aucun sosie mortel ». Elle ne tenait p
 
 ### Le griset du Ventoux
 
-Au Ventoux, le griset est le petit-gris, *Tricholoma terreum*, ou son complexe (*T. scalpturatum*, *T. myomyces*). Dans le massif, GBIF compte six relevés de *T. terreum* et deux de *T. scalpturatum*, faits par l'ONF à Bédoin, Brantes et Saint-Léger-du-Ventoux entre le 19 et le 29 octobre, en 2014 et 2015. Une encyclopédie locale donne au contraire le griset du Ventoux pour *T. portentosum*. Le groupe « Petits-gris » réunit les deux espèces et couvre le griset dans les deux lectures.
+Au Ventoux, le griset est le petit-gris, *Tricholoma terreum*, ou son complexe (*T. scalpturatum*, *T. myomyces*). Dans le massif, GBIF compte six relevés de *T. terreum* et deux de *T. scalpturatum*, faits par l'ONF à Bédoin, Brantes et Saint-Léger-du-Ventoux entre le 19 et le 29 octobre, en 2014 et 2015. Une encyclopédie locale donne au contraire le griset du Ventoux pour *T. portentosum*. Le groupe « Grisets » réunit les deux espèces et couvre le griset dans les deux lectures.
 
 Le massif ressort sans paramètre propre. Les pins noirs des reboisements de restauration des terrains en montagne sont à 1 dans le fichier, le calcaire est dans l'optimum de pH et l'altitude dans l'optimum. Avec le décalage d'altitude, le pic à 1 100 m va du 22 septembre au 13 novembre, ce que confirment les relevés de fin octobre. Aucun arrêté propre au Ventoux n'a été trouvé ; le droit commun s'applique.
 
@@ -84,7 +84,7 @@ Les fichiers complets sont dans `docs/brouillons/`, avec leur bloc d'illustratio
 | Bolet à pied rouge, *Neoboletus luridiformis* | 71 occurrences sous ce nom, taxonomie éclatée dans GBIF ; toxique cru | Regrouper les noms dans GBIF |
 | Truffes, *Tuber* spp. | Hypogées, cavées au chien ; récolte liée à la propriété (code forestier, art. L.163-11) ; truffe noire à cheval sur le 1er janvier | Hors du propos de Champis |
 | Hygrophore russule, *Hygrophorus russula* | 266 occurrences, intérêt culinaire faible | Une demande d'Adrien |
-| *Tricholoma scalpturatum*, *T. myomyces* | Complexe du petit-gris, identifications mêlées | Couverts de fait par le groupe Petits-gris |
+| *Tricholoma scalpturatum*, *T. myomyces* | Complexe du petit-gris, identifications mêlées | Couverts de fait par le groupe Grisets |
 
 ## Limites communes aux dix-sept fichiers
 
@@ -95,9 +95,9 @@ Les fichiers complets sont dans `docs/brouillons/`, avec leur bloc d'illustratio
 
 ## Décisions demandées à Adrien
 
-- [ ] Publier des fiches qui nomment un sosie mortel : petits-gris, russules, chanterelles en tube et jaune, et la girolle déjà publiée.
-- [ ] Publier le petit-gris malgré la controverse sur sa comestibilité.
-- [ ] Noms des groupes : « Petits-gris » plutôt que « Grisets », trop proche de la grisette, une amanite ; « Chanterelles » pour les craterelles en tube et jaune.
-- [ ] Les trois brouillons en attente : hygrophore de mars, sparassis, pholiote ridée.
-- [ ] Les saisons à cheval sur le 1er janvier : une extension du schéma (pied bleu, petit-gris, lactaire sanguin et bolet bai en janvier près de la Méditerranée ; pleurote, collybie, truffe).
+- [x] Publier des fiches qui nomment un sosie mortel : tranché le 9 nov. 2026, oui, le sosie en tête de fiche (grisets, russules, chanterelles en tube et jaune, girolle).
+- [x] Publier le petit-gris malgré la controverse sur sa comestibilité : tranché le 9 nov. 2026, oui, sans le mot « comestible ».
+- [x] Noms des groupes : tranché le 9 nov. 2026, « Grisets » (le nom provençal, celui du Ventoux) plutôt que « Petits-gris » ; « Chanterelles » pour les craterelles en tube et jaune.
+- [x] Les trois brouillons en attente : tranché le 9 nov. 2026, aucun pour l'instant.
+- [x] Les saisons à cheval sur le 1er janvier : tranché le 9 nov. 2026, schéma étendu le jour même ; pied bleu et petit-gris jusqu'au 31 janvier, lactaire sanguin et bolet bai jusqu'au 15 janvier.
 - [ ] La règle « hors forêt → T = 0 » face aux espèces de lisière et de pré.

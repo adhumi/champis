@@ -23,7 +23,8 @@ Un fichier `species/<id>.json` par espèce. Le pipeline (potentiel terrain `T`) 
 | `altitude_m` | BD ALTI 25 m | Trapèze |
 | `aspect` | Dérivé du MNT, 8 classes + `flat` (pente < 3°) | Poids 0–1 |
 | `slope_deg` | Dérivé du MNT | Trapèze |
-| `weights` | — | Poids de `cover`, `ph`, `altitude`, `aspect`, `slope` ; somme = 1 |
+| `edge_m` (**optionnel**) | Distance à la lisière, dérivée des rasters BD Forêt du pipeline (`grid/<dept>/edge.tif`) : pour un pixel de forêt, distance au pixel non forestier le plus proche (hors polygone BD Forêt, `herbacee`, couvert `sans_couvert` ou `non_foret`), en pas de 25 m, voisinage octogonal, plafonnée à 1 000 m ; 0 hors forêt | Trapèze sur les mètres ; poids `weights.edge`. Absent → poids 0, rien ne change pour l'espèce (spec › Scoring › Facteurs de sol et de paysage, palier 2, 9 nov. 2026). Pinèdes claires, pare-feu et bords de pistes des lactaires et grisets ; un facteur n'entre dans un fichier que s'il relève l'AUC GBIF d'un département de référence |
+| `weights` | — | Poids de `cover`, `ph`, `altitude`, `aspect`, `slope` et, s'il est présent, `edge` ; somme = 1 |
 
 **`T = host × Σ poids × facteur`** : l'hôte est multiplicatif, pas additif — une cédraie ou une vigne ne peut pas ressortir « bonne » parce que le pH et l'exposition sont parfaits. Règle dure : `altitude` hors `[min, max]` → `T = 0`. Hors forêt (ni BD Forêt, ni CLC forestier) → `T = 0`.
 
@@ -33,7 +34,7 @@ Un fichier `species/<id>.json` par espèce. Le pipeline (potentiel terrain `T`) 
 
 | Clé | Calcul |
 | --- | --- |
-| `season.start/end` (`MM-DD`) | `Φ = 0` hors saison ; **`Φ = 0,25` dès `season.start`** (plancher : les pousses précoces existent) |
+| `season.start/end` (`MM-DD`) | `Φ = 0` hors saison ; **`Φ = 0,25` dès `season.start`** (plancher : les pousses précoces existent). Une fin qui précède le début (`08-15` → `01-31`) est une **saison à cheval sur le 1er janvier** (décision du 9 nov. 2026) : les bornes, le pic et le jour se placent en ordinaux de dates, la saison en cours étant celle qui a commencé cette année ou l'année d'avant ; le pic peut lui aussi passer l'année. Une saison dans l'année civile s'arrête toujours au 31 décembre, décalage d'altitude compris (comportement inchangé) |
 | `peak.start/end` | `Φ = 1` au pic |
 | `ramp_days` | Rampe linéaire de 0,25 à 1 sur `ramp_days` avant le pic, et de 1 à 0,25 sur `ramp_days` après la fin du pic, bornée par la saison ; le plancher 0,25 tient jusqu'à `season.end` (pousses tardives) |
 | `secondary_peak` (optionnel) | Fenêtre `start/end` avec `Φ = phi` (ex. poussée printanière de *B. pinophilus* à 0,6), fusionnée par max avec la fenêtre principale |
