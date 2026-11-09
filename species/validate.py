@@ -222,8 +222,17 @@ def main() -> int:
         if set(t["aspect"]) != ASPECTS:
             err(f"{n}: aspect incomplet")
         check_weights(
-            f"{n}.terrain.weights", t["weights"], {"cover", "ph", "altitude", "aspect", "slope"}
+            f"{n}.terrain.weights",
+            t["weights"],
+            {"cover", "ph", "altitude", "aspect", "slope"},
+            optional={"edge"},
         )
+        # distance à la lisière (facteur optionnel, palier 2, 9 nov. 2026) : bloc et poids ensemble
+        edge = t.get("edge_m")
+        if edge is not None:
+            check_trapezoid(f"{n}.terrain.edge_m", edge)
+        elif t["weights"].get("edge", 0) > 0:
+            err(f"{n}: weights.edge = {t['weights']['edge']} sans bloc terrain.edge_m")
         for block, rl in t.get("refs", {}).items():
             for r in rl:
                 if r not in refs_known:
