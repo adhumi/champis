@@ -83,9 +83,11 @@ def check_trapezoid(name: str, t: dict) -> None:
         pass  # rampe nulle autorisée (ex. pente dès 0)
 
 
-def check_weights(name: str, w: dict, expected: set) -> None:
-    if set(w) != expected:
-        err(f"{name}: clés {sorted(w)} ≠ attendues {sorted(expected)}")
+def check_weights(name: str, w: dict, expected: set, optional: set = frozenset()) -> None:
+    """Clés attendues exactes, plus des clés optionnelles (facteurs optionnels, spec › Scoring ›
+    Facteurs de sol et de paysage, 9 nov. 2026 : absent = poids 0) ; la somme reste 1."""
+    if not expected <= set(w) <= expected | optional:
+        err(f"{name}: clés {sorted(w)} ≠ attendues {sorted(expected)} (+ {sorted(optional)} optionnelles)")
     s = sum(w.values())
     if abs(s - 1.0) > 1e-6:
         err(f"{name}: somme des poids = {s:.3f} ≠ 1")
@@ -250,8 +252,21 @@ def main() -> int:
         if w["persistence"]["days"] < 0:
             err(f"{n}: persistence négative")
         check_weights(
-            f"{n}.weather.weights", w["weights"], {"temp", "rain", "trigger", "soil_moisture"}
+            f"{n}.weather.weights",
+            w["weights"],
+            {"temp", "rain", "trigger", "soil_moisture"},
+            optional={"soil_temp"},
         )
+        # température du sol 0–7 cm (facteur optionnel, 9 nov. 2026) : bloc et poids vont ensemble
+        st = w.get("soil_temp")
+        st_w = w["weights"].get("soil_temp", 0)
+        if st is not None:
+            check_trapezoid(f"{n}.weather.soil_temp.c", st.get("c", {}))
+            wd = st.get("window_days")
+            if not (isinstance(wd, int) and not isinstance(wd, bool) and wd >= 1):
+                err(f"{n}: weather.soil_temp.window_days doit être un entier ≥ 1, pas {wd!r}")
+        elif st_w > 0:
+            err(f"{n}: weights.soil_temp = {st_w} sans bloc weather.soil_temp")
         for block, rl in w.get("refs", {}).items():
             for r in rl:
                 if r not in refs_known:

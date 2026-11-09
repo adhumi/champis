@@ -41,11 +41,13 @@ Un fichier `species/<id>.json` par espèce. Le pipeline (potentiel terrain `T`) 
 
 ## `weather` → indice `M` (API, par cellule météo, Open-Meteo)
 
-Séries : les 92 derniers jours et J+1 à J+7 viennent de l'**API prévision** (`past_days=92`, même modèle avant et après J, pas de discontinuité) ; seule la mémoire (90 j) peut venir de l'archive ERA5-Land. Variables : `temperature_2m_mean/min/max`, `rain_sum` (pas `precipitation_sum` : la neige n'est pas une pluie déclenchante), `snowfall_sum`, `et0_fao_evapotranspiration`, `soil_moisture_0_to_7cm`, `elevation` de la cellule.
+Séries : les 92 derniers jours et J+1 à J+7 viennent de l'**API prévision** (`past_days=92`, même modèle avant et après J, pas de discontinuité) ; seule la mémoire (90 j) peut venir de l'archive ERA5-Land. Variables : `temperature_2m_mean/min/max`, `rain_sum` (pas `precipitation_sum` : la neige n'est pas une pluie déclenchante), `snowfall_sum`, `et0_fao_evapotranspiration`, `soil_moisture_0_to_7cm_mean`, `soil_temperature_0_to_7cm_mean` (depuis le 9 nov. 2026), `elevation` de la cellule.
 
 **Correction altitudinale** : les températures de la cellule sont corrigées pour le pixel par −0,6 °C/100 m × (altitude pixel − altitude cellule), par classes de 300 m. Sans cela le gel n'est jamais vu à 1 400 m et la chaleur l'est à tort.
 
 `M = (Σ poids × facteur) × gel × bilan_hydrique × chaleur × mémoire`, puis persistance.
+
+**Facteurs optionnels** (décision du 9 nov. 2026) : un facteur absent du fichier vaut poids 0, et le fichier qui ne l'emploie pas ne change pas, donc ni son empreinte ni ses tuiles. Un facteur n'entre dans le schéma que s'il relève l'AUC GBIF d'au moins une espèce sur un département de référence (`T`) ou s'appuie sur la littérature (`M`). Aujourd'hui : `soil_temp`.
 
 | Clé | Donnée | Calcul |
 | --- | --- | --- |
@@ -58,7 +60,8 @@ Séries : les 92 derniers jours et J+1 à J+7 viennent de l'**API prévision** (
 | `heat` | `temperature_2m_max` corrigée | Si `≥ days` jours `≥ tmax_c` dans `window_days` → × `factor` |
 | `memory` | Cumul de `rain_sum` sur les `window_days` glissants **avant la fenêtre `rain`** (soit J−117 à J−28 inclus pour 90/28) | × `(floor + (1 − floor) × trapèze)` : module entre `floor` et 1, jamais annule |
 | `persistence` | — | `M_eff(J) = max(M(J), max_k M(J−k) × (1 − k/days))` pour `1 ≤ k ≤ days` ; gel (facteur du jour, en rampe) et bilan hydrique s'appliquent **après** (les sporophores existants gèlent ou se dessèchent) |
-| `weights` | — | Poids de `temp`, `rain`, `trigger`, `soil_moisture` ; somme = 1 |
+| `soil_temp` (**optionnel**) | `soil_temperature_0_to_7cm_mean`, moyenne sur `window_days`, corrigée à l'altitude du pixel comme l'air (−0,6 °C/100 m, même classe de 300 m : sur 7 à 14 jours le sol suit l'air moyen, approximation assumée) | Trapèze sur `c` ; poids `weights.soil_temp`. Absent → poids 0, rien ne change pour l'espèce. Spec › Scoring › Facteurs de sol et de paysage (9 nov. 2026) : le sol lisse les écarts jour-nuit et retarde le signal comme le mycélium. L'historique n'a la variable que depuis sa mise en service : une espèce ne l'active qu'après `window_days + persistence.days` jours de collecte, sinon l'API refuse la série |
+| `weights` | — | Poids de `temp`, `rain`, `trigger`, `soil_moisture` et, s'il est présent, `soil_temp` ; somme = 1 |
 
 Pour J+1 à J+7, mêmes formules sur les séries prévues. La série doit couvrir au moins `memory.window_days + rain.window_days + persistence.days` jours avant J (≈ 150 j) : une fenêtre tronquée est une erreur, jamais une approximation silencieuse. Les arrondis de jours utilisent « 0,5 → vers le haut » (comme JS et Swift), pas l'arrondi au pair de Python.
 
