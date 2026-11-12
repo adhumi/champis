@@ -110,3 +110,15 @@ en même temps, à la limite du seuil. Pour le lactaire de l'épicéa et pour co
 **contrôle groupant plusieurs départements** (positives de chaque département sur son propre raster
 T, fond tiré dans les mêmes départements) reste l'évolution de l'outil `check` à faire. En
 attendant, le facteur reste hors des fichiers.
+
+**12 nov. 2026, Hautes-Pyrénées (65), lactaire saumon : évalué, critère non atteint.** 52 occurrences
+retenues sur 210, 43 en forêt BD Forêt. T de référence déjà très discriminant : AUC 0,910. Avec le
+bloc lisière : AUC 0,909 (−0,001), T moyen aux occurrences 0,429 → 0,420. La distance à la lisière,
+telle que BD Forêt la donne, n'apporte rien au lactaire saumon : ses stations ne sont pas plus
+proches des bords de peuplement que la forêt en général. Deux réserves pour la suite : les lisières
+mesurées sont celles des polygones BD Forêt (clairières, prés, coupes), pas les **pistes et routes
+forestières**, absentes de BD Forêt, alors que Bonet 2012 parle de bords de pistes ; et le bloc
+testé est étroit (plein jusqu'à 100 m, nul au-delà de 400 m). On ne retouche pas le bloc pour
+coller aux points : le facteur n'entre pas pour cette espèce. Reste à le mesurer sur les espèces de
+pinèdes, petit-gris et lactaire délicieux (Aveyron), avant de conclure sur le facteur lui-même ;
+les bords de pistes relèvent d'une source routière (BD TOPO, palier 3).
