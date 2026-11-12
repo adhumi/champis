@@ -12,34 +12,40 @@ lance depuis le backoffice de champis-api ou un poste local, pas depuis une sess
 
 ## Protocole
 
-Depuis un clone de champis-api (sous-module à jour) :
+Depuis le backoffice de champis-api (fiche de l'espèce, décision d'Adrien du 12 nov. 2026 : le
+contrôle GBIF tourne sur le worker champis-jobs) :
+
+1. **« Recalculer le terrain »** avec le département 84 seul (outil `batch`, `depts = 84`,
+   `species = lactarius_deliciosus`) : BD Forêt, SoilGrids, MNT du Vaucluse, rasters `grid/84/`
+   (`edge.tif` compris), T de référence de l'espèce. Un quart d'heure environ.
+2. **« Contrôler »** (outil `check`) avec `département = 84`, la variante lisière `0,0,100,400` et le
+   poids `0.1` : le worker télécharge les occurrences GBIF du département, évalue le T de
+   référence, calcule un T variant **en mémoire** avec le bloc candidat (dans `data/T-variants/`,
+   jamais dans les tuiles), l'évalue sur les **mêmes occurrences** et dépose les deux rapports dans
+   le bucket sous `reports/`. Le journal de la tâche porte les deux AUC et le verdict ; la fiche
+   liste les rapports.
+
+Le même test depuis un poste :
 
 ```bash
-# 1. données et rasters du département (edge.tif compris, étape grid)
 uv run champis-pipeline download --dept 84
 uv run champis-pipeline grid --dept 84
-# 2. T de référence, sans le bloc, et son AUC
 uv run champis-pipeline terrain --dept 84 --species lactarius_deliciosus
-uv run champis-pipeline check --dept 84 --species lactarius_deliciosus
-cp reports/lactarius_deliciosus-84.json reports/lactarius_deliciosus-84-sans-lisiere.json
-# 3. le bloc candidat ci-dessous dans champis/species/lactarius_deliciosus.json (copie de travail,
-#    pas de commit), puis T et AUC avec le bloc
-uv run champis-pipeline terrain --dept 84 --species lactarius_deliciosus --force
-uv run champis-pipeline check --dept 84 --species lactarius_deliciosus
+uv run champis-pipeline check --dept 84 --species lactarius_deliciosus --edge 0,0,100,400 --edge-weight 0.1
 ```
 
-`check` lit le raster T courant de l'espèce ; les occurrences GBIF sont en cache après le premier
-appel (`data/raw/gbif/`), les deux mesures portent donc exactement sur les mêmes points.
+Le fichier espèce n'est jamais écrit par le test.
 
 ## Bloc candidat
 
 Trapèze sur la distance à la lisière en mètres : facteur 1 dans les 100 premiers mètres de forêt,
 nul au-delà de 400 m (Bonet 2012 : production des lactaires concentrée en bord de peuplement et de
-piste ; le premier anneau de pixels est à 25 m). Le poids vient de `cover` et `ph`, la somme reste 1.
+piste ; le premier anneau de pixels est à 25 m). Le poids `edge` = 0,10 est prélevé **au prorata
+sur tous les poids existants** (c'est ce que fait la variante), la somme reste 1 :
 
 ```json
 "edge_m": { "min": 0, "opt_low": 0, "opt_high": 100, "max": 400 },
-"weights": { "cover": 0.20, "ph": 0.25, "altitude": 0.20, "aspect": 0.15, "slope": 0.10, "edge": 0.10 }
+"weights": { "cover": 0.225, "ph": 0.27, "altitude": 0.18, "aspect": 0.135, "slope": 0.09, "edge": 0.10 }
 ```
 
 Les bornes et le poids sont un point de départ : si le gain vient surtout des 50 premiers mètres,
@@ -50,6 +56,9 @@ resserrer `opt_high` ; ne jamais ajuster sur un point isolé (skill `validation-
 - Au moins **30 occurrences en forêt** dans le rapport, sinon « non évalué ».
 - **Gain d'AUC ≥ 0,01** avec le bloc, et T moyen aux occurrences qui ne baisse pas.
 - Sinon le bloc reste hors du fichier et le résultat est noté ici avec les deux AUC.
+
+Le rapport de la variante applique ce critère lui-même (`entry` du `.json`, verdict dans le
+`.html`) ; il mesure, il ne décide pas.
 
 ## Si le bloc est adopté
 
