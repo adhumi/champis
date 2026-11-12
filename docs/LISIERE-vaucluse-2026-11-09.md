@@ -94,8 +94,19 @@ T moyen 0,529 → 0,526 : six points, rien à conclure. Même constat pour le la
 seules les occurrences à moins de 100 m comptent : iNaturalist et quelques jeux naturalistes en
 fournissent, le gros des données françaises non. Par espèce, la France entière en offre 150 à 210
 (lactaire délicieux 208, lactaire saumon 189, petit-gris 171, lactaire de l'épicéa 145, lactaire
-sanguin 67), dispersées sur plusieurs départements, Pyrénées, Cévennes et Alpes surtout. Un
-département seul n'atteint jamais le seuil de 30 ; **un contrôle groupant plusieurs départements**
-(positives de chaque département sur son propre raster T, fond tiré dans les mêmes départements)
-l'atteint pour les quatre premières espèces. C'est l'évolution de l'outil `check` à faire avant de
-reprendre le test ; en attendant, le facteur reste hors des fichiers.
+sanguin 67), concentrées dans quelques départements d'après le département déclaré :
+
+| Espèce | Départements avec le plus de points précis |
+| --- | --- |
+| Lactaire saumon | **Hautes-Pyrénées 44**, Haute-Garonne 23, Drôme 13, Ariège 10 |
+| Petit-gris | **Aveyron 33**, Haute-Garonne 14, Hautes-Pyrénées 6 |
+| Lactaire délicieux | Aveyron 27, Côtes-d'Armor 13, Hautes-Pyrénées 11, Haute-Garonne 9 |
+| Lactaire de l'épicéa | Isère 19, Savoie 16, Aveyron 11, Gard 9, Drôme 9 |
+
+(Avant le tri en forêt BD Forêt, qui en retire encore quelques-uns.) **Suite du test** : le lactaire
+saumon sur les **Hautes-Pyrénées (65)**, le petit-gris sur l'**Aveyron (12)**, avec l'outil tel
+quel (`batch` du département puis `check` avec la variante) ; le lactaire délicieux sur l'Aveyron
+en même temps, à la limite du seuil. Pour le lactaire de l'épicéa et pour consolider les autres, un
+**contrôle groupant plusieurs départements** (positives de chaque département sur son propre raster
+T, fond tiré dans les mêmes départements) reste l'évolution de l'outil `check` à faire. En
+attendant, le facteur reste hors des fichiers.
