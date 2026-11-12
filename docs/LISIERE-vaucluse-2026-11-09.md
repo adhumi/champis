@@ -106,9 +106,10 @@ sanguin 67), concentrées dans quelques départements d'après le département d
 (Avant le tri en forêt BD Forêt, qui en retire encore quelques-uns.) **Suite du test** : le lactaire
 saumon sur les **Hautes-Pyrénées (65)**, le petit-gris sur l'**Aveyron (12)**, avec l'outil tel
 quel (`batch` du département puis `check` avec la variante) ; le lactaire délicieux sur l'Aveyron
-en même temps, à la limite du seuil. Pour le lactaire de l'épicéa et pour consolider les autres, un
-**contrôle groupant plusieurs départements** (positives de chaque département sur son propre raster
-T, fond tiré dans les mêmes départements) reste l'évolution de l'outil `check` à faire. En
+en même temps, à la limite du seuil. Pour le lactaire de l'épicéa et pour consolider les autres, le
+**contrôle groupé** (`check --depts 38 73 12 …`, ou `all` : positives de chaque département sur
+son propre raster T, fond tiré dans les mêmes départements au prorata des forêts) existe depuis le
+12 nov. 2026 ; il demande le `batch` de chaque département nommé. En
 attendant, le facteur reste hors des fichiers.
 
 **12 nov. 2026, Hautes-Pyrénées (65), lactaire saumon : évalué, critère non atteint.** 52 occurrences
