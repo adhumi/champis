@@ -70,4 +70,16 @@ pas). Mêmes tests ensuite pour les autres lactaires et les grisets, un départe
 
 ## Résultat
 
-À compléter après le test : AUC sans / avec, occurrences en forêt, décision.
+**12 nov. 2026, Vaucluse, lactaire délicieux : non évalué.** GBIF ne connaît que 10 occurrences
+géolocalisées de l'espèce dans l'emprise du département (829 dans toute la France, 53 dans tout le
+Sud-Est) ; 3 passent le filtre de précision, 1 seule tombe en forêt BD Forêt. Les deux AUC
+(0,814 sans, 0,827 avec, T moyen aux occurrences 0,638 → 0,654) ne veulent rien dire sur un point.
+Rapports : `reports/lactarius_deliciosus-84[-edge-0-0-100-400-w0.1].html` du bucket.
+
+GBIF est très clairsemé en Provence pour toutes les espèces de Champis (quelques dizaines
+d'occurrences par espèce sur tout le Sud-Est), dense dans le Doubs et le Jura. Le test d'entrée de
+la lisière se refait donc sur le **Doubs (25)**, où les données existent, avec les lactaires qui y
+poussent : lactaire saumon (380 occurrences géolocalisées, sapinières), lactaire de l'épicéa (259,
+pessières), et le petit-gris (134) pour les grisets ; le lactaire délicieux (17 dans le Doubs)
+attend une source plus dense ou un contrôle groupant plusieurs départements. Même bloc candidat,
+même critère ; le résultat de chaque espèce est à noter ici.
