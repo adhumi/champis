@@ -83,3 +83,19 @@ poussent : lactaire saumon (380 occurrences géolocalisées, sapinières), lacta
 pessières), et le petit-gris (134) pour les grisets ; le lactaire délicieux (17 dans le Doubs)
 attend une source plus dense ou un contrôle groupant plusieurs départements. Même bloc candidat,
 même critère ; le résultat de chaque espèce est à noter ici.
+
+**12 nov. 2026, Doubs, lactaire saumon : non évalué.** 380 occurrences géolocalisées, mais 354 ont
+une incertitude déclarée de 1 à 5 km (le jeu national qui porte l'essentiel des données françaises
+est géoréférencé à la commune), 19 sont arrondies : 7 retenues, 6 en forêt. AUC 0,764 → 0,815,
+T moyen 0,529 → 0,526 : six points, rien à conclure. Même constat pour le lactaire de l'épicéa
+(3 occurrences précises sur 259) et le petit-gris (0 sur 134) dans le Doubs.
+
+**Ce que GBIF permet.** À l'échelle d'un facteur de lisière (bande de 100 m sur des pixels de 25 m),
+seules les occurrences à moins de 100 m comptent : iNaturalist et quelques jeux naturalistes en
+fournissent, le gros des données françaises non. Par espèce, la France entière en offre 150 à 210
+(lactaire délicieux 208, lactaire saumon 189, petit-gris 171, lactaire de l'épicéa 145, lactaire
+sanguin 67), dispersées sur plusieurs départements, Pyrénées, Cévennes et Alpes surtout. Un
+département seul n'atteint jamais le seuil de 30 ; **un contrôle groupant plusieurs départements**
+(positives de chaque département sur son propre raster T, fond tiré dans les mêmes départements)
+l'atteint pour les quatre premières espèces. C'est l'évolution de l'outil `check` à faire avant de
+reprendre le test ; en attendant, le facteur reste hors des fichiers.
