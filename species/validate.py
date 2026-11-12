@@ -166,6 +166,13 @@ def main() -> int:
     mapping = json.loads(MAPPING.read_text(encoding="utf-8"))
     vocab = set(mapping["hosts"]) | {"default"}
     covers = set(mapping["covers"])
+    # hôtes hors forêt (BD TOPO, palier 3, 12 nov. 2026) : vocabulaire à part, jamais de default
+    topo_vocab = {k for k in mapping.get("topo_hosts", {}) if k != "description"}
+    for nature, m in mapping.get("bdtopo_v3", {}).items():
+        if nature == "description":
+            continue
+        if m.get("host") not in topo_vocab or m.get("cover") not in covers:
+            err(f"mapping.bdtopo_v3[{nature!r}]: hôte ou couvert hors vocabulaire")
 
     missing = [c for c in TFV_CODES if c not in mapping["bdforet_v2"]]
     extra = [c for c in mapping["bdforet_v2"] if c not in TFV_CODES]
@@ -225,8 +232,22 @@ def main() -> int:
             f"{n}.terrain.weights",
             t["weights"],
             {"cover", "ph", "altitude", "aspect", "slope"},
-            optional={"edge"},
+            optional={"edge", "water"},
         )
+        # hôtes hors forêt (bloc optionnel, palier 3, 12 nov. 2026) : nommés, sans default
+        topo = t.get("hosts_topo")
+        if topo is not None:
+            check_unit(f"{n}.terrain.hosts_topo", topo, topo_vocab)
+            if "default" in topo or not topo:
+                err(f"{n}: hosts_topo nomme ses hôtes, sans default, et n'est pas vide")
+        # distance à l'eau (facteur optionnel, palier 3) : bloc et poids ensemble
+        water = t.get("water_m")
+        if water is not None:
+            check_trapezoid(f"{n}.terrain.water_m", water)
+            if t["weights"].get("water", 0) <= 0:
+                err(f"{n}: terrain.water_m sans poids weights.water")
+        elif t["weights"].get("water", 0) > 0:
+            err(f"{n}: weights.water = {t['weights']['water']} sans bloc terrain.water_m")
         # distance à la lisière (facteur optionnel, palier 2, 9 nov. 2026) : bloc et poids ensemble
         edge = t.get("edge_m")
         if edge is not None:
