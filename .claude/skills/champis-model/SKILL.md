@@ -39,7 +39,7 @@ Depuis le découpage des dépôts (6 nov. 2026), le code de référence est dans
 | --- | --- | --- |
 | trapèze, `T` | champis-api : `pipeline/champis_pipeline/scoring.py` | — (jamais ailleurs) |
 | `M`, `Φ`, `M_eff`, groupes | champis-api : `api/champis_api/scoring.py` (importe le trapèze du pipeline) | `champis-ios/Packages/ChampisScoring` — validé par les vecteurs de test (skill `scoring-parity`) ; le site prend les valeurs de l'API, sans portage |
-| interpolation entre cellules | champis-api : `api/champis_api/interp.py` | `ChampisScoring` (Swift) et `site.js` (JavaScript), validés par `shared/vectors/interp.json` |
+| interpolation entre cellules | champis-api : `api/champis_api/interp.py` | `ChampisScoring` (Swift) et `field.js` du site (JavaScript), validés par `shared/vectors/interp.json` |
 | seuils, palette | `shared/palette.json` | chargé tel quel par tous les clients |
 
 ## Vocabulaire

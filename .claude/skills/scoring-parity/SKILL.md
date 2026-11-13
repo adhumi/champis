@@ -7,7 +7,7 @@ description: Garantir que le scoring (trapèze, M, Φ, M_eff, groupes, palette) 
 
 Le scoring de référence est en Python, dans `adhumi/champis-api` (`api/champis_api/scoring.py`, trapèze dans `pipeline/champis_pipeline/scoring.py`). L'app recalcule `M × Φ` localement (hors ligne, changement de jour sans réseau). Ce portage n'a pas le droit de diverger.
 
-Le site **ne porte pas** le scoring (décision du 30 oct. 2026) : sans hors ligne web, il affiche `M_eff` et `Φ` tels que l'API les renvoie pour les 11 jours, et ne lit de `shared/` que la palette. La parité de `M` et `Φ` ne concerne donc que Python et Swift. Seule exception : l'interpolation de la météo entre cellules (13 nov. 2026), que le site applique aussi ; `site.js` rejoue `interp.json`.
+Le site **ne porte pas** le scoring (décision du 30 oct. 2026) : sans hors ligne web, il affiche `M_eff` et `Φ` tels que l'API les renvoie pour les 11 jours, et ne lit de `shared/` que la palette. La parité de `M` et `Φ` ne concerne donc que Python et Swift. Seule exception : l'interpolation de la météo entre cellules (13 nov. 2026), que le site applique aussi ; son `web/field.js` rejoue `interp.json`.
 
 ## Le contrat : `shared/vectors/`
 
