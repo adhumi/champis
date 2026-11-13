@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TEXTS = ROOT / "shared" / "texts"
 VECTORS = ROOT / "shared" / "vectors"
-VECTOR_FILES = ("trapezoid", "phi", "m", "group", "palette")
+VECTOR_FILES = ("trapezoid", "phi", "m", "group", "palette", "interp")
 SPECIES = ROOT / "species"
 ILLUSTRATIONS = ROOT / "shared" / "illustrations"
 
