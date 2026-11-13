@@ -330,5 +330,55 @@
       "host": "herbacee",
       "cover": "non_foret"
     }
+  },
+  "topo_hosts": {
+    "description": "Hôtes hors forêt (BD TOPO V3, zone_de_vegetation hors polygones BD Forêt ; palier 3, décision d'Adrien du 12 nov. 2026). Vocabulaire à part : l'index dans cet ordre est le code du raster host_topo.tif. Un hôte hors forêt ne compte que pour une espèce qui le nomme dans terrain.hosts_topo ; hosts.default ne s'y applique jamais et un pixel non nommé reste sans donnée (pas 0). Les 27 espèces forestières n'ont pas de bloc hosts_topo : leurs rasters et leurs empreintes ne bougent pas.",
+    "peupleraie": {
+      "fr": "Peupleraie (BD TOPO)",
+      "ecm": false
+    },
+    "bois": {
+      "fr": "Bois, bosquet ou forêt ouverte sans essence connue (BD TOPO Bois, Forêt ouverte)",
+      "ecm": "probable"
+    },
+    "verger": {
+      "fr": "Verger (BD TOPO)",
+      "ecm": false
+    },
+    "haie": {
+      "fr": "Haie (BD TOPO)",
+      "ecm": "mixte"
+    },
+    "lande": {
+      "fr": "Lande ligneuse (BD TOPO)",
+      "ecm": false
+    }
+  },
+  "bdtopo_v3": {
+    "description": "Correspondance BD TOPO V3 zone_de_vegetation.nature → hôte hors forêt (topo_hosts) et classe de couvert (covers), pour les pixels sans polygone BD Forêt. Les natures de forêt fermée (feuillus, conifères, mixte) sont celles de BD Forêt et ne sont pas lues ici. Source : flux WFS de la Géoplateforme, couche BDTOPO_V3:zone_de_vegetation.",
+    "Peupleraie": {
+      "host": "peupleraie",
+      "cover": "plantation"
+    },
+    "Bois": {
+      "host": "bois",
+      "cover": "fermee"
+    },
+    "Forêt ouverte": {
+      "host": "bois",
+      "cover": "ouverte"
+    },
+    "Verger": {
+      "host": "verger",
+      "cover": "ouverte"
+    },
+    "Haie": {
+      "host": "haie",
+      "cover": "ouverte"
+    },
+    "Lande ligneuse": {
+      "host": "lande",
+      "cover": "non_foret"
+    }
   }
 }

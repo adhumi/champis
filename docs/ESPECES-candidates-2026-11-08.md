@@ -2,7 +2,7 @@
 
 État au 8 nov. 2026. Demande d'Adrien : « étudie en profondeur et ajoute tout ce qui est ajoutable, consigne le reste ; pense aussi au griset du Ventoux ».
 
-Dix-sept espèces entrent dans le référentiel, ce qui porte Champis à vingt-sept espèces en onze groupes. Trois autres ont un fichier complet mais attendent une décision d'Adrien (`docs/brouillons/`). Vingt-cinq restent dehors, pour une raison dite ci-dessous avec ce qui les rendrait ajoutables. Les dix-sept espèces n'apparaissent sur le site et dans l'app qu'avec leur planche d'illustration, à générer d'après `shared/illustrations/PROMPTS.md` : une espèce est complète quand son fichier porte le bloc `about`, une photo et sa planche, et l'API ne sert que les espèces complètes (décision d'Adrien du 9 nov. 2026). La planche n'est pas un prérequis de la CI.
+Dix-sept espèces entrent dans le référentiel, ce qui porte Champis à vingt-sept espèces en onze groupes. Trois autres ont un fichier complet mais attendent une décision d'Adrien (`docs/brouillons/`). Vingt-cinq restent dehors, pour une raison dite ci-dessous avec ce qui les rendrait ajoutables. Les dix-sept espèces n'apparaissent sur le site et dans l'app qu'avec leur planche d'illustration, à générer d'après `shared/illustrations/PROMPTS.md` : une espèce est complète quand son fichier porte le bloc `about`, une photo et sa planche, et l'API ne sert que les espèces complètes dont les tuiles T France sont publiées dans le bucket (décisions d'Adrien du 9 nov. 2026). La planche n'est pas un prérequis de la CI. Les dix-sept planches sont déposées le 9 nov. ; restent les tuiles à rendre et publier.
 
 ## Comment on a trié
 
@@ -62,7 +62,7 @@ Les fichiers complets sont dans `docs/brouillons/`, avec leur bloc d'illustratio
 | --- | --- | --- |
 | Oronge, *Amanita caesarea* | Œuf presque identique à celui de la phalloïde ; confusions annuelles avec l'amanite tue-mouches délavée. Non protégée en France, quasi menacée en Alsace et en Lorraine. Hôtes lisibles. | Une décision d'Adrien sur les jumeaux mortels |
 | Agaric des bois, *Agaricus sylvicola* | Ressemble à une jeune phalloïde blanche | Idem |
-| Coulemelle, *Macrolepiota procera* | Prairies, lisières et clairières, en bonne partie hors forêt ; petites lépiotes mortelles | Un facteur de lisière et l'ouverture aux prés ; décision sur les lépiotes |
+| Coulemelle, *Macrolepiota procera* | Prairies, lisières et clairières, en bonne partie hors forêt ; petites lépiotes mortelles | Un facteur de lisière (codé le 9 nov. 2026, test d'entrée sur le Vaucluse : `docs/LISIERE-vaucluse-2026-11-09.md`) et l'ouverture aux prés ; décision sur les lépiotes |
 | Morilles, *Morchella* spp. | Frênes et ormes noyés dans « autre feuillu », ripisylves de moins de 2 ha sans essence, brûlis, vergers et jardins hors forêt | Un modèle à part, BD Forêt V3 pour le frêne |
 | Mousseron de la Saint-Georges, *Calocybe gambosa* | Prés, haies, vergers | Ouvrir la carte aux prés (structurant) |
 | Rosé des prés, *Agaricus campestris* | Prairies et pâtures | Idem |
