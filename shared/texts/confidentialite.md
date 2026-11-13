@@ -29,7 +29,7 @@ Pour compter les appareils qui utilisent l'app chaque jour, le serveur note une 
 ## Qui d'autre intervient
 
 - **Railway**, l'hébergeur, pour le serveur et la base de données.
-- **Apple**, pour les notifications de l'app (le texte passe par son service de notifications) et pour le fond de carte de l'app (Plans).
+- **Apple**, pour les notifications de l'app (leur texte, qui cite le nom que vous avez donné au coin et l'espèce, passe par son service de notifications) et pour le fond de carte de l'app (Plans).
 - **La Géoplateforme de l'IGN** (data.geopf.fr), un service public : le statut de la forêt d'un point (publique ou non) et, sur le site, le fond de carte et la recherche de commune. Ce qui lui part : la position du point dont vous ouvrez la fiche, le texte tapé dans la recherche, la zone de carte affichée. Rien qui vous identifie : ni identifiant, ni coin, ni observation.
 - **OpenStreetMap**, sur le site, seulement si vous choisissez ce fond de carte : il reçoit alors la zone affichée.
 

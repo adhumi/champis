@@ -10,8 +10,9 @@ Ce dépôt est le **référentiel** de Champis : ce que le pipeline, l'API, le s
 species/      un fichier JSON par espèce, SCHEMA.md (le modèle), validate.py
 mapping/      bdforet_to_hosts.json : les 32 codes TFV de la BD Forêt → hôtes
 shared/       palette.json (classes et couleurs), vectors/ (contrat de parité Python/Swift),
-              texts/ (articles du Guide, lus par le site et l'app)
-docs/         audit produit et plan (6 nov. 2026)
+              texts/ (articles du Guide, lus par le site et l'app), illustrations/ (une aquarelle par espèce),
+              photos/ (la photo créditée de chaque fiche)
+docs/         espèces candidates, test du facteur lisière, brouillons d'espèces en attente
 .claude/      skills partagés : champis-model, scoring-parity, spec-sync, species-file
 ```
 
@@ -46,4 +47,4 @@ Python 3.12, bibliothèque standard seulement, sans réseau.
 
 ## Licences
 
-Code (`species/validate.py`, `scripts/`) : MIT (`LICENSE`). Fichiers d'espèces, table BD Forêt, palette, vecteurs et textes du Guide : CC BY 4.0 (`LICENSE-DATA.md`), réutilisables librement en citant Champis.
+Code (`species/validate.py`, `scripts/`) : MIT (`LICENSE`). Fichiers d'espèces, table BD Forêt, palette, vecteurs, textes du Guide et aquarelles : CC BY 4.0 (`LICENSE-DATA.md`), réutilisables librement en citant Champis. Les photos de `shared/photos/` gardent la licence de leur auteur (`shared/photos/README.md`).

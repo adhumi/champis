@@ -4,7 +4,8 @@
 Usage : python3 scripts/check_shared.py
 Vérifie : chaque JSON se lit ; l'index des textes du Guide (shared/texts/index.json) et les
 fichiers Markdown se correspondent un pour un, sans id en double ; chaque illustration
-(shared/illustrations/<id>.jpg) porte l'id d'une espèce ; chaque fichier de vecteurs
+(shared/illustrations/<id>.jpg) et chaque photo (shared/photos/<id>.jpg) porte l'id d'une espèce ;
+chaque fichier de vecteurs
 (shared/vectors/) porte `generated_by` (scoring_version, species_hash) et des cas, et tous la même
 empreinte. Que les vecteurs soient à jour se vérifie dans la CI de champis-api
 (`champis-vectors --check`), qui a le code du scoring.
@@ -22,6 +23,7 @@ VECTORS = ROOT / "shared" / "vectors"
 VECTOR_FILES = ("trapezoid", "phi", "m", "group", "palette", "interp", "alt")
 SPECIES = ROOT / "species"
 ILLUSTRATIONS = ROOT / "shared" / "illustrations"
+PHOTOS = ROOT / "shared" / "photos"
 
 
 NOTES: list[str] = []  # constats sans échec (planche absente : espèce incomplète)
@@ -87,6 +89,19 @@ def check() -> list[str]:
             errors.append(f"shared/illustrations/{image.name} : format inattendu (attendu <id>.jpg)")
         elif image.stem not in species_ids:
             errors.append(f"shared/illustrations/{image.name} : aucune espèce de ce nom")
+
+    # photos (shared/photos/README.md) : la copie de `about.photo`, servie par le site et l'app à
+    # la place de Wikimedia. Même règle que les planches : absente, on le dit sans échouer.
+    for sid in sorted(species_ids):
+        if not (PHOTOS / f"{sid}.jpg").is_file():
+            NOTES.append(f"shared/photos/{sid}.jpg : absente, la fiche affichera « Photo à venir »")
+    for image in sorted(PHOTOS.glob("*.*")):
+        if image.suffix == ".md":
+            continue
+        if image.suffix != ".jpg":
+            errors.append(f"shared/photos/{image.name} : format inattendu (attendu <id>.jpg)")
+        elif image.stem not in species_ids:
+            errors.append(f"shared/photos/{image.name} : aucune espèce de ce nom")
 
     return errors
 

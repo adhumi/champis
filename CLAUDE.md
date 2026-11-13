@@ -9,9 +9,9 @@ Découpage des dépôts (spec › Produit › Étape C, lot C7, 6 nov. 2026) : c
 ```
 species/      fichiers espèces JSON + SCHEMA.md + validate.py   (skill species-file)
 mapping/      bdforet_to_hosts.json : 32 codes TFV → hôtes
-shared/       palette.json (seuils, échelle, encodages des tuiles T, G, A et E), vectors/ (contrat de parité Python/Swift) (skill scoring-parity), texts/ (articles du Guide, app et site), illustrations/ (prompts des planches, puis les images)
-scripts/      check_shared.py : JSON, index des textes, vecteurs
-docs/         audit produit et plan, espèces candidates (ajoutées, en attente, écartées) et brouillons/ en attente de décision
+shared/       palette.json (seuils, échelle, encodages des tuiles T, G, A et E), vectors/ (contrat de parité Python/Swift) (skill scoring-parity), texts/ (articles du Guide, app et site), illustrations/ (prompts des planches, puis les images), photos/ (copies des photos créditées des fiches)
+scripts/      check_shared.py : JSON, index des textes, vecteurs, planches, photos
+docs/         espèces candidates (ajoutées, en attente, écartées) et brouillons/ en attente de décision
 ```
 
 ## Outillage
@@ -19,6 +19,7 @@ docs/         audit produit et plan, espèces candidates (ajoutées, en attente,
 - `make check` = la CI : `species/validate.py` puis `scripts/check_shared.py`. Python 3.12, bibliothèque standard, sans réseau.
 - Les chemins `species/`, `mapping/`, `shared/` et `.claude/skills/{champis-model,scoring-parity,spec-sync,species-file}` sont lus tels quels par les trois autres dépôts (sous-module, liens de skills, scripts de synchronisation de l'app) : ne pas les déplacer.
 - Illustrations (`shared/illustrations/`) : aquarelles générées (Midjourney ou Gemini) à partir de `PROMPTS.md`, une par espèce (`<id>.jpg`), dans le style d'une image de référence ; une nouvelle espèce reçoit d'abord son bloc sujet dans `PROMPTS.md`.
+- Photos (`shared/photos/`) : la copie, sans retouche, de la photo Wikimedia Commons de `about.photo`, une par espèce (`<id>.jpg`) ; site et app l'affichent d'ici, avec le crédit, pour ne rien demander à Wikimedia. Changer `about.photo` et le fichier dans la même PR ; chaque photo garde la licence de son auteur (`shared/photos/README.md`).
 - Vecteurs (`shared/vectors/`) : générés uniquement par champis-api (`uv run champis-vectors` écrit dans son sous-module `champis/`), jamais à la main. Un changement d'espèce change leur empreinte : vecteurs régénérés dans la même PR, sinon la CI de champis-api échoue à la prochaine avancée du sous-module.
 
 ## Règles
