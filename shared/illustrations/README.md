@@ -25,6 +25,8 @@ indice par département, coins, carte ; `champis_api.catalog`, décision du 9 no
 Les vingt-sept espèces ont leur planche (9 nov. 2026) ; une nouvelle espèce reçoit d'abord son bloc
 sujet dans `PROMPTS.md`, puis sa planche ici, et n'apparaît qu'avec elle.
 
-Licence des images générées : les vingt-sept planches sont générées avec Gemini (Google) par Adrien ;
-elles relèvent des conditions d'utilisation de Google pour l'IA générative, qui laissent à
-l'utilisateur les droits sur les sorties qu'il génère. À revoir si l'outil change.
+Licence : les vingt-sept planches sont générées avec Gemini (Google) par Adrien, dont les conditions
+d'utilisation laissent à l'utilisateur les droits sur les sorties qu'il génère. L'image de
+référence de style est elle aussi une image générée par Adrien, pas l'œuvre d'un tiers. Les
+planches sont publiées sous licence CC BY 4.0, comme le reste du référentiel (`LICENSE-DATA.md`,
+décision d'Adrien du 13 nov. 2026) ; les icônes de l'app en dérivent. À revoir si l'outil change.
