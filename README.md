@@ -14,7 +14,7 @@ mapping/      bdforet_to_hosts.json : les 32 codes TFV de la BD Forêt → hôte
 shared/       palette.json (classes et couleurs), vectors/ (contrat de parité Python/Swift),
               texts/ (articles du Guide, lus par le site et l'app), illustrations/ (une aquarelle par espèce),
               photos/ (la photo créditée de chaque fiche)
-docs/         espèces candidates, test du facteur lisière,
+docs/         spec/ (copie expurgée de la spec), espèces candidates, test du facteur lisière,
               brouillons d'espèces en attente
 scripts/      check_shared.py : contrôle de tout ce qui n'est pas un fichier espèce
 .claude/      skills partagés : champis-model, scoring-parity, spec-sync, species-file
@@ -55,7 +55,7 @@ Une modification ici n'atteint la production qu'après la PR qui avance le sous-
 
 ## La spec
 
-Chaque décision de conception est écrite dans la spec avant d'être codée. C'est un document tenu par l'auteur ; une copie sera versionnée dans ce dépôt (`docs/spec/`) après relecture. D'ici là, `species/SCHEMA.md` décrit le modèle, et un changement de fond se propose par une issue.
+Chaque décision de conception est écrite dans la spec avant d'être codée. C'est un document tenu par l'auteur ; une copie est versionnée dans ce dépôt, dans [`docs/spec/`](docs/spec/README.md). Elle est expurgée (coûts, comparaisons avec des tiers nommés, détails d'infrastructure et de sécurité, quelques informations personnelles) et se met à jour par PR à partir du document, jamais à la main. `species/SCHEMA.md` décrit le modèle, et un changement de fond se propose par une issue.
 
 ## Signaler une faille
 
