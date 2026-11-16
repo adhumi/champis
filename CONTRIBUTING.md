@@ -70,7 +70,7 @@ eux ; c'est la CI de champis-api qui vérifie qu'ils sont à jour.
 
 Une formule ou un facteur du modèle, le schéma des fichiers, un format partagé entre les dépôts,
 un nouveau groupe d'espèces, tout ce qui touche la vie privée : cela se discute d'abord dans une
-issue. La spec du projet, tenue par l'auteur, fait foi (une copie sera versionnée ici, dans
+issue. La spec du projet, tenue par l'auteur, fait foi (une copie expurgée est versionnée ici, dans
 `docs/spec/`), et une PR qui la contredit n'est pas fusionnée, même si elle est meilleure : la
 spec change d'abord.
 

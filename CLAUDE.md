@@ -1,6 +1,6 @@
 # Champis — référentiel
 
-Cartes de cueillette de champignons (France, 25 m). Pensé d'abord pour Adrien et ses proches, puis ouvert à tous, infrastructure financée par dons (spec, 30 oct. 2026). La spec vit dans le doc « Spec — Champis » ; les skills `.claude/skills/*` disent comment travailler ici — lis `champis-model` avant de toucher une espèce, la palette ou les vecteurs.
+Cartes de cueillette de champignons (France, 25 m). Pensé d'abord pour Adrien et ses proches, puis ouvert à tous, infrastructure financée par dons (spec, 30 oct. 2026). La spec vit dans le doc « Spec — Champis » ; sa copie publique, expurgée, est dans `docs/spec/` (mise à jour par PR après un changement du doc, jamais à la main) ; les skills `.claude/skills/*` disent comment travailler ici — lis `champis-model` avant de toucher une espèce, la palette ou les vecteurs.
 
 Découpage des dépôts (spec › Produit › Étape C, lot C7, 6 nov. 2026) : ce dépôt est le référentiel, partagé par `adhumi/champis-api` (pipeline, API, crons, sur `api.champis.app`) et `adhumi/champis-web` (site `champis.app`), qui l'ont en sous-module `champis/`, et par `adhumi/champis-ios`, qui en copie les vecteurs, les textes et trois skills par ses scripts `sync-*.sh`. Il ne contient pas de code applicatif.
 
@@ -11,7 +11,7 @@ species/      fichiers espèces JSON + SCHEMA.md + validate.py   (skill species-
 mapping/      bdforet_to_hosts.json : 32 codes TFV → hôtes
 shared/       palette.json (seuils, échelle, encodages des tuiles T, G, A et E), vectors/ (contrat de parité Python/Swift) (skill scoring-parity), texts/ (articles du Guide, app et site), illustrations/ (prompts des planches, puis les images), photos/ (copies des photos créditées des fiches)
 scripts/      check_shared.py : JSON, index des textes, vecteurs, planches, photos
-docs/         espèces candidates (ajoutées, en attente, écartées) et brouillons/ en attente de décision
+docs/         spec/ (copie publique expurgée de la spec), espèces candidates (ajoutées, en attente, écartées) et brouillons/ en attente de décision
 ```
 
 ## Outillage
