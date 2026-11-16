@@ -39,6 +39,8 @@ Personne d'autre.
 
 Votre position n'est lue que quand vous le demandez, pour centrer la carte ou noter une observation. L'app ne tourne pas en arrière-plan : les notifications sont calculées par le serveur à partir de vos coins. Sur le site, « me localiser » lit la position dans le navigateur pour centrer la carte, sans l'envoyer nulle part.
 
+La carte retient la dernière vue affichée pour se rouvrir au même endroit : le niveau de zoom et le centre de la carte, rien d'autre. Cette vue reste sur votre appareil et n'est jamais envoyée, ni au serveur de Champis ni à un tiers. Sur le site, elle est gardée dans le stockage local de votre navigateur (`localStorage`, clé `champis.carte.vue`), pas dans un cookie ; pour l'effacer, supprimez les données du site champis.app dans les réglages du navigateur. En navigation privée, ou si le navigateur refuse ce stockage, rien n'est retenu et la carte s'ouvre sur la France entière. Dans l'app, elle est gardée dans les réglages de l'app et disparaît avec elle. Si vous veniez de centrer la carte sur votre position, la vue retenue est celle-là.
+
 ## Vos droits
 
 Dans les réglages de l'app, « Supprimer mes observations et mes coins » efface tout sur le serveur (observations, coins, jeton de notification et empreintes de comptage de l'appareil) puis sur l'appareil, sans retour. Vous pouvez aussi demander l'accès à vos données, leur rectification ou leur export en écrivant à [hello@champis.app](mailto:hello@champis.app). Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL ([cnil.fr](https://www.cnil.fr)).
