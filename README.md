@@ -17,7 +17,7 @@ shared/       palette.json (classes et couleurs), vectors/ (contrat de parité P
 docs/         spec/ (copie expurgée de la spec), espèces candidates, test du facteur lisière,
               brouillons d'espèces en attente
 scripts/      check_shared.py : contrôle de tout ce qui n'est pas un fichier espèce
-.claude/      skills partagés : champis-model, scoring-parity, spec-sync, species-file
+.claude/      skills partagés : champis-model, scoring-parity, spec-sync, species-file, roadmap
 ```
 
 Les skills de `.claude/skills/` sont des notes de travail en Markdown, écrites pour un assistant de code et lisibles par tous : `champis-model` résume le contrat du modèle, `species-file` la marche à suivre pour un fichier espèce.
