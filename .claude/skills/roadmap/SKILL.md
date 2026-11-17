@@ -12,7 +12,7 @@ Depuis le 17 nov. 2026 (décision d'Adrien), ce qui reste à faire sur Champis v
 - Lire les issues ouvertes du dépôt concerné, et celles de `adhumi/champis` pour les sujets transverses. Chercher celle qui couvre la tâche demandée avant d'en ouvrir une.
 - Si la tâche a son issue : la lire en entier (critère de fin, dépendances, décisions déjà prises en commentaire) et travailler dessus.
 - Si la demande contredit une issue ou en dépend, le dire à Adrien avant de coder.
-- Une issue marquée `attend-adrien` attend une décision ou un geste de sa part : ne pas trancher à sa place.
+- Une issue marquée `waiting-for-decision` attend une décision : ne pas trancher à la place d'Adrien.
 
 ## En écriture : pendant et à la fin
 
@@ -68,12 +68,12 @@ Une issue par résultat : pas de liste fourre-tout. Écrire en français, comme 
 
 Peu, et les mêmes dans les quatre dépôts :
 
-- `plus-tard` : gardé au chaud, pas prévu maintenant ;
-- `attend-adrien` : une décision ou un geste d'Adrien est nécessaire ;
-- `ouverture` : à faire avant ou le jour de l'ouverture du code ;
-- `sur-appareil` : demande un essai sur un vrai appareil.
+- `later` : gardé au chaud, pas prévu maintenant ;
+- `waiting-for-decision` : une décision est nécessaire avant d'avancer ;
+- `open-source` : à faire avant ou le jour de l'ouverture du code ;
+- `on-device` : demande un essai sur un vrai appareil.
 
-Une issue sans `plus-tard` est à faire. Pas d'étiquette de priorité : l'ordre se lit dans la spec (plan de réalisation) et dans les jalons si Adrien en crée.
+Une issue sans `later` est à faire. Pas d'étiquette de priorité : l'ordre se lit dans la spec (plan de réalisation) et dans les jalons si Adrien en crée.
 
 ## Ce qui ne va jamais dans une issue
 
